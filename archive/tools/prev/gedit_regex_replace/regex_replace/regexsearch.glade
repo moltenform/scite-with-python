@@ -5,9 +5,9 @@
 <requires lib="gnome"/>
 
 <widget class="GtkDialog" id="search_dialog">
-  <property name="width_request">547</property>
+  <property name="width_request">667</property>
   <property name="visible">True</property>
-  <property name="title" translatable="yes">Regex Find</property>
+  <property name="title" translatable="yes">Regular Expression</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_CENTER_ON_PARENT</property>
   <property name="modal">False</property>
@@ -46,7 +46,19 @@
 	      <accelerator key="Escape" modifiers="0" signal="clicked"/>
 	    </widget>
 	  </child>
-
+ 	  <child>
+	    <widget class="GtkButton" id="replace_all_button">
+	      <property name="visible">True</property>
+	      <property name="sensitive">False</property>
+	      <property name="can_default">True</property>
+	      <property name="can_focus">True</property>
+	      <property name="label">Replace All</property>
+	      <property name="use_stock">False</property>
+	      <property name="relief">GTK_RELIEF_NORMAL</property>
+	      <property name="focus_on_click">True</property>
+	      <property name="response_id">0</property>
+	    </widget>
+	  </child>
 	  <child>
 	    <widget class="GtkButton" id="find_button">
 	      <property name="visible">True</property>
@@ -75,6 +87,7 @@
 	      <property name="response_id">0</property>
 	    </widget>
 	  </child>
+	 
 	</widget>
 	<packing>
 	  <property name="padding">4</property>
@@ -158,7 +171,7 @@
 	      <child>
 		<widget class="GtkLabel" id="label_replace">
 		  <property name="visible">True</property>
-		  <property name="label" translatable="yes">Replace for: </property>
+		  <property name="label" translatable="yes">Replace with: </property>
 		  <property name="use_underline">False</property>
 		  <property name="use_markup">False</property>
 		  <property name="justify">GTK_JUSTIFY_LEFT</property>
@@ -224,7 +237,44 @@
 	      <property name="fill">False</property>
 	    </packing>
 	  </child>
+	  <child>
+	    <widget class="GtkCheckButton" id="use_backreferences_check">
+	      <property name="visible">True</property>
+	      <property name="can_focus">True</property>
+	      <property name="label" translatable="yes">Use _backreferences like \1, \2 (See Python re documentation)</property>
+	      <property name="use_underline">True</property>
+	      <property name="relief">GTK_RELIEF_NORMAL</property>
+	      <property name="focus_on_click">True</property>
+	      <property name="active">True</property>
+	      <property name="inconsistent">False</property>
+	      <property name="draw_indicator">True</property>
+	    </widget>
+	    <packing>
+	      <property name="padding">0</property>
+	      <property name="expand">False</property>
+	      <property name="fill">False</property>
+	    </packing>
+	  </child>
+	  <child>
+	    <widget class="GtkCheckButton" id="case_sensitive_check">
+	      <property name="visible">True</property>
+	      <property name="can_focus">True</property>
+	      <property name="label" translatable="yes">_Case-sensitive</property>
+	      <property name="use_underline">True</property>
+	      <property name="relief">GTK_RELIEF_NORMAL</property>
+	      <property name="focus_on_click">True</property>
+	      <property name="active">True</property>
+	      <property name="inconsistent">False</property>
+	      <property name="draw_indicator">True</property>
+	    </widget>
+	    <packing>
+	      <property name="padding">0</property>
+	      <property name="expand">False</property>
+	      <property name="fill">False</property>
+	    </packing>
+	  </child>
 	</widget>
+	<!-- perhaps use GTK Label for explaining this uses Python re-->
 	<packing>
 	  <property name="padding">0</property>
 	  <property name="expand">True</property>
