@@ -19,8 +19,8 @@
 HINSTANCE vhInst;
 HWND vhWndMain;
 HICON vhIcon;
-TCHAR* szClassName = TEXT("Clipcircle32bfisher");
-TCHAR szInfoTitle[] = TEXT("ClipCircle32");
+WCHAR* szClassName = L"Clipcircle32bfisher";
+WCHAR szInfoTitle[] = L"ClipCircle32";
 HWND vhNextClipViewer = null;
 ClipCircle g_ClipCircle;
 
@@ -162,8 +162,6 @@ BOOL FInitApplication(int nCmdShow)
 	RegisterHotKey(vhWndMain, CLIPC_SPPASTE , MOD_WIN , 'V'); //MOD_NOREPEAT
 	RegisterHotKey(vhWndMain, CLIPC_QUIT, MOD_WIN|MOD_ALT, VK_ESCAPE);
 
-	sendinput_setup();
-
 	// if I want to support // Windows XP/Srvr 2003 read docs
 
 	NOTIFYICONDATA nid = { 0 };
@@ -185,6 +183,10 @@ BOOL FInitApplication(int nCmdShow)
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
 	vhInst = hInstance;
+
+	// if already running, quit
+	if (::FindWindow(szClassName, NULL))
+		return 0;
 
 	if (FInitApplication(nCmdShow))
 	{
