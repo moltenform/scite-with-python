@@ -12,7 +12,6 @@ SsiE sendinput_ctrlv(int nClipSize)
 {
 	::Sleep(200); // wait for the Win and V key to be released. (hack)
 
-
 	INPUT arL[1024];
 	int t = -1; UINT ret;
 	memset(arL, 0, sizeof(arL)); 

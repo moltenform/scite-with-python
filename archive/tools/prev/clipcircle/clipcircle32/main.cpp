@@ -3,19 +3,28 @@
 #include "util.h"
 #include "sendinput.h"
 
+//takes unicode, but composed characters or non-BMP characters 
+//will cause selection to be incorrect.
 
 #include <stdio.h>
 #include "main.h"
+#include "cliputils.h"
+#include "clipcircle.h"
 
 // subsystem to Windows
 // pch output removed
 // use unicode.
+// clean exits important because of clip watcher.
 
 HINSTANCE vhInst;
 HWND vhWndMain;
 HICON vhIcon;
 TCHAR* szClassName = TEXT("AOTWIN");
 TCHAR szInfoTitle[] = TEXT("Always On Top");
+HWND vhNextClipViewer = null;
+
+ClipCircle g_ClipCircle;
+
 
 #define Assert(f) if (!(f)) __debugbreak();
 
@@ -60,25 +69,46 @@ void OnTrayIcon(UINT32 idTaskbar,  UINT32 iMessage)
 	}
 }
 
-LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	//if (LOWORD(lParam) == WM_RBUTTONDOWN)
-	//{
-	//char buf[256]={0};
-	//sprintf_s(buf, "is %d (%d) %d %d", message,WM_MY_TRAY_ICON, wParam, lParam);
-	//MessageBoxA(NULL, "Hi", buf, MB_OK);
-	//}
-
-	switch (message)
+	switch (uMsg)
 	{
+	case WM_CREATE:
+		vhNextClipViewer = ::SetClipboardViewer(hWnd); 
+		break;
+	case WM_CHANGECBCHAIN: 
+		// If the next window is closing, repair the chain. 
+		if ((HWND) wParam == vhNextClipViewer) 
+			vhNextClipViewer = (HWND) lParam; 
+		// Otherwise, pass the message to the next link. 
+		else if (vhNextClipViewer != NULL) 
+			SendMessage(vhNextClipViewer, uMsg, wParam, lParam); 
+	 
+		break;
+	case WM_DRAWCLIPBOARD:  // clipboard contents changed. 
+		// get it
+		if (OpenClipboard(NULL))
+		{
+			if (::IsClipboardFormatAvailable(CF_UNICODETEXT))
+			{
+				HANDLE hClipboardData = GetClipboardData(CF_UNICODETEXT);
+				WCHAR *pchData = (WCHAR*)GlobalLock(hClipboardData);
+				g_ClipCircle.OnClipChange(pchData);
+				GlobalUnlock(hClipboardData);
+			}
+			CloseClipboard();
+		}
+
+        // Pass the message to the next window in clipboard viewer chain.
+        SendMessage(vhNextClipViewer, uMsg, wParam, lParam); 
+        break;
+
 	case WM_HOTKEY:
 		{
 		switch(wParam)
 		{
 		case CLIPC_QUIT:
 			{
-			UnregisterHotKey(vhWndMain, CLIPC_SPPASTE);
-			UnregisterHotKey(vhWndMain, CLIPC_QUIT);
 			NOTIFYICONDATA nid = { 0 };
 			nid.cbSize = sizeof(nid);
 			nid.hWnd = vhWndMain;
@@ -90,15 +120,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		
 		case CLIPC_SPPASTE:
 			{
-			SsiE serr = sendinput_ctrlv(6);
-			// don't use serr
-
+			g_ClipCircle.PasteAndCycle();
 			break;
 			}
 		
 		default:
 			{
-			MessageBoxA(NULL, "AOT:  Uhhh", "AOT", MB_OK);
+			MessageBoxA(NULL, "clipcircle: unknown msg", "clipcircle", MB_OK);
 			break;
 			}
 		}
@@ -109,10 +137,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		OnTrayIcon((UINT32)wParam, (UINT32)lParam);
 		break;
 		}
+
 	default:
 		break;
 	}
-	return DefWindowProc(hWnd, message, wParam, lParam);
+	return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
 
 BOOL FInitApplication(int nCmdShow)
@@ -167,6 +196,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
+		UnregisterHotKey(vhWndMain, CLIPC_SPPASTE);
+		UnregisterHotKey(vhWndMain, CLIPC_QUIT);
+		::ChangeClipboardChain(vhWndMain, vhNextClipViewer); 
+
 	}
 	return 0;
 }

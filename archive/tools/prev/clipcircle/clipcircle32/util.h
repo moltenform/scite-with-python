@@ -8,6 +8,10 @@
 #include <ShellAPI.h>
 #include <stdio.h>
 
+#define StringStartsWith(s1,s2) (strncmp((s1), (s2), strlen(s2))==0)
+#define StringAreEqual(s1, s2) (strcmp((s1),(s2))==0)
+
+
 #define null NULL
 inline void DisplayWarning(const char* sz)
 {
