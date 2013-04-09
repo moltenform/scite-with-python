@@ -1,9 +1,10 @@
 
 #include "util.h"
 
-INPUT arInput[512]; 
-//C_ASSERT(_countof(arEvents) % 2 == 1); // should be an odd number
-INPUT arCtrlV[4];
+INPUT arInput[255];
+C_ASSERT(_countof(arInput) % 2 == 1); // should be an odd number
+INPUT arCtrlV[15];
+INPUT arWinbackdown[1];
 bool g_fInited = false;
 
 /*
@@ -12,31 +13,22 @@ win-ctrl-v. could possibly create new thread and sleep. but better to
 temporarily 'unpress' the windows key.
 */
 
-
-DWORD WINAPI ThreadProc (LPVOID lpdwThreadParam )
-{
-	//::Sleep(400);
-
-	UINT ret = ::SendInput(_countof(arCtrlV), arCtrlV, sizeof(arCtrlV[0]));
-	if (!ret)
-		DisplayWarning("::SendInput failed");
-	return 0;
-}
-
 SsiE sendinput_ctrlv()
 {
 	if (!g_fInited)
 		return ssierr("not inited");
-DWORD dwThreadId;
-//	::CreateThread(NULL, //Choose default security
-//0, //Default stack size
-//&ThreadProc,
-////Routine to execute
-//(LPVOID) null, //Thread parameter
-//0, //Immediately run the thread
-//&dwThreadId //Thread Id
-//);
-ThreadProc(null);
+
+	UINT ret = ::SendInput(_countof(arCtrlV), arCtrlV, sizeof(arCtrlV[0]));
+	if (!ret)
+		DisplayWarning("::SendInput failed");
+	/*ret = ::SendInput(_countof(arInput), arInput, sizeof(arInput[0]));
+	if (!ret)
+		DisplayWarning("::SendInput failed");
+
+	ret = ::SendInput(_countof(arWinbackdown), arWinbackdown, sizeof(arWinbackdown[0]));
+	if (!ret)
+		DisplayWarning("::SendInput failed");*/
+
 	return SsiEOk;
 }
 SsiE sendinput_leftarrow(int nHowManyTimes)
@@ -60,48 +52,64 @@ SsiE sendinput_leftarrow(int nHowManyTimes)
 void sendinput_setup()
 {
 	// set up arCtrlV
-	//memset(arCtrlV, 0, sizeof(arCtrlV));
-	//for (int i=0; i<_countof(arCtrlV); i++)
-	//	arCtrlV[i].type = INPUT_KEYBOARD;
-	//// 1) ctrl key down
-	//arCtrlV[0].ki.wVk = VK_LCONTROL; 
-	//// 2) v key down
-	//arCtrlV[1].ki.wVk = 56; // v key
-	//// 3) v key up
-	//arCtrlV[2].ki.wVk = 56;
-	//arCtrlV[2].ki.dwFlags = KEYEVENTF_KEYUP;
-	//// 4) ctrl key up
-	//arCtrlV[3].ki.wVk = VK_LCONTROL; 
-	//arCtrlV[3].ki.dwFlags = KEYEVENTF_KEYUP;
-
 	memset(arCtrlV, 0, sizeof(arCtrlV));
 	for (int i=0; i<_countof(arCtrlV); i++)
 		arCtrlV[i].type = INPUT_KEYBOARD;
-	// 2) v key down
-	arCtrlV[0].ki.wVk = VK_LWIN ; // v key
+	// 1) win key up
+	arCtrlV[0].ki.wVk = VK_LWIN;
 	arCtrlV[0].ki.dwFlags = KEYEVENTF_KEYUP;
-	// 3) v key up
-	arCtrlV[1].ki.wVk = VK_LWIN ;
+	// 2) v key up
+	arCtrlV[1].ki.wVk = 'V';
 	arCtrlV[1].ki.dwFlags = KEYEVENTF_KEYUP;
-	// 2) v key down
-	arCtrlV[2].ki.wVk = 'V'; // v key
-	// 3) v key up
-	arCtrlV[3].ki.wVk = 'V';
-	arCtrlV[3].ki.dwFlags = KEYEVENTF_KEYUP;
+	// 3) ctrl key down
+	arCtrlV[2].ki.wVk = VK_LCONTROL; 
+	// 4) v key down
+	arCtrlV[3].ki.wVk = 'V'; // v key
+	// 5) v key up
+	arCtrlV[4].ki.wVk = 'V';
+	arCtrlV[4].ki.dwFlags = KEYEVENTF_KEYUP;
+	// 6) ctrl key up
+	arCtrlV[5].ki.wVk = VK_LCONTROL; 
+	arCtrlV[5].ki.dwFlags = KEYEVENTF_KEYUP;
+	// 7) shift down
+	arInput[6].ki.wVk = VK_LSHIFT;
+	// 8) left down
+	arInput[7].ki.wVk = VK_LEFT;
+	arInput[8].ki.wVk = VK_LEFT;
+	arInput[8].ki.dwFlags = KEYEVENTF_KEYUP;
+	arInput[9].ki.wVk = VK_LEFT;
+	arInput[10].ki.wVk = VK_LEFT;
+	arInput[10].ki.dwFlags = KEYEVENTF_KEYUP;
+	arInput[11].ki.wVk = VK_LEFT;
+	arInput[12].ki.wVk = VK_LEFT;
+	arInput[12].ki.dwFlags = KEYEVENTF_KEYUP;
+	// shift up
+	arInput[13].ki.wVk = VK_LSHIFT;
+	arInput[13].ki.dwFlags = KEYEVENTF_KEYUP;
+	// win back down
+	arInput[14].ki.wVk = VK_LWIN;
+
+	// 7) win key down
+	memset(arWinbackdown, 0, sizeof(arWinbackdown));
+	arWinbackdown[0].type = INPUT_KEYBOARD;
+	arWinbackdown[0].ki.wVk = VK_LWIN;
 
 	memset(arInput, 0, sizeof(arInput));
 	arInput[0].type = INPUT_KEYBOARD;
 	arInput[0].ki.wVk = VK_LSHIFT;
-	for (int i=1; i<_countof(arInput); i++)
+	for (int i=0; i<_countof(arInput)-2; i++)
 	{
-		arInput[i].type = INPUT_KEYBOARD;
-		arInput[i].ki.wVk = VK_LEFT;
-		arInput[i].ki.wScan = 0;
-		arInput[i].ki.dwFlags = 
-			(i%2==1) ? 0 : KEYEVENTF_KEYUP;
-		arInput[i].ki.time = 0;
-		arInput[i].ki.dwExtraInfo = 0;
+		arInput[i+1].type = INPUT_KEYBOARD;
+		arInput[i+1].ki.wVk = VK_LEFT;
+		arInput[i+1].ki.wScan = 0;
+		arInput[i+1].ki.dwFlags = 
+			(i%2==0) ? 0 : KEYEVENTF_KEYUP;
+		arInput[i+1].ki.time = 0;
+		arInput[i+1].ki.dwExtraInfo = 0;
 	}
+	arInput[_countof(arInput)-1].type = INPUT_KEYBOARD;
+	arInput[_countof(arInput)-1].ki.wVk = VK_LSHIFT;
+	arInput[_countof(arInput)-1].ki.dwFlags = KEYEVENTF_KEYUP;
 
 	// http://www.codeguru.com/forum/showthread.php?t=377393
 	// http://www.teachers.ash.org.au/dbrown/virtualdub/capture.htm
