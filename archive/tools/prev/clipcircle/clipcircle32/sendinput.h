@@ -1,4 +1,4 @@
 
 
-SsiE sendinput_ctrlv(int nClipSize);
+SsiE sendinput_ctrlv(const WCHAR* sz);
 void sendinput_setup();

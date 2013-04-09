@@ -24,9 +24,9 @@ void SetClipboardString(const WCHAR* s)
    GlobalUnlock(hClipboardData);
 		  
    // Now, set the Clipboard data by specifying that 
-   // ANSI text is being used and passing the handle to
+   // unicode text is being used and passing the handle to
    // the global memory.
-   SetClipboardData(CF_UNICODETEXT,hClipboardData);
+   SetClipboardData(CF_UNICODETEXT, hClipboardData);
 		  
    // Finally, when finished I simply close the Clipboard
    // which has the effect of unlocking it so that other

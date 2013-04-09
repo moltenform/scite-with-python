@@ -1,10 +1,10 @@
-
-
 #include "util.h"
 #include "sendinput.h"
 
 //takes unicode, but composed characters or non-BMP characters 
 //will cause selection to be incorrect.
+// todo: take mutex so that only one instance runs.
+// (or just check for a window with same name)
 
 #include <stdio.h>
 #include "main.h"
@@ -19,12 +19,10 @@
 HINSTANCE vhInst;
 HWND vhWndMain;
 HICON vhIcon;
-TCHAR* szClassName = TEXT("AOTWIN");
-TCHAR szInfoTitle[] = TEXT("Always On Top");
+TCHAR* szClassName = TEXT("Clipcircle32bfisher");
+TCHAR szInfoTitle[] = TEXT("ClipCircle32");
 HWND vhNextClipViewer = null;
-
 ClipCircle g_ClipCircle;
-
 
 #define Assert(f) if (!(f)) __debugbreak();
 

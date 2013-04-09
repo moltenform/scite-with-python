@@ -26,10 +26,9 @@ public:
 	{
 		if (!s || !s[0])
 			return;
-		// is it equal to anything already cached?
-		for (int i=0; i<_countof(m_items);i++)
-			if (wcscmp(s, m_items[i])==0)
-				return;
+		// is it equal to the current one?
+		if (wcscmp(s, m_items[m_ptr])==0)
+			return;
 
 		// push it onto the ring
 		m_ptr++;
@@ -41,13 +40,11 @@ public:
 	void PasteAndCycle()
 	{
 		SetClipboardString(m_items[m_ptr]);
-		sendinput_ctrlv(wcslen(m_items[m_ptr]));
+		sendinput_ctrlv(m_items[m_ptr]);
 		m_ptr--;
 		if (m_ptr < 0) m_ptr= g_nItems-1;
 		PrintDebug();
 	}
-
-
 	void PrintDebug()
 	{
 		FILE* f = fopen("C:\\pydev\\pyaudio_here\\progs\\clipcircle\\clipcircle32\\dbgout.txt", "w");
@@ -58,6 +55,5 @@ public:
 		}
 		fclose(f);
 	}
-
 };
 
