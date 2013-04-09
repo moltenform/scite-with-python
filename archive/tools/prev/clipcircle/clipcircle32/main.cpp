@@ -1,69 +1,55 @@
-#include "util.h"
+/*
+Clipcircle32
+Ben Fisher, 2011. Released under the GPLv3 license.
+http://halfhourhacks.blogspot.com
+See clipcircle.txt for more information.
+
+Build settings:
+Use Unicode character set.
+Linker/system/subsystem should be Windows.
+*/
+
+#include "common.h"
 #include "sendinput.h"
-
-//takes unicode, but composed characters or non-BMP characters 
-//will cause selection to be incorrect.
-// todo: take mutex so that only one instance runs.
-// (or just check for a window with same name)
-
-#include <stdio.h>
-#include "main.h"
-#include "cliputils.h"
 #include "clipcircle.h"
 
-// subsystem to Windows
-// pch output removed
-// use unicode.
-// clean exits important because of clip watcher.
+const int CLIPC_HOTKEY_SPPASTE = 2;
+const int CLIPC_HOTKEY_QUIT = 3;
+const int WM_MY_TRAY_ICON = (WM_USER + 2); // message for icon messages
+const int TASKBARICON_uId = 0x300; // taskbar icons are identified by hWnd and uID.
 
-HINSTANCE vhInst;
-HWND vhWndMain;
-HICON vhIcon;
-WCHAR* szClassName = L"Clipcircle32bfisher";
-WCHAR szInfoTitle[] = L"ClipCircle32";
-HWND vhNextClipViewer = null;
+const WCHAR* g_wzClassName = L"bfisher_Clipcircle32";
+const WCHAR* g_wzTip = L"ClipCircle32";
+HWND g_vhWndMain = NULL;
+HWND g_vhNextClipViewer = NULL;
 ClipCircle g_ClipCircle;
 
-#define Assert(f) if (!(f)) __debugbreak();
-
-void FShowSystemTrayIconMenu()
+void TrayIconMsg(UINT32 idTaskbar,  UINT32 iMessage)
 {
-	HMENU hMenu = ::CreatePopupMenu();
-	Assert(hMenu);
-	const INT32 idInfo = 1;
-
-	if (!::AppendMenu(hMenu, MF_STRING | MF_ENABLED, idInfo, L"Info"))
-	{
-		Assert(false);
-	}
-	POINT ptCursorPos;
-	if (!::GetCursorPos(&ptCursorPos))
-	{
-		Assert(false);
-	}
-	SetForegroundWindow(vhWndMain);
-	UINT uFlags = TPM_RIGHTALIGN | TPM_BOTTOMALIGN |TPM_RETURNCMD;
-	INT32 iSelected = ::TrackPopupMenuEx(hMenu, uFlags, ptCursorPos.x, ptCursorPos.y, vhWndMain, NULL );
-	::DestroyMenu(hMenu);
-	
-	if (iSelected == idInfo)
-	{
-		MessageBoxA(NULL, "ClipCircle32, by Ben Fisher, 2011\n\n"
-			"Press Win+Alt+Esc to quit\nPress Win+V to paste\n", "ClipCircle32", MB_OK);
-	}
-}
-
-
-void OnTrayIcon(UINT32 idTaskbar,  UINT32 iMessage)
-{
-	if (idTaskbar != mwid_TaskBarIco)
+	if (idTaskbar != TASKBARICON_uId)
 		return;
 
-	switch (iMessage)
+	if (iMessage != WM_RBUTTONDOWN)
+		return;
+
+	SetForegroundWindow(g_vhWndMain);
+
+	HMENU hMenu = CreatePopupMenu();
+	Assert(hMenu);
+	const int nIdInfo = 1;
+	BOOL ret = AppendMenu(hMenu, MF_STRING | MF_ENABLED, nIdInfo, L"Info");
+	Assert(ret);
+	POINT ptCursorPos;
+	ret = GetCursorPos(&ptCursorPos);
+	Assert(ret);
+
+	INT32 nSelected = TrackPopupMenuEx(hMenu, TPM_RETURNCMD, ptCursorPos.x, ptCursorPos.y, g_vhWndMain, NULL);
+	DestroyMenu(hMenu);
+	
+	if (nSelected == nIdInfo)
 	{
-		case WM_RBUTTONDOWN:
-				FShowSystemTrayIconMenu();
-				break;
+		MessageBoxA(NULL, "ClipCircle32, by Ben Fisher, 2011\n\n"
+			"Press Win+Escape to quit\nPress Win+V to paste\n", "ClipCircle32", MB_OK);
 	}
 }
 
@@ -72,22 +58,22 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	switch (uMsg)
 	{
 	case WM_CREATE:
-		vhNextClipViewer = ::SetClipboardViewer(hWnd); 
+		g_vhNextClipViewer = SetClipboardViewer(hWnd); 
 		break;
 	case WM_CHANGECBCHAIN: 
 		// If the next window is closing, repair the chain. 
-		if ((HWND) wParam == vhNextClipViewer) 
-			vhNextClipViewer = (HWND) lParam; 
+		if ((HWND) wParam == g_vhNextClipViewer) 
+			g_vhNextClipViewer = (HWND) lParam; 
 		// Otherwise, pass the message to the next link. 
-		else if (vhNextClipViewer != NULL) 
-			SendMessage(vhNextClipViewer, uMsg, wParam, lParam); 
+		else if (g_vhNextClipViewer != NULL) 
+			SendMessage(g_vhNextClipViewer, uMsg, wParam, lParam); 
 	 
 		break;
 	case WM_DRAWCLIPBOARD:  // clipboard contents changed. 
 		// get it
 		if (OpenClipboard(NULL))
 		{
-			if (::IsClipboardFormatAvailable(CF_UNICODETEXT))
+			if (IsClipboardFormatAvailable(CF_UNICODETEXT))
 			{
 				HANDLE hClipboardData = GetClipboardData(CF_UNICODETEXT);
 				WCHAR *pchData = (WCHAR*)GlobalLock(hClipboardData);
@@ -98,25 +84,25 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		}
 
         // Pass the message to the next window in clipboard viewer chain.
-        SendMessage(vhNextClipViewer, uMsg, wParam, lParam); 
+        SendMessage(g_vhNextClipViewer, uMsg, wParam, lParam); 
         break;
 
 	case WM_HOTKEY:
 		{
 		switch(wParam)
 		{
-		case CLIPC_QUIT:
+		case CLIPC_HOTKEY_QUIT:
 			{
 			NOTIFYICONDATA nid = { 0 };
 			nid.cbSize = sizeof(nid);
-			nid.hWnd = vhWndMain;
-			nid.uID = mwid_TaskBarIco;
+			nid.hWnd = g_vhWndMain;
+			nid.uID = TASKBARICON_uId;
 			Shell_NotifyIcon(NIM_DELETE, &nid);
 			PostQuitMessage(0);
 			break;
 			}
 		
-		case CLIPC_SPPASTE:
+		case CLIPC_HOTKEY_SPPASTE:
 			{
 			g_ClipCircle.PasteAndCycle();
 			break;
@@ -132,7 +118,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		}
 	case WM_MY_TRAY_ICON:
 		{
-		OnTrayIcon((UINT32)wParam, (UINT32)lParam);
+		TrayIconMsg((UINT32)wParam, (UINT32)lParam);
 		break;
 		}
 
@@ -142,39 +128,34 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
 
-BOOL FInitApplication(int nCmdShow)
+BOOL StartApplication(int nCmdShow, HINSTANCE hInst)
 {
-	WNDCLASSEX wcex = { 0 };
-	wcex.cbSize = sizeof(WNDCLASSEX); 
-
-	wcex.style			= CS_HREDRAW | CS_VREDRAW;
-	wcex.lpfnWndProc	= (WNDPROC)WndProc;
-	wcex.hInstance		= vhInst;
-	wcex.hbrBackground	= (HBRUSH)(COLOR_WINDOW+1);
-	wcex.lpszClassName	= szClassName;
-	if (RegisterClassEx(&wcex) == 0)
+	WNDCLASSEX wc = { 0 };
+	wc.cbSize = sizeof(WNDCLASSEX); 
+	wc.style = 0;
+	wc.lpfnWndProc = (WNDPROC)WndProc;
+	wc.hInstance = hInst;
+	wc.hbrBackground = (HBRUSH)(COLOR_WINDOW+1);
+	wc.lpszClassName = g_wzClassName;
+	if (RegisterClassEx(&wc) == 0)
 		return FALSE;
 
-	vhWndMain = CreateWindow(szClassName, szClassName, WS_OVERLAPPED, 0, 0, 0, 0, HWND_MESSAGE, NULL, vhInst, NULL);
-	if (vhWndMain == NULL)
+	g_vhWndMain = CreateWindow(g_wzClassName, g_wzClassName, WS_OVERLAPPED, 0, 0, 0, 0, HWND_MESSAGE, NULL, hInst, NULL);
+	if (g_vhWndMain == NULL)
 		return FALSE;
-
-	RegisterHotKey(vhWndMain, CLIPC_SPPASTE , MOD_WIN , 'V'); //MOD_NOREPEAT
-	RegisterHotKey(vhWndMain, CLIPC_QUIT, MOD_WIN|MOD_ALT, VK_ESCAPE);
-
-	// if I want to support // Windows XP/Srvr 2003 read docs
 
 	NOTIFYICONDATA nid = { 0 };
-	nid.cbSize = sizeof(nid);
-	nid.hWnd = vhWndMain;
-	nid.uID = mwid_TaskBarIco;
-	nid.uFlags = NIF_ICON|NIF_TIP | NIF_MESSAGE;
-	// NIF_MESSAGE is important!
-	nid.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+	nid.cbSize = NOTIFYICONDATA_V3_SIZE; // support Windows XP/Srvr 2003
+	nid.hWnd = g_vhWndMain;
+	nid.uID = TASKBARICON_uId;
+	nid.uFlags = NIF_ICON | NIF_TIP | NIF_MESSAGE;
+	if (OS_FileExists(L"icon.ico"))
+		nid.hIcon = (HICON) LoadImage(NULL, L"icon.ico", IMAGE_ICON, 16, 16, LR_LOADFROMFILE);
+	else
+		nid.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+
 	nid.uCallbackMessage = WM_MY_TRAY_ICON;
-	//nid.hBalloonIcon = LoadIcon(NULL, IDI_APPLICATION);
-	//http://msdn.microsoft.com/en-us/library/windows/desktop/bb773352%28v=vs.85%29.aspx
-	memcpy(nid.szTip, szInfoTitle, sizeof(szInfoTitle));
+	wcscpy_s(nid.szTip, _countof(nid.szTip), g_wzTip);
 	Shell_NotifyIcon(NIM_ADD, &nid);
 
 	return TRUE;
@@ -182,24 +163,24 @@ BOOL FInitApplication(int nCmdShow)
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-	vhInst = hInstance;
-
 	// if already running, quit
-	if (::FindWindow(szClassName, NULL))
+	if (FindWindow(g_wzClassName, NULL))
 		return 0;
 
-	if (FInitApplication(nCmdShow))
+	if (StartApplication(nCmdShow, hInstance))
 	{
+		RegisterHotKey(g_vhWndMain, CLIPC_HOTKEY_SPPASTE , MOD_WIN , 'V'); //MOD_NOREPEAT
+		RegisterHotKey(g_vhWndMain, CLIPC_HOTKEY_QUIT, MOD_WIN, VK_ESCAPE);
 		MSG msg;
 		while (GetMessage(&msg, NULL, 0, 0)) 
 		{
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
-		UnregisterHotKey(vhWndMain, CLIPC_SPPASTE);
-		UnregisterHotKey(vhWndMain, CLIPC_QUIT);
-		::ChangeClipboardChain(vhWndMain, vhNextClipViewer); 
-
+		UnregisterHotKey(g_vhWndMain, CLIPC_HOTKEY_SPPASTE);
+		UnregisterHotKey(g_vhWndMain, CLIPC_HOTKEY_QUIT);
+		ChangeClipboardChain(g_vhWndMain, g_vhNextClipViewer); 
 	}
 	return 0;
 }
+

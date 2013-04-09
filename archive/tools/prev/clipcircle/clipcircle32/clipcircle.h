@@ -1,20 +1,18 @@
 
 #include <stdlib.h>
+
 const int g_nItems = 8;
+
+// This class maintains a ring buffer of clipboard items.
 class ClipCircle
 {
-private:
-	WCHAR* m_items[g_nItems];
-	int m_ptr;
 public:
 	ClipCircle()
 	{
-		// set everything to a space character
+		// initialize all strings to " " (a single space)
 		for (int i=0; i<_countof(m_items); i++)
-		{
-			m_items[i] = (WCHAR*) calloc(2, sizeof(WCHAR));
-			m_items[i][0] = L' ';
-		}
+			m_items[i] = _wcsdup(L" ");
+
 		m_ptr = 0;
 	}
 	~ClipCircle()
@@ -22,38 +20,35 @@ public:
 		for (int i=0; i<_countof(m_items);i++)
 			free(m_items[i]);
 	}
-	void OnClipChange(const WCHAR* s)
+
+	// Push onto the buffer.
+	void OnClipChange(const WCHAR* wz)
 	{
-		if (!s || !s[0])
+		if (!wz || !wz[0])
 			return;
-		// is it equal to the current one?
-		if (wcscmp(s, m_items[m_ptr])==0)
+
+		// ignore if it is equal to the current one.
+		if (wcscmp(wz, m_items[m_ptr])==0)
 			return;
 
 		// push it onto the ring
 		m_ptr++;
 		if (m_ptr >= g_nItems) m_ptr=0;
 		free(m_items[m_ptr]);
-		m_items[m_ptr] = _wcsdup(s);
-		PrintDebug();
+		m_items[m_ptr] = _wcsdup(wz);
 	}
+
+	// Pop from the buffer. Output the string to the current window.
 	void PasteAndCycle()
 	{
 		SetClipboardString(m_items[m_ptr]);
-		sendinput_ctrlv(m_items[m_ptr]);
+		SendKeyboardInputToWindow(m_items[m_ptr]);
 		m_ptr--;
-		if (m_ptr < 0) m_ptr= g_nItems-1;
-		PrintDebug();
+		if (m_ptr < 0) m_ptr = g_nItems-1;
 	}
-	void PrintDebug()
-	{
-		FILE* f = fopen("C:\\pydev\\pyaudio_here\\progs\\clipcircle\\clipcircle32\\dbgout.txt", "w");
-		for (int i=0; i<g_nItems; i++)
-		{
-			const WCHAR* fmt = (i==m_ptr ? L"(%d):%s\n" : L"%d:%s\n");
-			fwprintf(f, fmt, i, m_items[i]);
-		}
-		fclose(f);
-	}
+
+private:
+	WCHAR* m_items[g_nItems];
+	int m_ptr;
 };
 

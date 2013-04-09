@@ -1,3 +1,4 @@
 
+#pragma once
 
-SsiE sendinput_ctrlv(const WCHAR* sz);
+bool SendKeyboardInputToWindow(const WCHAR* sz);
