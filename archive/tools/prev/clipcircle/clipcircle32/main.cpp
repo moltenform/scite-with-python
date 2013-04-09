@@ -90,7 +90,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		
 		case CLIPC_SPPASTE:
 			{
-			SsiE serr = sendinput_ctrlv();
+			SsiE serr = sendinput_ctrlv(6);
 			// don't use serr
 
 			break;
