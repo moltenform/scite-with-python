@@ -9,8 +9,12 @@
 #include <ShellAPI.h>
 #include <stdio.h>
 
+#ifdef NTDDI_WINXP
 C_ASSERT(_WIN32_WINNT == NTDDI_WINXP);
+#endif
+#ifdef _WIN32_IE_IE50
 C_ASSERT(_WIN32_IE == _WIN32_IE_IE50);
+#endif
 
 inline void DisplayWarning(const char* sz)
 {

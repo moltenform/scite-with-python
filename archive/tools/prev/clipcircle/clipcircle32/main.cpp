@@ -130,7 +130,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 BOOL StartApplication(int nCmdShow, HINSTANCE hInst)
 {
-	WNDCLASSEX wc = { 0 };
+	WNDCLASSEX wc = {0};
 	wc.cbSize = sizeof(WNDCLASSEX); 
 	wc.style = 0;
 	wc.lpfnWndProc = (WNDPROC)WndProc;
@@ -145,7 +145,12 @@ BOOL StartApplication(int nCmdShow, HINSTANCE hInst)
 		return FALSE;
 
 	NOTIFYICONDATA nid = { 0 };
-	nid.cbSize = NOTIFYICONDATA_V3_SIZE; // support Windows XP/Srvr 2003
+#ifdef NOTIFYICONDATA_V3_SIZE
+	UINT cbSize = NOTIFYICONDATA_V3_SIZE;
+#else
+	UINT cbSize = sizeof(NOTIFYICONDATA);
+#endif
+	nid.cbSize = cbSize; // support Windows XP/Srvr 2003
 	nid.hWnd = g_vhWndMain;
 	nid.uID = TASKBARICON_uId;
 	nid.uFlags = NIF_ICON | NIF_TIP | NIF_MESSAGE;
