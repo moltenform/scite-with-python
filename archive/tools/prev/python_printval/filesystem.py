@@ -6,6 +6,7 @@ exists = os.path.exists
 join = os.path.join
 split = os.path.split
 isdir = os.path.isdir
+is_dir = os.path.isdir
 copy = shutil.copy
 getsize = os.path.getsize
 copytree = shutil.copytree
