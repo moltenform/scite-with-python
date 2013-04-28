@@ -12,6 +12,7 @@ typedef struct SsipIndexer_t
 	bool m_bFullUpdate;
 	bool m_bVerbose;
 	uint m_nFilesPresent;
+	uint m_nMinWordlen;
 } SsipIndexer;
 
 inline SsipIndexer* SsipIndexer_Create(const char* szIniFile)
@@ -23,6 +24,7 @@ inline SsipIndexer* SsipIndexer_Create(const char* szIniFile)
 	obj->m_bFullUpdate = false;
 	obj->m_bVerbose = false;
 	obj->m_nFilesPresent = 0;
+	obj->m_nMinWordlen = 5;
 	return obj;
 }
 inline void SsipIndexer_Close(SsipIndexer* obj)

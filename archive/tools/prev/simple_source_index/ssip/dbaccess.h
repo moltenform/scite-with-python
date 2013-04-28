@@ -26,6 +26,8 @@ SsiE SSIdbAccess_InsertSrcFile(SSIdbAccess* pDb, const char* szFile, UINT64 nLas
 SsiE SSIdbAccess_TxnStart(SSIdbAccess* pDb);
 SsiE SSIdbAccess_TxnCommit(SSIdbAccess* pDb);
 SsiE SSIdbAccess_TxnAbort(SSIdbAccess* pDb);
+SsiE SSIdbAccess_AsyncModeStart(SSIdbAccess* pDb);
+SsiE SSIdbAccess_AsyncModeStop(SSIdbAccess* pDb);
 SsiE SSIdbAccess_AddCatalogSrcIndex(SSIdbAccess* pDb);
 
 SsiE SSIdbAccess_GetLastModified(SSIdbAccess* pDb, const char* szFile, UINT64*outnLastMod, uint*outnRowId);

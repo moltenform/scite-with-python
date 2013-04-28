@@ -255,6 +255,14 @@ SsiE SSIdbAccess_TxnAbort(SSIdbAccess* pDb)
 {
 	return SSIdbAccess_RunSqlM(pDb, "ROLLBACK TRANSACTION");
 }
+SsiE SSIdbAccess_AsyncModeStart(SSIdbAccess* pDb)
+{
+	return SSIdbAccess_RunSqlM(pDb, "PRAGMA synchronous = 0");
+}
+SsiE SSIdbAccess_AsyncModeStop(SSIdbAccess* pDb)
+{
+	return SSIdbAccess_RunSqlM(pDb, "PRAGMA synchronous = 1");
+}
 
 // look in database for matches, and run callback for each file.
 // at this stage, false-positives are possible due to hash collisions or files that have been deleted.

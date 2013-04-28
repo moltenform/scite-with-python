@@ -71,3 +71,6 @@ inline bool OS_GetOwnPath(char* szBuf, UINT nBufsize)
 {
 	return !!::GetModuleFileName(NULL, szBuf, nBufsize);
 }
+
+void PerfTimer_Start();
+double PerfTimer_Stop();

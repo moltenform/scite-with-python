@@ -46,3 +46,20 @@ bool WalkThroughFiles(const char* szDir, void* obj, PfnWalkfilesCallback callbac
 	return WalkThroughFiles_Impl(szDir, obj, callback, 0, nMaxdepth);
 }
 
+LARGE_INTEGER g_start={0};
+void PerfTimer_Start()
+{
+	g_start.QuadPart = 0;
+	::QueryPerformanceCounter(&g_start);
+}
+double PerfTimer_Stop()
+{
+	assertTrue(g_start.QuadPart!=0);
+	LARGE_INTEGER nstop;
+	::QueryPerformanceCounter(&nstop);
+	UINT64 ndiff = nstop.QuadPart - g_start.QuadPart;
+	LARGE_INTEGER freq;
+	::QueryPerformanceFrequency(&freq);
+	return (ndiff)/((double)freq.QuadPart);
+}
+

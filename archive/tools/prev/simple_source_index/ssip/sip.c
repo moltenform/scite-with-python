@@ -50,7 +50,7 @@ static SsiE SsipIndexer_CallbackWalk_I(SsipIndexer* pIndexer, const char* szFile
 	{
 		if (!pIndexer->m_bFullUpdate && pIndexer->m_bVerbose)
 			printf("Updating %s\n", szFilename);
-		SsiE serr = text_processFile(pIndexer->m_dbAccess, szFilename, nRowId);
+		SsiE serr = text_processFile(pIndexer->m_dbAccess, szFilename, nRowId, pIndexer->m_nMinWordlen);
 		if (serr) return serr;
 	}
 	return SsiEOk;
@@ -72,6 +72,7 @@ bool SsipIndexer_CallbackWalk(void* obj, const char* szFilename)
 static SsiE Sip_RunUpdate_I(SsipIndexer* pIndexer)
 {
 	pIndexer->m_bVerbose = GetSettingInt(pIndexer->m_szIniFile, "verbose", 0) > 0;
+	pIndexer->m_nMinWordlen = GetSettingInt(pIndexer->m_szIniFile, "min_word_len", 5);
 	if (pIndexer->m_bFullUpdate && OS_FileExists(g_szDbName))
 	{
 		bool b = OS_ReallyDelete(g_szDbName);
@@ -91,6 +92,8 @@ static SsiE Sip_RunUpdate_I(SsipIndexer* pIndexer)
 		if (serr) return serr;
 	}
 	SsiE serr = SSIdbAccess_PrepareSqlQueries(pIndexer->m_dbAccess);
+	if (serr) return serr;
+	serr = SSIdbAccess_AsyncModeStart(pIndexer->m_dbAccess);
 	if (serr) return serr;
 	serr = SSIdbAccess_TxnStart(pIndexer->m_dbAccess);
 	if (serr) return serr;
@@ -117,7 +120,9 @@ static SsiE Sip_RunUpdate_I(SsipIndexer* pIndexer)
 
 	serr = SSIdbAccess_TxnCommit(pIndexer->m_dbAccess);
 	if (serr) return serr;
-
+	serr = SSIdbAccess_AsyncModeStop(pIndexer->m_dbAccess);
+	if (serr) return serr;
+	
 	// check for staleness (if many files have been deleted)
 	if (!pIndexer->m_bFullUpdate && (pIndexer->m_bVerbose || pIndexer->m_nFilesPresent > 100))
 	{
@@ -257,6 +262,14 @@ SsiE SipHigh_FindInFilesInternal(const char* szIni, const char* szTerm, bool bWh
 	}
 	if (structFindInFilesWalk.nFilesPresent == 0)
 		return ssierr("No files seen. Make sure ssip.cfg file specifies srcdir1=c:\\path\\to\\src");
+	
+	{
+		char szSrcDir[MAX_PATH] = {0};
+		bool bRet = GetSettingString(szIni, "srcdir0", szSrcDir, _countof(szSrcDir));
+		if (bRet || szSrcDir[0])
+			return ssierr("do not set srcdir0.");
+	}
+
 	return SsiEOk;
 }
 void SipHigh_FindInFiles(const char* szIni, const char* szTerm, bool bWholeWord)

@@ -80,7 +80,7 @@ bool text_checkIsBlacklisted(const char* s)
 }
 
 // walk through a file, adding terms to the database.
-static SsiE text_processFile_impl(FILE* fin, SSIdbAccess* pDbAccess, uint nFileid)
+static SsiE text_processFile_impl(FILE* fin, SSIdbAccess* pDbAccess, uint nFileid, uint nMinWordlen)
 {
 	if (!g_bInited) return ssierr("forgot to call text_setup()?");
 	text_resetMemoryIndicator();
@@ -128,7 +128,7 @@ static SsiE text_processFile_impl(FILE* fin, SSIdbAccess* pDbAccess, uint nFilei
 			{
 				// word is finished.
 				// don't include single letters/numbers.
-				if (nWordLen > 1)
+				if (nWordLen > 1 && nWordLen>=nMinWordlen)
 				{
 					Hash_Finalize(hash, nWordLen);
 					if (!g_arrMemoryIndicator[hash])
@@ -148,12 +148,12 @@ static SsiE text_processFile_impl(FILE* fin, SSIdbAccess* pDbAccess, uint nFilei
 	return SsiEOk;
 }
 
-SsiE text_processFile(SSIdbAccess* pDbAccess, const char* szFilename, uint nFileid)
+SsiE text_processFile(SSIdbAccess* pDbAccess, const char* szFilename, uint nFileid, uint nMinWordlen)
 {
 	// opening as text. will conveniently strip \r characters
 	FILE* fin = fopen(szFilename, "r");
 	if (!fin) return ssierr("could not read from file");
-	SsiE serr = text_processFile_impl(fin, pDbAccess, nFileid);
+	SsiE serr = text_processFile_impl(fin, pDbAccess, nFileid, nMinWordlen);
 	fclose(fin);
 	if (serr) printf("Error in file %s\n", szFilename);
 	return serr;

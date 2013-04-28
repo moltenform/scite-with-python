@@ -1,12 +1,13 @@
 
-# modify ssip_test0.cfg so that the directory points to test\testdata
-
 import os,sys,shutil,subprocess
 import exceptions
-os.chdir('..')
-g_sExe = os.path.join('release', 'ssip.exe')
-sfile1  = os.path.join('test','testdata','folder1','temp.cpp')
-sfile2  = os.path.join('test','testdata','folder1','contrived.cpp')
+join = os.path.join
+os.chdir(join('..', 'release'))
+g_sExe = 'simple_source_indexing.exe'
+sfile1  = join('..','test','testdata','folder1','temp.cpp')
+sfile2  = join('..','test','testdata','folder1','contrived.cpp')
+
+
 class Bucket():
     pass
     
@@ -20,14 +21,20 @@ def assertContains(s, subs):
         raise exceptions.RuntimeError, 'stop'
 
 def main():
+    assert os.path.exists(g_sExe)
     if os.path.exists('ssip.db'): os.unlink('ssip.db')
     if os.path.exists('ssip.db'): raise 'need to delete db'
     if os.path.exists(sfile1): os.unlink(sfile1)
     if os.path.exists(sfile1): raise 'need to delete tempfile'
+    
+    #create a new cfg.
     target = 'ssip.cfg'
-    new = os.path.join('test','ssip_test0.cfg')
-    os.unlink(target)
-    shutil.copyfile(new, target)
+    stestdata = os.path.abspath(join('..','test','testdata'))
+    fnew = open(target, 'w')
+    fnew.write('\n[main]\n')
+    fnew.write('\nsrcdir1=%s'%stestdata)
+    fnew.write('\nsrcdir2=')
+    fnew.close()
     tests()
 
 def tests():
@@ -47,7 +54,7 @@ def tests():
     # verify results
     bk = runandprocessresults(['-s', 'CAudioData'])
     assertEqual(bk.countResults, 17)
-    sresexp='folder1\effects.cpp:4:bool effect_checksame(CAudioData* w1, C|folder1\effects.cpp:38:errormsg effect_mix(CAudioData**out, CA|folder1\effects.cpp:40: CAudioData* audio;|folder1\effects.cpp:63:errormsg effect_modulate(CAudioData**ou|folder1\effects.cpp:65: CAudioData* audio;|folder1\effects.cpp:78:errormsg effect_append(CAudioData**out,|folder1\effects.cpp:80: CAudioData* audio;|folder1\effects.cpp:109:errormsg effect_scale_pitch_duration(CAu|folder1\effects.cpp:111: CAudioData* audio;|folder1\effects.cpp:138:errormsg effect_vibrato(CAudioData**out|folder1\effects.cpp:140: CAudioData* audio;|folder1\src1.c:46:errormsg caudiodata_savewavestream(CAudioDa|folder1\src1.c:148:errormsg caudiodata_savewave(CAudioData* t|folder1\src1.c:161:errormsg caudiodata_savewavemem(char** o|folder1\src1.c:193:errormsg caudiodata_loadwavestream(CAudioD|folder1\src1.c:195: CAudioData* audio;|folder1\src1.c:303:errormsg caudiodata_loadwave(CAudioData** '
+    sresexp=r'folder1\effects.cpp:4:bool effect_checksame(CAudioData* w1, C|folder1\effects.cpp:38:errormsg effect_mix(CAudioData**out, CA|folder1\effects.cpp:40: CAudioData* audio;|folder1\effects.cpp:63:errormsg effect_modulate(CAudioData**ou|folder1\effects.cpp:65: CAudioData* audio;|folder1\effects.cpp:78:errormsg effect_append(CAudioData**out,|folder1\effects.cpp:80: CAudioData* audio;|folder1\effects.cpp:109:errormsg effect_scale_pitch_duration(CAu|folder1\effects.cpp:111: CAudioData* audio;|folder1\effects.cpp:138:errormsg effect_vibrato(CAudioData**out|folder1\effects.cpp:140: CAudioData* audio;|folder1\src1.c:46:errormsg caudiodata_savewavestream(CAudioDa|folder1\src1.c:148:errormsg caudiodata_savewave(CAudioData* t|folder1\src1.c:161:errormsg caudiodata_savewavemem(char** o|folder1\src1.c:193:errormsg caudiodata_loadwavestream(CAudioD|folder1\src1.c:195: CAudioData* audio;|folder1\src1.c:303:errormsg caudiodata_loadwave(CAudioData** '
     sresexp=sresexp.split('|')
     assertEqual(len(sresexp),17)
     for line in sresexp:
@@ -65,13 +72,10 @@ def tests():
     # test blacklisted terms
     bk = runandprocessresults(['-s', 'void'])
     assertEqual(bk.countResults, 0)
-    assertContains(bk.txt, 'No results!')
     bk = runandprocessresults(['-s', ''])
     assertEqual(bk.countResults, 0)
-    assertContains(bk.txt, 'No results!')
     bk = runandprocessresults(['-s', 'include'])
     assertEqual(bk.countResults, 0)
-    assertContains(bk.txt, 'No results!')
     
     # test find-in-files
     bk = runandprocessresults(['-s', 'wantstring'])
@@ -85,10 +89,10 @@ def tests():
     assertEqual( len(bk.txt.split('wantstring'))-1, 9)
     
     # test add new file
+    import time; time.sleep(2)
     shutil.copyfile(sfile2, sfile1)
     bk = runandprocessresults(['-s', 'wantstring'])
-    assert bk.txt.strip().startswith('Updating')
-    assertEqual(bk.countResults, 12+1) #+1 for the 'updating' string
+    assertEqual(bk.countResults, 12)
     assertEqual( len(bk.txt.split('wantstring'))-1, 18)
     
     # test modify file
@@ -100,11 +104,10 @@ def tests():
     ftemp.write(alltxt)
     ftemp.close() #this should update the last mod time
     bk = runandprocessresults(['-s', 'wantstring'])
-    assert bk.txt.strip().startswith('Updating')
-    assertEqual(bk.countResults, 12+1) #+1 for the 'updating' string
+
+    assertEqual(bk.countResults, 12)
     assertEqual( len(bk.txt.split('wantstring'))-1, 18)
     bk = runandprocessresults(['-s', 'temp5323'])
-    assert not bk.txt.strip().startswith('Updating')
     
     # test modify file
     os.unlink(sfile1)
@@ -113,20 +116,14 @@ def tests():
     ftemp.write(alltxt)
     ftemp.close() #this should update the last mod time
     bk = runandprocessresults(['-s', 'wantstring'])
-    assert bk.txt.strip().startswith('Updating')
-    assertEqual(bk.countResults, 6+1) #+1 for the 'updating' string
+    assertEqual(bk.countResults, 6)
     bk = runandprocessresults(['-s', 'wantstringchanged'])
-    assert not bk.txt.strip().startswith('Updating')
     assertEqual(bk.countResults, 6)
     bk = runandprocessresults(['-s', 'temp5323'])
-    assert not bk.txt.strip().startswith('Updating')
     
     # test delete file
     os.unlink(sfile1)
     bk = runandprocessresults(['-s', 'wantstringchanged'])
-    assert not bk.txt.strip().startswith('Updating')
-    assertContains( bk.txt, 'Stale files:1')
-    assertContains( bk.txt, 'is in missing file')
     assertEqual(bk.countResults, 0 )
     bk = runandprocessresults(['-s', 'wantstring'])
     assertEqual(bk.countResults, 6 )
@@ -136,9 +133,13 @@ def runandprocessresults(listArgs):
     txt, ret = _runReturnStdout(listArgs)
     assertEqual(ret, 0)
     bucket = Bucket()
-    assert 'C:\\' in txt
-    bucket.countResults = len(txt.split('C:\\')) - 1
-    bucket.txt = txt
+    assert not txt.startswith('Error:')
+    if ('C:\\' in txt):
+        bucket.countResults = len(txt.split('C:\\')) - 1
+        bucket.txt = txt
+    else:
+        bucket.countResults = 0
+        bucket.txt = ''
     return bucket
 
 def _runReturnStdout(listArgs):
