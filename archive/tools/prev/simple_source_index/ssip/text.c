@@ -90,7 +90,7 @@ static SsiE text_processFile_impl(FILE* fin, SSIdbAccess* pDbAccess, uint nFilei
 	
 	char charCurrent = ' ';
 	bool bInsideWord = false;
-	int nWordLen = 0;
+	uint nWordLen = 0;
 	u32 hash = 0;
 	Hash_Reset(hash);
 

@@ -13,11 +13,12 @@ typedef struct SsipIndexer_t
 	bool m_bVerbose;
 	uint m_nFilesPresent;
 	uint m_nMinWordlen;
+	UINT64 m_rgFileExts[10];
 } SsipIndexer;
 
 inline SsipIndexer* SsipIndexer_Create(const char* szIniFile)
 {
-	SsipIndexer* obj = (SsipIndexer*) malloc(sizeof(SsipIndexer));
+	SsipIndexer* obj = (SsipIndexer*) calloc(1, sizeof(SsipIndexer));
 	obj->m_errFlag = SsiEOk;
 	obj->m_szIniFile = strdup(szIniFile);
 	obj->m_dbAccess = null;

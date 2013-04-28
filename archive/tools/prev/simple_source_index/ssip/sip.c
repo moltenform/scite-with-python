@@ -59,9 +59,10 @@ static SsiE SsipIndexer_CallbackWalk_I(SsipIndexer* pIndexer, const char* szFile
 // examine each file. Set flag on the indexer object if an error occurs
 bool SsipIndexer_CallbackWalk(void* obj, const char* szFilename)
 {
-	int nType = IsSrcFileExtension(szFilename);
-	if (nType == 0) return true;
 	SsipIndexer* pIndexer = (SsipIndexer*) obj;
+	bool bIsSrc = IsSrcFileExtensionArr(szFilename, pIndexer->m_rgFileExts, _countof(pIndexer->m_rgFileExts));
+	if (!bIsSrc) return true;
+
 	pIndexer->m_nFilesPresent++;
 	SsiE serr = SsipIndexer_CallbackWalk_I(pIndexer, szFilename);
 	if (serr) { pIndexer->m_errFlag = serr; return false; }
@@ -97,6 +98,13 @@ static SsiE Sip_RunUpdate_I(SsipIndexer* pIndexer)
 	if (serr) return serr;
 	serr = SSIdbAccess_TxnStart(pIndexer->m_dbAccess);
 	if (serr) return serr;
+
+	// get file extensions
+	serr = GetFileExts(pIndexer->m_szIniFile, pIndexer->m_rgFileExts, _countof(pIndexer->m_rgFileExts));
+	if (serr) return serr;
+
+	//return SsiEOk;
+
 
 	// walk through the files and add them to the db.
 	uint nMaxDirDepth = GetSettingInt(pIndexer->m_szIniFile, "maxdirdepth", 18);
@@ -216,18 +224,21 @@ void SipHigh_RunSearch(const char* szIni, const char* szTerm)
 	text_uninit();
 }
 
+
+
 // temporary struct to pass data to callback.
 typedef struct StructFindInFilesWalkT
 {
 	const char* szSearch;
 	bool bWholeWord;
 	int nFilesPresent;
+	UINT64 rgFileExtensions[10]; 
 } StructFindInFilesWalk;
 bool Ssip_FindInFilesWalk(void* obj, const char* szFilename)
 {
 	StructFindInFilesWalk* pWalk = (StructFindInFilesWalk*) obj;
-	int nType = IsSrcFileExtension(szFilename);
-	if (nType == 0) return true;
+	bool bIsSrc = IsSrcFileExtensionArr(szFilename, pWalk->rgFileExtensions, _countof(pWalk->rgFileExtensions) );
+	if (!bIsSrc) return true;
 	
 	SsiE serr = text_findinfile(szFilename, pWalk->szSearch, pWalk->bWholeWord, false);
 	if (serr) return false;
@@ -240,10 +251,14 @@ bool Ssip_FindInFilesWalk(void* obj, const char* szFilename)
 // useful because it can search for partial strings.
 SsiE SipHigh_FindInFilesInternal(const char* szIni, const char* szTerm, bool bWholeWord)
 {
-	StructFindInFilesWalk structFindInFilesWalk;
+	StructFindInFilesWalk structFindInFilesWalk = {0};
 	structFindInFilesWalk.szSearch = szTerm;
 	structFindInFilesWalk.bWholeWord = bWholeWord;
 	structFindInFilesWalk.nFilesPresent = 0;
+	
+	// get file extensions
+	SsiE serr = GetFileExts(szIni, structFindInFilesWalk.rgFileExtensions, _countof(structFindInFilesWalk.rgFileExtensions));
+	if (serr) return serr;
 
 	// walk through the files.
 	uint nMaxDirDepth = GetSettingInt(szIni, "maxdirdepth", 12);
@@ -261,15 +276,8 @@ SsiE SipHigh_FindInFilesInternal(const char* szIni, const char* szTerm, bool bWh
 		}
 	}
 	if (structFindInFilesWalk.nFilesPresent == 0)
-		return ssierr("No files seen. Make sure ssip.cfg file specifies srcdir1=c:\\path\\to\\src");
+		return ssierr("No files seen?. Make sure ssip.cfg file specifies srcdir1=c:\\path\\to\\src");
 	
-	{
-		char szSrcDir[MAX_PATH] = {0};
-		bool bRet = GetSettingString(szIni, "srcdir0", szSrcDir, _countof(szSrcDir));
-		if (bRet || szSrcDir[0])
-			return ssierr("do not set srcdir0.");
-	}
-
 	return SsiEOk;
 }
 void SipHigh_FindInFiles(const char* szIni, const char* szTerm, bool bWholeWord)

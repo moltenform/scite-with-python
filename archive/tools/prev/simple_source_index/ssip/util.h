@@ -18,7 +18,32 @@ typedef UINT uint;
 #define StringAreEqual(s1, s2) (strcmp((s1),(s2))==0)
 #define StringAreEqualN(s1, s2, len) (strncmp((s1),(s2),(len))==0)
 bool StringEndsWith(const char* s1, const char* s2);
-int IsSrcFileExtension(const char* szFilename);
+
+inline UINT64 GetFileExtensionAsNumber(const char* szFilename)
+{
+	// position just after the '.'.
+	UINT64 ret = 0;
+	for (int i=0; i<64/8; i++)
+	{
+		if (!szFilename[i]) break;
+		if (szFilename[i]=='\\') return 0;
+		ret |= ((UINT64)tolower(szFilename[i])) << ((UINT64)(8*i));
+	}
+	return ret;
+}
+
+inline bool IsSrcFileExtensionArr(const char* szFilename, const UINT64* rgExts, size_t lenRgExts)
+{
+	const char* szPeriod = strrchr(szFilename, '.');
+	if (!szPeriod || !*(szPeriod+1)) return false;
+	UINT64 num = GetFileExtensionAsNumber(szPeriod+1);
+	for (size_t i=0; i<lenRgExts; i++)
+	{
+		if (!rgExts[i]) return false;
+		if (rgExts[i] == num) return true;
+	}
+	return false;
+}
 
 // test with a small buffer (many collisions):
 // #define Test_SmallBuffer
@@ -73,6 +98,9 @@ inline SsiE ssierr_impl(const char* msg, int lineno, const char* file)
 // get setting from config file
 bool GetSettingString(const char* szProfileFile, const char* szSettingName, char* szBufret, uint nBufsize);
 uint GetSettingInt(const char* szProfileFile, const char* szSettingName, uint nDefault);
+
+SsiE GetFileExts(const char* szIni, UINT64* rgExts, size_t lenRgExts);
+
 
 // wrappers for memory freeing.
 // these exist for visual consistency, one can line up the constructor and destructor and see correspondence.
