@@ -44,13 +44,13 @@ def blistdirsrecurse(s, fnAllowDir=None):
 			dirnames[:] = newdirs
 		yield (dirpath, os.path.split(dirpath)[1])
 
-def readfile(s):
-	f=open(s,'r')
+def readfile(s, mode='r'):
+	f=open(s,mode)
 	txt = f.read()
 	f.close()
 	return txt
-def writefile(s, txt):
-	f=open(s,'w')
+def writefile(s, txt, mode='w'):
+	f=open(s,mode)
 	f.write(txt)
 	f.close()
 	
