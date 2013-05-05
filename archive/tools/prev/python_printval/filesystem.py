@@ -60,12 +60,14 @@ def file_acctime(s): return os.stat(s).ST_ATIME
 def file_ctime(s): return os.stat(s).ST_CTIME
 
 def runGetStdout(listArgs, shell=False):
-    sp = subprocess.Popen(listArgs, shell, stdout=subprocess.PIPE)
+    import subprocess
+    sp = subprocess.Popen(listArgs, shell=shell, stdout=subprocess.PIPE)
     text = sp.communicate()[0]
     return text.rstrip(), sp.returncode
 
 def runGetRetcode(listArgs, shell=False):
-    sp = subprocess.Popen(listArgs, shell)
+    import subprocess
+    sp = subprocess.Popen(listArgs, shell=shell)
     sp.wait()
     return sp.returncode
 
