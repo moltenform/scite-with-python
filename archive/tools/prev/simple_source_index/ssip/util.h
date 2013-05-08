@@ -49,14 +49,16 @@ inline bool IsSrcFileExtensionArr(const char* szFilename, const UINT64* rgExts, 
 // #define Test_SmallBuffer
 // break into debugger on error
 // #define DebugAssertions
-// temporary debugging code uses 'prin' instead of printf for visibility
-#define prin printf
+
+// do not use 'printf' except for temporary debugging code
+#define printerrfmt(...) do {printf("error:"); printf(__VA_ARGS__); printf("\n"); } while(0)
+#define printwrnfmt(...) do {printf("warning:"); printf(__VA_ARGS__); printf("\n"); } while(0)
 
 // Asserts. verify a condition that should always hold.
 inline void assertEqual_impl(int a, int b, int lineno, const char* file)
 {
 	if (a!=b) {
-		printf("Assertion failure on line %d file %s! %d != %d\n", lineno,file,a,b);
+		printerrfmt("Assertion failure on line %d file %s! %d != %d", lineno,file,a,b);
 #ifdef DebugAssertions
 		__debugbreak();
 #endif
@@ -75,8 +77,8 @@ typedef const char* SsiE;
 #define SsiEOk ((SsiE) null)
 inline SsiE ssierrp_impl(const char* msg, int n, int lineno, const char* file)
 {
-	printf("Error:%s (%d)\n", msg,n);
-	printf("line %d of file %s\n", lineno, file);
+	printerrfmt("Error:%s (%d)", msg,n);
+	printerrfmt("line %d of file %s", lineno, file);
 #ifdef DebugAssertions
 	__debugbreak();
 #endif
@@ -84,8 +86,8 @@ inline SsiE ssierrp_impl(const char* msg, int n, int lineno, const char* file)
 }
 inline SsiE ssierr_impl(const char* msg, int lineno, const char* file)
 {
-	printf("Error:%s\n", msg);
-	printf("line %d of file %s\n", lineno, file);
+	printerrfmt("Error:%s", msg);
+	printerrfmt("line %d of file %s", lineno, file);
 #ifdef DebugAssertions
 	__debugbreak();
 #endif

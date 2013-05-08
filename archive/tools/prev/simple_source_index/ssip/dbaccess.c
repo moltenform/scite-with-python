@@ -63,7 +63,7 @@ SSIdbAccess* SSIdbAccess_Create(const char* szDbName)
 		SQLITE_OPEN_NOMUTEX, NULL);
 	if (rc || !db)
 	{
-		fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
+		printerrfmt("Can't open database: %s", sqlite3_errmsg(db));
 		sqlite3_close(db);
 		return null;
     }
@@ -90,7 +90,7 @@ SsiE SSIdbAccess_RunSql(SSIdbAccess* pSSIdbAccess, const char* szSql, int nLine)
 	char *szErrMsg = 0;
 	int rc = sqlite3_exec(pSSIdbAccess->m_db, szSql, null, 0, &szErrMsg);
     if (rc!=SQLITE_OK) {
-      fprintf(stderr, "SQL error: %s\n", szErrMsg);
+      printerrfmt("SQL error: %s", szErrMsg);
       free_fn(szErrMsg, sqlite3_free);
 	  return ssierrp("sql error on dbaccess.cpp line", nLine);
     }
@@ -110,7 +110,7 @@ SsiE SSIdbAccess_AddSchema(SSIdbAccess* pSSIdbAccess)
 }
 SsiE SSIdbAccess_AddCatalogSrcIndex(SSIdbAccess* pSSIdbAccess)
 {
-	printf("Indexing...\n");
+	printwrnfmt("Indexing...");
 	SsiE serr = SSIdbAccess_RunSqlM(pSSIdbAccess, szAddIndex);
 	if (serr) return serr;
 	return SsiEOk;
@@ -153,7 +153,7 @@ static inline SsiE SSIdbAccess_InsertHelper(int rc, SSIdbAccess* pDb, SqlOps nOp
 	if (rc!=SQLITE_OK) return ssierrp("error binding data.", nOp);
 	rc = sqlite3_step(pDb->m_stmts[nOp]);
 	if (rc!=SQLITE_DONE) {
-		printf("query name %s", szReadableName);
+		printerrfmt("query name %s", szReadableName);
 		return ssierrp("error running query.", nOp);
 	}
 	return SsiEOk;

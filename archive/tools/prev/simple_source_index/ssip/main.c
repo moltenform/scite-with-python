@@ -9,9 +9,7 @@
 // Possible improvements:
 // Store the last-modified time of the entire directory, maybe in the .cfg file, for an even quicker check.
 // For the find-in-files implementation, use my own strstr code that also counts newlines, for better speed.
-// Support case-insensitive search
 // See if calling SSIdbAccess_AddCatalogSrcIndex is worth costs.
-// Don't hard-code source file extensions.
 // Add built-in support for searching for two consecutive terms
 // Automatically rebuild db in case of many deleted files (stale file entries)
 

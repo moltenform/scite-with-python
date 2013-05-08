@@ -49,7 +49,7 @@ static SsiE SsipIndexer_CallbackWalk_I(SsipIndexer* pIndexer, const char* szFile
 	if (bNeedsProcessing)
 	{
 		if (!pIndexer->m_bFullUpdate && pIndexer->m_bVerbose)
-			printf("Updating %s\n", szFilename);
+			printwrnfmt("Updating %s\n", szFilename);
 		SsiE serr = text_processFile(pIndexer->m_dbAccess, szFilename, nRowId, pIndexer->m_nMinWordlen);
 		if (serr) return serr;
 	}
@@ -103,8 +103,6 @@ static SsiE Sip_RunUpdate_I(SsipIndexer* pIndexer)
 	serr = GetFileExts(pIndexer->m_szIniFile, pIndexer->m_rgFileExts, _countof(pIndexer->m_rgFileExts));
 	if (serr) return serr;
 
-	//return SsiEOk;
-
 
 	// walk through the files and add them to the db.
 	uint nMaxDirDepth = GetSettingInt(pIndexer->m_szIniFile, "maxdirdepth", 18);
@@ -140,9 +138,9 @@ static SsiE Sip_RunUpdate_I(SsipIndexer* pIndexer)
 		assertTrue(nFilesInDb > 0);
 		assertTrue(nFilesInDb >= pIndexer->m_nFilesPresent);
 		if (pIndexer->m_bVerbose && nFilesInDb>pIndexer->m_nFilesPresent)
-			printf("Stale files:%d\n", nFilesInDb - pIndexer->m_nFilesPresent);
-		if (nFilesInDb - pIndexer->m_nFilesPresent > 30)
-			printf("Note: There are some stale files in db (harmless, but the db is a bit bigger than necessary)\n");
+			printwrnfmt("Stale files:%d", nFilesInDb - pIndexer->m_nFilesPresent);
+		if (nFilesInDb - pIndexer->m_nFilesPresent > 50)
+			printwrnfmt("There are some stale files in db (the db is a bit bigger than necessary).");
 	}
 
 	return SsiEOk;
@@ -178,7 +176,7 @@ bool Sip_Search_Callback(void* obj, const char* szFilename, const char* szSearch
 	else
 	{
 		if (pIndexer->m_bVerbose)
-			printf("Result is in missing file...\n");
+			printwrnfmt("Result is in missing file...");
 	}
 	return true;
 }
@@ -186,18 +184,23 @@ static SsiE Sip_RunSearch_I(SsipIndexer* pIndexer, const char* szTerm)
 {
 	if (text_checkIsBlacklisted(szTerm))
 	{
-		printf("No results! The term you entered is likely to be present in every file, so it was not indexed."
-			" (It's also possible that the term you entered has a hash collision with a blacklisted term).\n");
+		printerrfmt("No results! The term you entered is likely to be present in every file, so it was not indexed."
+			" (It's also possible that the term you entered has a hash collision with a blacklisted term).");
 		return SsiEOk;
 	}
 	if (strlen(szTerm) == 1)
 	{
-		printf("No results! We don't index single characters.\n");
+		printerrfmt("Input too short! We don't index single characters.");
+		return SsiEOk;
+	}
+	if (strlen(szTerm) < pIndexer->m_nMinWordlen)
+	{
+		printerrfmt("Input too short! The .cfg has specified min_word_len=%d.", pIndexer->m_nMinWordlen);
 		return SsiEOk;
 	}
 	if (strstr(szTerm, " ") || strstr(szTerm, "\t"))
 	{
-		printf("We don't index whitespace, so this query won't yield results.\n");
+		printerrfmt("We don't index whitespace, so this query won't yield results.");
 		return SsiEOk;
 	}
 	int nHash = Hash_getHashValue(szTerm);

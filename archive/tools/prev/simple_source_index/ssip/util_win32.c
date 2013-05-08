@@ -12,7 +12,7 @@ bool WalkThroughFiles_Impl(const char* szPath, void* obj, PfnWalkfilesCallback c
 
 	if (nCurrentdepth > nMaxdepth)
 	{
-		printf("Error: exceeded max depth!");
+		printerrfmt("Exceeded max directory depth! You can adjust maxdirdepth=x in the .cfg (%d>%d)", nCurrentdepth,nMaxdepth);
 		return false;
 	}
 

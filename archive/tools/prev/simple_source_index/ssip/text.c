@@ -55,7 +55,7 @@ void text_init()
 	}
 	if (!g_arrMemoryIndicator)
 	{
-		printf("malloc failed.\n");
+		printerrfmt("malloc failed.");
 		g_bInited = false;
 		return;
 	}
@@ -155,7 +155,7 @@ SsiE text_processFile(SSIdbAccess* pDbAccess, const char* szFilename, uint nFile
 	if (!fin) return ssierr("could not read from file");
 	SsiE serr = text_processFile_impl(fin, pDbAccess, nFileid, nMinWordlen);
 	fclose(fin);
-	if (serr) printf("Error in file %s\n", szFilename);
+	if (serr) printerrfmt("Error in file %s", szFilename);
 	return serr;
 }
 
@@ -231,6 +231,7 @@ static void text_findinfile_impl(FILE* fin, const char* szFilename, const char* 
 						printline--;
 				}
 			
+				// printing the actual result
 				printf("%s:%d:%s\n", szFilename, nLinesSeen, printline);
 				nLastLinePrinted = nLinesSeen;
 				
@@ -241,7 +242,7 @@ static void text_findinfile_impl(FILE* fin, const char* szFilename, const char* 
 		curpos = nextpos+len; // advance beyond match
 	}
 	if (!bFoundOnce && bExpectToFind)
-		printf("String not found. Hash collision?\n");
+		printwrnfmt("String not found. Hash collision?\n");
 }
 
 SsiE text_findinfile(const char* szFilename, const char* szSearchString, bool bWholeWord, bool bExpectToFind)
@@ -249,7 +250,7 @@ SsiE text_findinfile(const char* szFilename, const char* szSearchString, bool bW
 	// opening as text, will strip \r characters
 	if (OS_GetFileSize(szFilename) >= g_arraySize-1 /*room for null*/)
 	{
-		printf("file %s is too big", szFilename);
+		printerrfmt("file %s is too big", szFilename);
 		return ssierr("file is too big");
 	}
 	FILE* fin = fopen(szFilename, "r");
