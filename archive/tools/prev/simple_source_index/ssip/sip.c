@@ -5,9 +5,6 @@
 #include "text.h"
 #include "hash.h"
 
-// filename for database.
-const char* g_szDbName = "ssip.db";
-
 // examine each file. If it has been modified more recently than we've seen, process it.
 static SsiE SsipIndexer_CallbackWalk_I(SsipIndexer* pIndexer, const char* szFilename)
 {
@@ -72,19 +69,27 @@ bool SsipIndexer_CallbackWalk(void* obj, const char* szFilename)
 // make sure database is up to date.
 static SsiE Sip_RunUpdate_I(SsipIndexer* pIndexer)
 {
+	// the db location can be specified in the cfg.
+	char szDbPath[MAX_PATH] = "\0";
+	bool bG = GetSettingString(pIndexer->m_szIniFile, "dbpath", szDbPath, _countof(szDbPath));
+	if (!bG || !szDbPath[0])
+		pIndexer->m_szDbFile = strdup("ssip.db");
+	else
+		pIndexer->m_szDbFile = strdup(szDbPath);
+
 	pIndexer->m_bVerbose = GetSettingInt(pIndexer->m_szIniFile, "verbose", 0) > 0;
 	pIndexer->m_nMinWordlen = GetSettingInt(pIndexer->m_szIniFile, "min_word_len", 5);
-	if (pIndexer->m_bFullUpdate && OS_FileExists(g_szDbName))
+	if (pIndexer->m_bFullUpdate && OS_FileExists(pIndexer->m_szDbFile))
 	{
-		bool b = OS_ReallyDelete(g_szDbName);
+		bool b = OS_ReallyDelete(pIndexer->m_szDbFile);
 		if (!b) return ssierr("Could not delete existing db");
 	}
 	// db doesn't already exist, so create it.
-	if (!pIndexer->m_bFullUpdate && !OS_FileExists(g_szDbName))
+	if (!pIndexer->m_bFullUpdate && !OS_FileExists(pIndexer->m_szDbFile))
 		pIndexer->m_bFullUpdate = true;
 
 	assertTrue(!pIndexer->m_dbAccess);
-	pIndexer->m_dbAccess = SSIdbAccess_Create(g_szDbName);
+	pIndexer->m_dbAccess = SSIdbAccess_Create(pIndexer->m_szDbFile);
 	if (!pIndexer->m_dbAccess) return ssierr("SSIdbAccess_Create failed");
 	
 	if (pIndexer->m_bFullUpdate)
@@ -109,7 +114,7 @@ static SsiE Sip_RunUpdate_I(SsipIndexer* pIndexer)
 	const int nDirsReadFromIni = 9;
 	for (int i=1; i <= nDirsReadFromIni; i++)
 	{
-		char szSettingName[MAX_PATH];
+		char szSettingName[MAX_PATH] = "\0";
 		sprintf_s(szSettingName, _countof(szSettingName), "srcdir%d", i);
 		char szSrcDir[MAX_PATH] = {0};
 		bool bRet = GetSettingString(pIndexer->m_szIniFile, szSettingName, szSrcDir, _countof(szSrcDir));

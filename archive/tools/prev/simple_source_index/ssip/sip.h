@@ -8,6 +8,7 @@ typedef struct SsipIndexer_t
 {
 	SsiE m_errFlag;
 	char* m_szIniFile;
+	char* m_szDbFile;
 	SSIdbAccess* m_dbAccess;
 	bool m_bFullUpdate;
 	bool m_bVerbose;
@@ -21,6 +22,7 @@ inline SsipIndexer* SsipIndexer_Create(const char* szIniFile)
 	SsipIndexer* obj = (SsipIndexer*) calloc(1, sizeof(SsipIndexer));
 	obj->m_errFlag = SsiEOk;
 	obj->m_szIniFile = strdup(szIniFile);
+	obj->m_szDbFile = null;
 	obj->m_dbAccess = null;
 	obj->m_bFullUpdate = false;
 	obj->m_bVerbose = false;
@@ -33,10 +35,12 @@ inline void SsipIndexer_Close(SsipIndexer* obj)
 	if (!obj) return;
 	free_nop(obj->m_errFlag);
 	free_free(obj->m_szIniFile);
+	free_free(obj->m_szDbFile);
 	free_fn(obj->m_dbAccess, SSIdbAccess_Close);
 	free_nop(obj->m_bFullUpdate);
 	free_nop(obj->m_bVerbose);
 	free_nop(obj->m_nFilesPresent);
+	free_nop(obj->m_nMinWordlen);
 	free_free(obj);
 }
 

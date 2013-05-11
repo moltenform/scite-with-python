@@ -6,6 +6,7 @@ os.chdir(join('..', 'release'))
 g_sExe = 'simple_source_indexing.exe'
 sfile1  = join('..','test','testdata','folder1','temp.cpp')
 sfile2  = join('..','test','testdata','folder1','contrived.cpp')
+sbinary = join('..','test','testdata','folder1','tempbinary.cpp')
 
 
 class Bucket():
@@ -23,7 +24,9 @@ def assertContains(s, subs):
 def main():
     assert os.path.exists(g_sExe)
     if os.path.exists('ssip.db'): os.unlink('ssip.db')
-    if os.path.exists('ssip.db'): raise 'need to delete db'
+    if os.path.exists('ssip_test.db'): os.unlink('ssip_test.db')
+    if os.path.exists('ssip_test.db'): raise 'need to delete db'
+    if os.path.exists(sbinary): os.unlink(sbinary)
     if os.path.exists(sfile1): os.unlink(sfile1)
     if os.path.exists(sfile1): raise 'need to delete tempfile'
     
@@ -34,12 +37,18 @@ def main():
     fnew.write('\n[main]\n')
     fnew.write('\nsrcdir1=%s'%stestdata)
     fnew.write('\nsrcdir2=')
+    fnew.write('\nminwordlength=3')
+    fnew.write('\n')
+    fnew.write(r'dbpath=ssip_test.db')
     fnew.close()
     tests()
+    assert os.path.exists('ssip_test.db')
+    assert not os.path.exists('ssip.db')
 
 def tests():
     # simple test
     bk = runandprocessresults(['-start'])
+    print bk.err
     bk = runandprocessresults(['-s', 'extern'])
     assertEqual(bk.countResults, 1)
     assertContains(bk.txt, 'src2.h:23:extern "C" {')
@@ -70,12 +79,22 @@ def tests():
         assertContains(bk.txt, line)
     
     # test blacklisted terms
+    errdeny="error:No results! The term you entered is likely to be present in every file, so it was not indexed. (It's also possible that the term you entered has a hash collision with a blacklisted term)."
     bk = runandprocessresults(['-s', 'void'])
-    assertEqual(bk.countResults, 0)
+    assertEqual(bk.err, errdeny)
+    bk = runandprocessresults(['-s', 'ab'])
+    assertEqual(bk.err, "error:Input too short! The .cfg has specified min_word_len=5.")
     bk = runandprocessresults(['-s', ''])
-    assertEqual(bk.countResults, 0)
+    assertEqual(bk.err, errdeny)
     bk = runandprocessresults(['-s', 'include'])
-    assertEqual(bk.countResults, 0)
+    assertEqual(bk.err, errdeny)
+    
+    f=open(sbinary, 'wb')
+    f.write('44444444444444 4444444 4444\0\0444444 4444 444')
+    f.close()
+    bk = runandprocessresults(['-s', 'include'])
+    assert bk.err.startswith('error::null char in file')
+    os.unlink(sbinary)
     
     # test find-in-files
     bk = runandprocessresults(['-s', 'wantstring'])
@@ -130,16 +149,31 @@ def tests():
     
 
 def runandprocessresults(listArgs):
-    txt, ret = _runReturnStdout(listArgs)
-    assertEqual(ret, 0)
     bucket = Bucket()
-    assert not txt.startswith('Error:')
-    if ('C:\\' in txt):
-        bucket.countResults = len(txt.split('C:\\')) - 1
-        bucket.txt = txt
-    else:
-        bucket.countResults = 0
-        bucket.txt = ''
+    bucket.countResults = 0
+    bucket.txt = ''
+    bucket.err = None
+    
+    txt, ret = _runReturnStdout(listArgs)
+    if ret!=0 or txt.startswith('error:'):
+        bucket.err = txt
+        bucket.countResults = -1
+        return bucket
+    
+    for line in txt.replace('\r\n','\n').split('\n'):
+        line=line.strip()
+        if not line: continue
+        if line.startswith('err') or line.startswith('warn'):
+            bucket.err = txt
+            bucket.countResults = -1
+            return bucket
+        elif line[1]==':' and line[2]=='\\':
+            bucket.countResults+=1
+            bucket.txt = txt
+        else:
+            print 'not sure if result or error', txt
+            assert False
+        
     return bucket
 
 def _runReturnStdout(listArgs):

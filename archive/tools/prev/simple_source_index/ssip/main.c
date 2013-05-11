@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
 		szIni = ".." OS_SEP "ssip.cfg";
 	if (!OS_FileExists(szIni))
 	{
-		puts("Could not find ssip.cfg. Use ssipexample.cfg as an example.\n");
+		printerrfmt("Could not find ssip.cfg. Use ssipexample.cfg as an example.");
 		return 1;
 	}
 
@@ -47,7 +47,7 @@ int main(int argc, char* argv[])
 	else if (argc == 3 && StringAreEqual(argv[1], "-noindexnowhole"))
 		SipHigh_FindInFiles(szIni, argv[2], false /*wholeword*/);
 	else
-		puts(szUsage);
+		printf("%s\n", szUsage);
 	
 	return 0;
 }

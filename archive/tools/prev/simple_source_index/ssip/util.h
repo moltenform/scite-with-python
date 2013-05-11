@@ -77,7 +77,7 @@ typedef const char* SsiE;
 #define SsiEOk ((SsiE) null)
 inline SsiE ssierrp_impl(const char* msg, int n, int lineno, const char* file)
 {
-	printerrfmt("Error:%s (%d)", msg,n);
+	printerrfmt(":%s (%d)", msg,n);
 	printerrfmt("line %d of file %s", lineno, file);
 #ifdef DebugAssertions
 	__debugbreak();
@@ -86,7 +86,7 @@ inline SsiE ssierrp_impl(const char* msg, int n, int lineno, const char* file)
 }
 inline SsiE ssierr_impl(const char* msg, int lineno, const char* file)
 {
-	printerrfmt("Error:%s", msg);
+	printerrfmt(":%s", msg);
 	printerrfmt("line %d of file %s", lineno, file);
 #ifdef DebugAssertions
 	__debugbreak();

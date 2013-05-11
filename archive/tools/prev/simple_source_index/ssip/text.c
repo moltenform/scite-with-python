@@ -171,14 +171,10 @@ static void text_findinfile_impl(FILE* fin, const char* szFilename, const char* 
 	size_t nChars = fread(g_arrFileContents, sizeof(char), g_arraySize, fin);
 	if (nChars >= g_arraySize-1)
 	{
-		puts("file is too big\n");
+		printwrnfmt("file is too big\n");
 		return;
 	}
-	if (strstr(szSearchString, "\n"))
-	{
-		puts("newline in search string - not supported.\n");
-		return;
-	}
+	
 	g_arrFileContents[nChars] = '\0';
 
 	int nLinesSeen = 1;
@@ -247,12 +243,16 @@ static void text_findinfile_impl(FILE* fin, const char* szFilename, const char* 
 
 SsiE text_findinfile(const char* szFilename, const char* szSearchString, bool bWholeWord, bool bExpectToFind)
 {
-	// opening as text, will strip \r characters
-	if (OS_GetFileSize(szFilename) >= g_arraySize-1 /*room for null*/)
+	if (strstr(szSearchString, "\n"))
+		return ssierr("newline in search string - not supported.");
+	
+	// opening as text, will convert newlines
+	if (OS_GetFileSize(szFilename) >= 1024 * 1024)
 	{
-		printerrfmt("file %s is too big", szFilename);
-		return ssierr("file is too big");
+		printwrnfmt("skipping file %s; too big", szFilename);
+		return SsiEOk;
 	}
+	
 	FILE* fin = fopen(szFilename, "r");
 	if (!fin) { return ssierr("file not found"); }
 	text_findinfile_impl(fin, szFilename, szSearchString, bWholeWord, bExpectToFind);
