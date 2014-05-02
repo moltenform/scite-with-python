@@ -80,6 +80,13 @@ def re_replace(starget, sre, srep):
     import re
     return re.sub(sre, srep, starget)
 
+'''
+ re.search(pattern, string, flags=0)
+ re.match(pattern, string, flags=0)
+ re.findall(pattern, string, flags=0) --strings
+ re.finditer(pattern, string, flags=0)
+ re.IGNORECASE, re.MULTILINE, re.DOTALL
+ '''
 
 def getClipboardText():
     from Tkinter import Tk
