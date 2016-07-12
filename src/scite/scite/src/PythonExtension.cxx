@@ -311,7 +311,8 @@ bool PythonExtension::OnUserListSelection(int type, const char* selection)
 	}
 }
 
-bool PythonExtension::RunCallback(const char* szNameOfFunction, int nArgs, const char* szArg1)
+bool PythonExtension::RunCallback(
+	const char* szNameOfFunction, int nArgs, const char* szArg1)
 {
 	if (nArgs == 0)
 	{
@@ -324,82 +325,119 @@ bool PythonExtension::RunCallback(const char* szNameOfFunction, int nArgs, const
 	}
 	else
 	{
-		return WriteError("Unexpected: calling RunCallback, only 0/1 args supported.");
+		return WriteError(
+			"Unexpected: calling RunCallback, only 0/1 args supported.");
 	}
 }
 
-bool PythonExtension::RunCallbackArgs(const char* szNameOfFunction, PyObject* pArgsBorrowed)
+bool PythonExtension::RunCallbackArgs(
+	const char* szNameOfFunction, PyObject* pArgsBorrowed)
 {
 	CPyObjStrong pName = PyString_FromString(c_PythonModuleName);
-	if (!pName) { return WriteError("Unexpected error: could not form string."); }
+	if (!pName)
+	{ 
+		return WriteError("Unexpected error: could not form string."); 
+	}
+
 	CPyObjStrong pModule = PyImport_Import(pName);
-	if (!pModule) {
+	if (!pModule)
+	{
 		WriteError("Error importing module.");
 		PyErr_Print();
 		return false;
 	}
+
 	CPyObjWeak pDict = PyModule_GetDict(pModule);
-	if (!pDict) { return WriteError("Unexpected: could not get module dict."); }
+	if (!pDict)
+	{
+		return WriteError("Unexpected: could not get module dict.");
+	}
+
 	CPyObjWeak pFn = PyDict_GetItemString(pDict, szNameOfFunction);
-	if (!pFn) { /* module does not define that callback. */ return false; }
-	if (!PyCallable_Check(pFn)) { return WriteError("callback not a function", szNameOfFunction); }
+	if (!pFn)
+	{
+		// module does not define that callback.
+		return false;
+	}
+
+	if (!PyCallable_Check(pFn))
+	{
+		return WriteError("callback not a function", szNameOfFunction);
+	}
 
 	CPyObjStrong pResult = PyObject_CallObject(pFn, pArgsBorrowed);
-	if (!pResult) {
+	if (!pResult)
+	{
 		WriteError("Error in callback ", szNameOfFunction);
 		PyErr_Print();
 		return false;
 	}
-	/* bubble event up by default, unless they explicitly return false. */
-	if (PyBool_Check(((PyObject*)pResult)) && pResult == Py_False)
-		return true; // do not bubble up event
-	else
-		return false; // bubble up event
+
+	// bubble event up by default, unless they explicitly return false.
+	bool shouldBubbleUpEvent = !(PyBool_Check(((PyObject*)pResult)) &&
+		pResult == Py_False);
+	return shouldBubbleUpEvent;
 }
 
 PyObject* pyfun_LogStdout(PyObject* self, PyObject* args)
 {
-	char* szLogStr = NULL; /* we don't own this. */
-	if (!PyArg_ParseTuple(args, "s", &szLogStr)) return NULL;
-	Host()->Trace(szLogStr);
-	Py_INCREF(Py_None);
-	return Py_None;
+	char* szLogStr = NULL; // we don't own this.
+	if (PyArg_ParseTuple(args, "s", &szLogStr)) 
+	{
+		Host()->Trace(szLogStr);
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
+	else
+	{
+		return NULL;
+	}
 }
 
 PyObject* pyfun_MessageBox(PyObject* self, PyObject* args)
 {
-	char* szLogStr = NULL; /* we don't own this. */
-	if (!PyArg_ParseTuple(args, "s", &szLogStr)) return NULL;
+	char* szLogStr = NULL; // we don't own this.
+	if (PyArg_ParseTuple(args, "s", &szLogStr))
+	{
 #ifdef _WIN32
-	MessageBoxA(NULL, szLogStr, "SciTEPython", 0);
+		MessageBoxA(NULL, szLogStr, "SciTEPython", 0);
 #endif
-	Py_INCREF(Py_None);
-	return Py_None;
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
+	else
+	{
+		return NULL;
+	}
 }
 
 PyObject* pyfun_SciteOpenFile(PyObject* self, PyObject* args)
 {
-	char* szFilename = NULL; /* we don't own this. */
-	if (!PyArg_ParseTuple(args, "s", &szFilename)) return NULL;
-	if (szFilename) {
+	char* szFilename = NULL; // we don't own this.
+	if (PyArg_ParseTuple(args, "s", &szFilename) && szFilename)
+	{
 		SString cmd = "open:";
 		cmd += szFilename;
 		cmd.substitute("\\", "\\\\");
 		Host()->Perform(cmd.c_str());
+		Py_INCREF(Py_None);
+		return Py_None;
 	}
-	Py_INCREF(Py_None);
-	return Py_None;
+	else
+	{
+		return NULL;
+	}
 }
 
 PyObject* pyfun_GetProperty(PyObject* self, PyObject* args)
 {
-	char* szPropName = NULL; /* we don't own this. */
+	char* szPropName = NULL; // we don't own this.
 	if (!PyArg_ParseTuple(args, "s", &szPropName)) return NULL;
 	char *value = Host()->Property(szPropName);
 	if (value)
 	{
 		PyObject* objRet = PyString_FromString(value);
-		/* leave it with a refcount of 1, don't decref */
+		// leave it with a refcount of 1, don't decref
 		delete[] value;
 		return objRet;
 	}
@@ -412,7 +450,7 @@ PyObject* pyfun_GetProperty(PyObject* self, PyObject* args)
 
 PyObject* pyfun_SetProperty(PyObject* self, PyObject* args)
 {
-	char* szPropName = NULL; char* szPropValue = NULL; /* we don't own this. */
+	char* szPropName = NULL; char* szPropValue = NULL; // we don't own this.
 	if (!PyArg_ParseTuple(args, "ss", &szPropName, &szPropValue)) return NULL;
 	Host()->SetProperty(szPropName, szPropValue); // it looks like SetProperty allocates, don't need key and val on the heap.
 	Py_INCREF(Py_None);
@@ -421,7 +459,7 @@ PyObject* pyfun_SetProperty(PyObject* self, PyObject* args)
 
 PyObject* pyfun_UnsetProperty(PyObject* self, PyObject* args)
 {
-	char* szPropName = NULL; /* we don't own this. */
+	char* szPropName = NULL; // we don't own this.
 	if (!PyArg_ParseTuple(args, "s", &szPropName)) return NULL;
 	Host()->UnsetProperty(szPropName);
 	Py_INCREF(Py_None);
@@ -430,7 +468,7 @@ PyObject* pyfun_UnsetProperty(PyObject* self, PyObject* args)
 
 PyObject* pyfun_pane_Append(PyObject* self, PyObject* args)
 {
-	char* szText = NULL; /* we don't own this. */
+	char* szText = NULL; // we don't own this.
 	int nPane = -1; ExtensionAPI::Pane pane;
 	if (!PyArg_ParseTuple(args, "is", &nPane, &szText)) return NULL;
 	if (!getPaneFromInt(nPane, &pane)) return NULL;
@@ -441,7 +479,7 @@ PyObject* pyfun_pane_Append(PyObject* self, PyObject* args)
 
 PyObject* pyfun_pane_Insert(PyObject* self, PyObject* args)
 {
-	char* szText = NULL; /* we don't own this. */
+	char* szText = NULL; // we don't own this.
 	int nPane = -1, nPos = -1; ExtensionAPI::Pane pane;
 	if (!PyArg_ParseTuple(args, "iis", &nPane, &nPos, &szText)) return NULL;
 	if (nPos < 0) return NULL;
@@ -484,7 +522,7 @@ PyObject* pyfun_pane_TextRange(PyObject* self, PyObject* args)
 
 PyObject* pyfun_pane_FindText(PyObject* self, PyObject* args) //returns a tuple
 {
-	char* szText = NULL; /* we don't own this. */
+	char* szText = NULL; // we don't own this.
 	int nPane = -1, nFlags = 0, nPosStart = 0, nPosEnd = -1; ExtensionAPI::Pane pane;
 	if (!PyArg_ParseTuple(args, "is|iii", &nPane, &szText, &nFlags, &nPosStart, &nPosEnd)) return NULL;
 	if (!getPaneFromInt(nPane, &pane)) return NULL;
@@ -512,7 +550,7 @@ PyObject* pyfun_pane_FindText(PyObject* self, PyObject* args) //returns a tuple
 
 PyObject* pyfun_pane_SendScintillaFn(PyObject* self, PyObject* args)
 {
-	char* szCmd = NULL; /* we don't own this. */
+	char* szCmd = NULL; // we don't own this.
 	int nPane = -1; ExtensionAPI::Pane pane;
 	PyObject* pSciArgs; //borrowed reference, so ok.
 	if (!PyArg_ParseTuple(args, "isO", &nPane, &szCmd, &pSciArgs)) return NULL;
@@ -564,7 +602,11 @@ PyObject* pyfun_pane_SendScintillaFn(PyObject* self, PyObject* args)
 	}
 	else
 	{
-		if (!lParam) { /* Unexpected: returning null instead of string */ Py_INCREF(Py_None); return Py_None; }
+		if (!lParam) { 
+			// Unexpected: returning null instead of string
+			Py_INCREF(Py_None); 
+			return Py_None; 
+		}
 		//because there might not be a final null, pyObjReturn = PyString_FromString((char *) lParam); doesn't work
 		//trace("got", "", (size_t) result);
 		if (result == 0)
@@ -579,7 +621,7 @@ PyObject* pyfun_pane_SendScintillaFn(PyObject* self, PyObject* args)
 
 PyObject* pyfun_pane_SendScintillaGet(PyObject* self, PyObject* args)
 {
-	char* szProp = NULL; /* we don't own this. */
+	char* szProp = NULL; // we don't own this.
 	int nPane = -1; ExtensionAPI::Pane pane; PyObject* pyObjParam = NULL;
 	if (!PyArg_ParseTuple(args, "is|O", &nPane, &szProp, &pyObjParam)) return NULL;
 	if (!getPaneFromInt(nPane, &pane)) return NULL;
@@ -611,7 +653,7 @@ PyObject* pyfun_pane_SendScintillaGet(PyObject* self, PyObject* args)
 
 PyObject* pyfun_pane_SendScintillaSet(PyObject* self, PyObject* args)
 {
-	char* szProp = NULL; /* we don't own this. */
+	char* szProp = NULL; // we don't own this.
 	int nPane = -1; ExtensionAPI::Pane pane; PyObject* pyObjArg1 = NULL; PyObject* pyObjArg2 = NULL;
 	if (!PyArg_ParseTuple(args, "isO|O", &nPane, &szProp, &pyObjArg1, &pyObjArg2)) return NULL;
 	if (!getPaneFromInt(nPane, &pane)) return NULL;
@@ -647,7 +689,7 @@ PyObject* pyfun_pane_SendScintillaSet(PyObject* self, PyObject* args)
 
 PyObject* pyfun_app_GetConstant(PyObject* self, PyObject* args)
 {
-	char* szProp = NULL; /* we don't own this. */
+	char* szProp = NULL; // we don't own this.
 	if (!PyArg_ParseTuple(args, "s", &szProp)) return NULL;
 
 	int nFnIndex = IFaceTable::FindConstant(szProp);
@@ -660,7 +702,7 @@ PyObject* pyfun_app_GetConstant(PyObject* self, PyObject* args)
 
 PyObject* pyfun_app_SciteCommand(PyObject* self, PyObject* args)
 {
-	char* szProp = NULL; /* we don't own this. */
+	char* szProp = NULL; // we don't own this.
 	if (!PyArg_ParseTuple(args, "s", &szProp)) return NULL;
 
 	int nFnIndex = FindFriendlyNamedIDMConstant(szProp);
@@ -774,8 +816,11 @@ bool pullPythonArgument(IFaceType type, CPyObjWeak pyObjNext, intptr_t* param)
 	return true;
 }
 
-bool pushPythonArgument(IFaceType type, intptr_t param, PyObject** pyValueOut /* caller must incref this! */)
+bool pushPythonArgument(IFaceType type, intptr_t param,
+	PyObject** pyValueOut)
 {
+	// note: caller must incref pyValueOut.
+
 	switch (type) {
 	case iface_void:
 		*pyValueOut = Py_None;

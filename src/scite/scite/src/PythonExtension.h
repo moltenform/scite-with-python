@@ -34,8 +34,14 @@ class CPyObjWeak
 private:
 	PyObject* m_pyo;
 public:
-	CPyObjWeak(PyObject* pyo) { m_pyo = pyo; }
-	~CPyObjWeak() { /* do not need to decref */ }
+	CPyObjWeak(PyObject* pyo)
+	{
+		m_pyo = pyo;
+	}
+	~CPyObjWeak()
+	{
+		// do not need to decref 
+	}
 	operator PyObject*() { return m_pyo; }
 };
 
