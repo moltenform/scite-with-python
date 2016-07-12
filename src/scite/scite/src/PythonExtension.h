@@ -15,42 +15,58 @@
 #include <vector>
 #include <map>
 
+// Holder for PyObject, to ensure Py_DECREF is called.
 class CPyObjectOwned
 {
 private:
-	PyObject* m_pyo;
-public:
-	CPyObjectOwned() { m_pyo = NULL; }
-	CPyObjectOwned(PyObject* pyo) { m_pyo = pyo; }
-	void Attach(PyObject* pyo) { m_pyo = pyo; }
-	~CPyObjectOwned() { if (m_pyo) Py_DECREF(m_pyo); }
-	operator PyObject*() { return m_pyo; }
+	PyObject* _obj;
 
+public:
+	CPyObjectOwned()
+	{ 
+		_obj = NULL;
+	}
+	CPyObjectOwned(PyObject* obj)
+	{
+		_obj = obj;
+	}
+	void Attach(PyObject* obj)
+	{
+		_obj = obj;
+	}
+	~CPyObjectOwned()
+	{
+		if (_obj)
+		{
+			Py_DECREF(_obj);
+		}
+	}
+	operator PyObject*()
+	{
+		return _obj;
+	}
 };
 
-// unnecessary, but makes code more consistent, clear that we don't own the reference
+// Holder for PyObject, when Py_DECREF isn't called, e.g. a borrowed reference.
 class CPyObjectPtr
 {
 private:
-	PyObject* m_pyo;
+	PyObject* _obj;
+
 public:
-	CPyObjectPtr(PyObject* pyo)
+	CPyObjectPtr(PyObject* obj)
 	{
-		m_pyo = pyo;
+		_obj = obj;
 	}
 	~CPyObjectPtr()
 	{
-		// do not need to decref 
+		// don't need to decref 
 	}
-	operator PyObject*() { return m_pyo; }
+	operator PyObject*()
+	{
+		return _obj;
+	}
 };
-
-int FindFriendlyNamedIDMConstant(const char* name);
-inline bool getPaneFromInt(int nPane, ExtensionAPI::Pane* outPane);
-bool pullPythonArgument(IFaceType type, CPyObjectPtr pyObjNext, intptr_t* param);
-bool pushPythonArgument(IFaceType type, intptr_t param, PyObject** pyValueOut /* caller must incref this! */);
-void trace(const char* szText1, const char* szText2 = NULL);
-void trace(const char* szText1, const char* szText2, int n);
 
 class PythonExtension : public Extension
 {
@@ -58,6 +74,9 @@ public:
 	static const IFaceConstant* const constantsTable;
 	static const size_t constantsTableLen;
 	static PythonExtension &Instance();
+	void WriteText(const char* text);
+	ExtensionAPI* GetHost();
+	bool FInitialized();
 	virtual ~PythonExtension();
 
 	virtual bool Initialise(ExtensionAPI* host);
@@ -92,20 +111,14 @@ private:
 	ExtensionAPI* _host;
 	bool _pythonInitialized;
 
-	void WriteLog(const char* wzError);
-	bool WriteError(const char* wzError);
-	bool WriteError(const char* wzError, const char* wzError2);
-	bool RunCallback(const char* szNameOfFunction, int nArgs, const char* szArg1);
-	bool RunCallbackArgs(const char* szNameOfFunction, PyObject* pArgsBorrowed);
+	void WriteLog(const char* error);
+	bool WriteError(const char* error);
+	bool WriteError(const char* error, const char* error2);
+	bool RunCallback(const char* nameOfFunction, int nArgs, const char* arg1);
+	bool RunCallbackArgs(const char* nameOfFunction, PyObject* pArgsBorrowed);
 	void InitializePython();
 	void SetupPythonNamespace();
 
-public:
-	void WriteText(const char* szText);
-	ExtensionAPI* GetHost();
-	bool FInitialized();
-
-private:
 	PythonExtension();
 	PythonExtension(const PythonExtension &); // Disable copy ctor
 	void operator=(const PythonExtension &); // Disable operator=
