@@ -381,10 +381,10 @@ bool PythonExtension::RunCallbackArgs(
 
 PyObject* pyfun_LogStdout(PyObject* self, PyObject* args)
 {
-	char* szLogStr = NULL; // we don't own this.
-	if (PyArg_ParseTuple(args, "s", &szLogStr)) 
+	char* msg = NULL; // we don't own this.
+	if (PyArg_ParseTuple(args, "s", &msg)) 
 	{
-		Host()->Trace(szLogStr);
+		Host()->Trace(msg);
 		Py_INCREF(Py_None);
 		return Py_None;
 	}
@@ -396,11 +396,11 @@ PyObject* pyfun_LogStdout(PyObject* self, PyObject* args)
 
 PyObject* pyfun_MessageBox(PyObject* self, PyObject* args)
 {
-	char* szLogStr = NULL; // we don't own this.
-	if (PyArg_ParseTuple(args, "s", &szLogStr))
+	char* msg = NULL; // we don't own this.
+	if (PyArg_ParseTuple(args, "s", &msg))
 	{
 #ifdef _WIN32
-		MessageBoxA(NULL, szLogStr, "SciTEPython", 0);
+		MessageBoxA(NULL, msg, "SciTEPython", 0);
 #endif
 		Py_INCREF(Py_None);
 		return Py_None;
@@ -413,11 +413,11 @@ PyObject* pyfun_MessageBox(PyObject* self, PyObject* args)
 
 PyObject* pyfun_SciteOpenFile(PyObject* self, PyObject* args)
 {
-	char* szFilename = NULL; // we don't own this.
-	if (PyArg_ParseTuple(args, "s", &szFilename) && szFilename)
+	char* filename = NULL; // we don't own this.
+	if (PyArg_ParseTuple(args, "s", &filename) && filename)
 	{
 		SString cmd = "open:";
-		cmd += szFilename;
+		cmd += filename;
 		cmd.substitute("\\", "\\\\");
 		Host()->Perform(cmd.c_str());
 		Py_INCREF(Py_None);
@@ -431,73 +431,114 @@ PyObject* pyfun_SciteOpenFile(PyObject* self, PyObject* args)
 
 PyObject* pyfun_GetProperty(PyObject* self, PyObject* args)
 {
-	char* szPropName = NULL; // we don't own this.
-	if (!PyArg_ParseTuple(args, "s", &szPropName)) return NULL;
-	char *value = Host()->Property(szPropName);
-	if (value)
+	char* propName = NULL; // we don't own this.
+	if (PyArg_ParseTuple(args, "s", &propName))
 	{
-		PyObject* objRet = PyString_FromString(value);
-		// leave it with a refcount of 1, don't decref
-		delete[] value;
-		return objRet;
+		char* value = Host()->Property(propName);
+		if (value)
+		{
+			// don't use a strong ref, we want the refcount to stay at 1
+			CPyObjWeak pythonStr = PyString_FromString(value);
+			delete[] value;
+			return pythonStr;
+		}
+		else
+		{
+			Py_INCREF(Py_None);
+			return Py_None;
+		}
 	}
 	else
 	{
-		Py_INCREF(Py_None);
-		return Py_None;
+		return NULL;
 	}
 }
 
 PyObject* pyfun_SetProperty(PyObject* self, PyObject* args)
 {
-	char* szPropName = NULL; char* szPropValue = NULL; // we don't own this.
-	if (!PyArg_ParseTuple(args, "ss", &szPropName, &szPropValue)) return NULL;
-	Host()->SetProperty(szPropName, szPropValue); // it looks like SetProperty allocates, don't need key and val on the heap.
-	Py_INCREF(Py_None);
-	return Py_None;
+	char* propName = NULL; // we don't own this.
+	char* propValue = NULL; // we don't own this.
+	if (PyArg_ParseTuple(args, "ss", &propName, &propValue))
+	{
+		// it looks like SetProperty allocates, it's ok if key and val go out of scope.
+		Host()->SetProperty(propName, propValue);
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
+	else
+	{
+		return NULL;
+	}
 }
 
 PyObject* pyfun_UnsetProperty(PyObject* self, PyObject* args)
 {
-	char* szPropName = NULL; // we don't own this.
-	if (!PyArg_ParseTuple(args, "s", &szPropName)) return NULL;
-	Host()->UnsetProperty(szPropName);
-	Py_INCREF(Py_None);
-	return Py_None;
+	char* propName = NULL; // we don't own this.
+	if (PyArg_ParseTuple(args, "s", &propName))
+	{
+		Host()->UnsetProperty(propName);
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
+	else
+	{
+		return NULL;
+	}
 }
 
 PyObject* pyfun_pane_Append(PyObject* self, PyObject* args)
 {
-	char* szText = NULL; // we don't own this.
-	int nPane = -1; ExtensionAPI::Pane pane;
-	if (!PyArg_ParseTuple(args, "is", &nPane, &szText)) return NULL;
-	if (!getPaneFromInt(nPane, &pane)) return NULL;
-	Host()->Insert(pane, Host()->Send(pane, SCI_GETLENGTH, 0, 0), szText);
-	Py_INCREF(Py_None);
-	return Py_None;
+	char* text = NULL; // we don't own this.
+	int nPane = -1;
+	ExtensionAPI::Pane pane;
+	if (PyArg_ParseTuple(args, "is", &nPane, &text) &&
+		getPaneFromInt(nPane, &pane))
+	{
+		Host()->Insert(pane, Host()->Send(pane, SCI_GETLENGTH, 0, 0), text);
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
+	else
+	{
+		return NULL;
+	}
 }
 
 PyObject* pyfun_pane_Insert(PyObject* self, PyObject* args)
 {
-	char* szText = NULL; // we don't own this.
-	int nPane = -1, nPos = -1; ExtensionAPI::Pane pane;
-	if (!PyArg_ParseTuple(args, "iis", &nPane, &nPos, &szText)) return NULL;
-	if (nPos < 0) return NULL;
-	if (!getPaneFromInt(nPane, &pane)) return NULL;
-	Host()->Insert(pane, nPos, szText);
-	Py_INCREF(Py_None);
-	return Py_None;
+	char* text = NULL; // we don't own this.
+	int nPane = -1, nPos = -1;
+	ExtensionAPI::Pane pane;
+	if (PyArg_ParseTuple(args, "iis", &nPane, &nPos, &text) &&
+		nPos >= 0 &&
+		getPaneFromInt(nPane, &pane))
+	{
+		Host()->Insert(pane, nPos, text);
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
+	else
+	{
+		return NULL;
+	}
 }
 
 PyObject* pyfun_pane_Remove(PyObject* self, PyObject* args)
 {
-	int nPane = -1, nPosStart = -1, nPosEnd = -1; ExtensionAPI::Pane pane;
-	if (!PyArg_ParseTuple(args, "iii", &nPane, &nPosStart, &nPosEnd)) return NULL;
-	if (nPosStart < 0 || nPosEnd < 0) return NULL;
-	if (!getPaneFromInt(nPane, &pane)) return NULL;
-	Host()->Remove(pane, nPosStart, nPosEnd);
-	Py_INCREF(Py_None);
-	return Py_None;
+	int nPane = -1, nPosStart = -1, nPosEnd = -1;
+	ExtensionAPI::Pane pane;
+	if (!PyArg_ParseTuple(args, "iii", &nPane, &nPosStart, &nPosEnd) &&
+		!(nPosStart < 0 || nPosEnd < 0) &&
+		(getPaneFromInt(nPane, &pane)))
+	{
+		Host()->Remove(pane, nPosStart, nPosEnd);
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
+	else
+	{
+		return NULL;
+	}
 }
 
 PyObject* pyfun_pane_TextRange(PyObject* self, PyObject* args)
@@ -509,6 +550,7 @@ PyObject* pyfun_pane_TextRange(PyObject* self, PyObject* args)
 	char *value = Host()->Range(pane, nPosStart, nPosEnd);
 	if (value)
 	{
+		// give the caller ownership of this object.
 		CPyObjWeak objRet = PyString_FromString(value); // weakref because we are giving ownership.
 		delete[] value;
 		return objRet;
@@ -523,29 +565,40 @@ PyObject* pyfun_pane_TextRange(PyObject* self, PyObject* args)
 PyObject* pyfun_pane_FindText(PyObject* self, PyObject* args) //returns a tuple
 {
 	char* szText = NULL; // we don't own this.
-	int nPane = -1, nFlags = 0, nPosStart = 0, nPosEnd = -1; ExtensionAPI::Pane pane;
-	if (!PyArg_ParseTuple(args, "is|iii", &nPane, &szText, &nFlags, &nPosStart, &nPosEnd)) return NULL;
-	if (!getPaneFromInt(nPane, &pane)) return NULL;
-	if (nPosEnd == -1) nPosEnd = Host()->Send(pane, SCI_GETLENGTH, 0, 0);
-	if (nPosStart < 0 || nPosEnd < 0) return NULL;
-
-	Sci_TextToFind ft = { {0, 0}, 0, {0, 0} };
-	ft.lpstrText = szText;
-	ft.chrg.cpMin = nPosStart;
-	ft.chrg.cpMax = nPosEnd;
-	int result = Host()->Send(pane, SCI_FINDTEXT, static_cast<uptr_t>(nFlags), reinterpret_cast<sptr_t>(&ft));
-
-	if (result >= 0)
+	int nPane = -1, nFlags = 0, nPosStart = 0, nPosEnd = -1;
+	ExtensionAPI::Pane pane;
+	if (!PyArg_ParseTuple(args, "is|iii", &nPane, &szText, &nFlags, &nPosStart, &nPosEnd) &&
+		getPaneFromInt(nPane, &pane))
 	{
-		// build a tuple. // weakref because we are giving ownership.
-		CPyObjWeak objRet = Py_BuildValue("(i,i)", ft.chrgText.cpMin, ft.chrgText.cpMax);
-		return objRet;
+		if (nPosEnd == -1)
+		{
+			nPosEnd = Host()->Send(pane, SCI_GETLENGTH, 0, 0);
+		}
+
+		if (!(nPosStart < 0 || nPosEnd < 0))
+		{
+			Sci_TextToFind ft = { {0, 0}, 0, {0, 0} };
+			ft.lpstrText = szText;
+			ft.chrg.cpMin = nPosStart;
+			ft.chrg.cpMax = nPosEnd;
+			int result = Host()->Send(pane, SCI_FINDTEXT,
+				static_cast<uptr_t>(nFlags), reinterpret_cast<sptr_t>(&ft));
+
+			if (result >= 0)
+			{
+				// don't use a strong ref, we want the refcount to stay at 1
+				CPyObjWeak objRet = Py_BuildValue("(i,i)", ft.chrgText.cpMin, ft.chrgText.cpMax);
+				return objRet;
+			}
+			else
+			{
+				Py_INCREF(Py_None);
+				return Py_None;
+			}
+		}
 	}
-	else
-	{
-		Py_INCREF(Py_None);
-		return Py_None;
-	}
+
+	return NULL;
 }
 
 PyObject* pyfun_pane_SendScintillaFn(PyObject* self, PyObject* args)
