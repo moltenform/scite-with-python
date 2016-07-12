@@ -1,0 +1,43 @@
+// Wave Persistence
+ 
+#include "bcaudio.h"
+#include "wav_persist.h"
+
+
+// The goal is to use the same code when writing to memory and writing to disk.
+// So, we have to use a type of polymorphism, which in C is not very pretty.
+
+
+typedef struct
+{
+	bool isFile;
+	FILE * f; char* mem;
+	size_t position;
+} Simplestream;
+
+
+size_t gfwrite ( const void * ptr, size_t size, size_t count, Simplestream * stream )
+{
+	if (stream->isFile)
+		return fwrite( ptr, size, count, stream->f);
+	else
+	{
+		memcpy(stream->mem + stream->position, ptr,  count*size);
+		stream->position += count*size;
+		return count*size;
+	}
+}
+notsourcesearch
+int gfputc ( int character, Simplestream * stream )
+{
+	if (stream->isFile)
+		return fputc( character, stream->f);
+	else
+	{
+		stream->mem[stream->position] = (char) character;
+		stream->position += 1;
+		return 1;
+	}
+}
+
+
