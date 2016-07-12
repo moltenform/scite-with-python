@@ -15,30 +15,30 @@
 #include <vector>
 #include <map>
 
-class CPyObjStrong
+class CPyObjectOwned
 {
 private:
 	PyObject* m_pyo;
 public:
-	CPyObjStrong() { m_pyo = NULL; }
-	CPyObjStrong(PyObject* pyo) { m_pyo = pyo; }
+	CPyObjectOwned() { m_pyo = NULL; }
+	CPyObjectOwned(PyObject* pyo) { m_pyo = pyo; }
 	void Attach(PyObject* pyo) { m_pyo = pyo; }
-	~CPyObjStrong() { if (m_pyo) Py_DECREF(m_pyo); }
+	~CPyObjectOwned() { if (m_pyo) Py_DECREF(m_pyo); }
 	operator PyObject*() { return m_pyo; }
 
 };
 
 // unnecessary, but makes code more consistent, clear that we don't own the reference
-class CPyObjWeak
+class CPyObjectPtr
 {
 private:
 	PyObject* m_pyo;
 public:
-	CPyObjWeak(PyObject* pyo)
+	CPyObjectPtr(PyObject* pyo)
 	{
 		m_pyo = pyo;
 	}
-	~CPyObjWeak()
+	~CPyObjectPtr()
 	{
 		// do not need to decref 
 	}
@@ -47,7 +47,7 @@ public:
 
 int FindFriendlyNamedIDMConstant(const char* name);
 inline bool getPaneFromInt(int nPane, ExtensionAPI::Pane* outPane);
-bool pullPythonArgument(IFaceType type, CPyObjWeak pyObjNext, intptr_t* param);
+bool pullPythonArgument(IFaceType type, CPyObjectPtr pyObjNext, intptr_t* param);
 bool pushPythonArgument(IFaceType type, intptr_t param, PyObject** pyValueOut /* caller must incref this! */);
 void trace(const char* szText1, const char* szText2 = NULL);
 void trace(const char* szText1, const char* szText2, int n);

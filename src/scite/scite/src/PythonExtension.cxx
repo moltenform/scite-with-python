@@ -240,7 +240,7 @@ bool PythonExtension::OnChar(char ch)
 {
 	if (FInitialized())
 	{
-		CPyObjStrong args = Py_BuildValue("(i)", (int)ch);
+		CPyObjectOwned args = Py_BuildValue("(i)", (int)ch);
 		return RunCallbackArgs("OnChar", args);
 	}
 	else
@@ -256,7 +256,7 @@ bool PythonExtension::OnKey(int keycode, int modifiers)
 		int fShift = (SCMOD_SHIFT & modifiers) != 0 ? 1 : 0;
 		int fCtrl = (SCMOD_CTRL & modifiers) != 0 ? 1 : 0;
 		int fAlt = (SCMOD_ALT & modifiers) != 0 ? 1 : 0;
-		CPyObjStrong args = Py_BuildValue("(i,i,i,i)",
+		CPyObjectOwned args = Py_BuildValue("(i,i,i,i)",
 			(int)keycode, fShift, fCtrl, fAlt);
 		return RunCallbackArgs("OnKey", args);
 	}
@@ -288,7 +288,7 @@ bool PythonExtension::OnDwellStart(int pos, const char *word)
 		}
 		else
 		{
-			CPyObjStrong args = Py_BuildValue("(i,s)", pos, word);
+			CPyObjectOwned args = Py_BuildValue("(i,s)", pos, word);
 			return RunCallbackArgs("OnDwellStart", args);
 		}
 	}
@@ -302,7 +302,7 @@ bool PythonExtension::OnUserListSelection(int type, const char* selection)
 {
 	if (FInitialized())
 	{
-		CPyObjStrong args = Py_BuildValue("(i,s)", type, selection);
+		CPyObjectOwned args = Py_BuildValue("(i,s)", type, selection);
 		return RunCallbackArgs("OnUserListSelection", args);
 	}
 	else
@@ -320,7 +320,7 @@ bool PythonExtension::RunCallback(
 	}
 	else if (nArgs == 1)
 	{
-		CPyObjStrong args = Py_BuildValue("(s)", szArg1);
+		CPyObjectOwned args = Py_BuildValue("(s)", szArg1);
 		return RunCallbackArgs(szNameOfFunction, args);
 	}
 	else
@@ -333,13 +333,13 @@ bool PythonExtension::RunCallback(
 bool PythonExtension::RunCallbackArgs(
 	const char* szNameOfFunction, PyObject* pArgsBorrowed)
 {
-	CPyObjStrong pName = PyString_FromString(c_PythonModuleName);
+	CPyObjectOwned pName = PyString_FromString(c_PythonModuleName);
 	if (!pName)
 	{ 
 		return WriteError("Unexpected error: could not form string."); 
 	}
 
-	CPyObjStrong pModule = PyImport_Import(pName);
+	CPyObjectOwned pModule = PyImport_Import(pName);
 	if (!pModule)
 	{
 		WriteError("Error importing module.");
@@ -347,13 +347,13 @@ bool PythonExtension::RunCallbackArgs(
 		return false;
 	}
 
-	CPyObjWeak pDict = PyModule_GetDict(pModule);
+	CPyObjectPtr pDict = PyModule_GetDict(pModule);
 	if (!pDict)
 	{
 		return WriteError("Unexpected: could not get module dict.");
 	}
 
-	CPyObjWeak pFn = PyDict_GetItemString(pDict, szNameOfFunction);
+	CPyObjectPtr pFn = PyDict_GetItemString(pDict, szNameOfFunction);
 	if (!pFn)
 	{
 		// module does not define that callback.
@@ -365,7 +365,7 @@ bool PythonExtension::RunCallbackArgs(
 		return WriteError("callback not a function", szNameOfFunction);
 	}
 
-	CPyObjStrong pResult = PyObject_CallObject(pFn, pArgsBorrowed);
+	CPyObjectOwned pResult = PyObject_CallObject(pFn, pArgsBorrowed);
 	if (!pResult)
 	{
 		WriteError("Error in callback ", szNameOfFunction);
@@ -438,7 +438,7 @@ PyObject* pyfun_GetProperty(PyObject* self, PyObject* args)
 		if (value)
 		{
 			// don't use a strong ref, we want the refcount to stay at 1
-			CPyObjWeak pythonStr = PyString_FromString(value);
+			CPyObjectPtr pythonStr = PyString_FromString(value);
 			delete[] value;
 			return pythonStr;
 		}
@@ -551,7 +551,7 @@ PyObject* pyfun_pane_TextRange(PyObject* self, PyObject* args)
 	if (value)
 	{
 		// give the caller ownership of this object.
-		CPyObjWeak objRet = PyString_FromString(value); // weakref because we are giving ownership.
+		CPyObjectPtr objRet = PyString_FromString(value); // weakref because we are giving ownership.
 		delete[] value;
 		return objRet;
 	}
@@ -587,7 +587,7 @@ PyObject* pyfun_pane_FindText(PyObject* self, PyObject* args) //returns a tuple
 			if (result >= 0)
 			{
 				// don't use a strong ref, we want the refcount to stay at 1
-				CPyObjWeak objRet = Py_BuildValue("(i,i)", ft.chrgText.cpMin, ft.chrgText.cpMax);
+				CPyObjectPtr objRet = Py_BuildValue("(i,i)", ft.chrgText.cpMin, ft.chrgText.cpMax);
 				return objRet;
 			}
 			else
@@ -804,7 +804,7 @@ static PyMethodDef methods_LogStdout[] = {
 
 void PythonExtension::SetupPythonNamespace()
 {
-	CPyObjWeak pInitMod = Py_InitModule("CScite", methods_LogStdout);
+	CPyObjectPtr pInitMod = Py_InitModule("CScite", methods_LogStdout);
 
 	// WARNING: PyRun_SimpleString does not handle errors well, check return value and not ErrorsOccurred(), it might leave python in a weird state.
 	int ret = PyRun_SimpleString(
@@ -827,9 +827,9 @@ void PythonExtension::SetupPythonNamespace()
 	// use Python's import. don't have to worry about current directory problems
 	// using PyRun_AnyFile(fp, "pythonsetup.py"); ran into those issues
 	// pythonsetup.py modifies the CScite module object, so others importing CScite will see the changes.
-	CPyObjStrong pName = PyString_FromString("pythonsetup");
+	CPyObjectOwned pName = PyString_FromString("pythonsetup");
 	if (!pName) { WriteError("Unexpected error: could not form string pythonsetup."); }
-	CPyObjStrong pModule = PyImport_Import(pName);
+	CPyObjectOwned pModule = PyImport_Import(pName);
 	if (!pModule)
 	{
 		WriteError("Error importing pythonsetup module.");
@@ -837,7 +837,7 @@ void PythonExtension::SetupPythonNamespace()
 	}
 }
 
-bool pullPythonArgument(IFaceType type, CPyObjWeak pyObjNext, intptr_t* param)
+bool pullPythonArgument(IFaceType type, CPyObjectPtr pyObjNext, intptr_t* param)
 {
 	if (!pyObjNext) { PyErr_SetString(PyExc_RuntimeError, "Unexpected: could not get next item."); return false; }
 
