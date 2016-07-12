@@ -2,4 +2,10 @@
 Moved properties and doc to a subdirectory,
 	updated cxx source to look for properties/SciTEGlobal.properties instead of SciTEGlobal.properties
 
+Combine some uncommonly used properties files into one file (others.properties)
+	move the ones to combine into one directory
+	cd to that directory. ensure unix tools are in the path.
+	tail -n +1 * > ../others.properties
+	open ../others.properties and replace "==> " with "## ==> "
+	
 
