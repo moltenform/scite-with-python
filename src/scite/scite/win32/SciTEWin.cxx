@@ -2159,6 +2159,8 @@ uptr_t SciTEWin::EventLoop() {
 #pragma warning(disable: 28251)
 #endif
 
+void runPythonTest();
+
 int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 
 	typedef BOOL (WINAPI *SetDllDirectorySig)(LPCTSTR lpPathName);
@@ -2220,6 +2222,10 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 			lptszCmdLine++;
 		try {
 			MainWind.Run(lptszCmdLine);
+			
+			runPythonTest();
+			
+			
 			result = MainWind.EventLoop();
 		} catch (GUI::ScintillaFailure &sf) {
 			MainWind.CheckForScintillaFailure(static_cast<int>(sf.status));
