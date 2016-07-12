@@ -1487,7 +1487,7 @@ GUI::gui_string SciTEBase::LocaliseMessage(const char *s, const GUI::gui_char *p
 
 void SciTEBase::ReadLocalization() {
 	localiser.Clear();
-	GUI::gui_string title = GUI_TEXT("locale.properties");
+	GUI::gui_string title = GUI_TEXT("properties/locale.properties");
 	const std::string localeProps = props.GetExpandedString("locale.properties");
 	if (localeProps.length()) {
 		title = GUI::StringFromUTF8(localeProps);
