@@ -1,8 +1,14 @@
 // SciTE Python Extension
 // Ben Fisher, 2011
 
-#include "..\python\include\python.h"
+#include "Scite.h"
+#include "Scintilla.h"
+#include "Extender.h"
+#include "SString.h"
+#include "SciTEKeys.h"
+#include "IFaceTable.h"
 
+#include "..\python\include\python.h"
 #include "IFaceTable.h"
 
 #include <string>
@@ -33,68 +39,68 @@ public:
 	operator PyObject*() { return m_pyo; }
 };
 
-int FindFriendlyNamedIDMConstant(const char *name);
+int FindFriendlyNamedIDMConstant(const char* name);
 inline bool getPaneFromInt(int nPane, ExtensionAPI::Pane* outPane);
 bool pullPythonArgument(IFaceType type, CPyObjWeak pyObjNext, intptr_t* param);
 bool pushPythonArgument(IFaceType type, intptr_t param, PyObject** pyValueOut /* caller must incref this! */);
-void trace(const char *szText1, const char *szText2=NULL);
-void trace(const char *szText1, const char *szText2, int n);
+void trace(const char* szText1, const char* szText2=NULL);
+void trace(const char* szText1, const char* szText2, int n);
 
 class PythonExtension : public Extension
 {
+public:
+	static const IFaceConstant* const friendlyconstants;
+	static const size_t lengthfriendlyconstants;
+	static PythonExtension &Instance();
+	virtual ~PythonExtension();
+
+	virtual bool Initialise(ExtensionAPI* host);
+	virtual bool Finalise();
+	virtual bool Clear();
+	virtual bool Load(const char* fileName);
+	virtual bool InitBuffer(int index);
+	virtual bool ActivateBuffer(int index);
+	virtual bool RemoveBuffer(int index);
+	virtual bool OnExecute(const char* s);
+
+	// file events
+	virtual bool OnOpen(const char* fileName);
+	virtual bool OnClose(const char* filename);
+	virtual bool OnSwitchFile(const char* fileName);
+	virtual bool OnBeforeSave(const char* fileName);
+	virtual bool OnSave(const char* fileName);
+	virtual bool OnSavePointReached();
+	virtual bool OnSavePointLeft();
+
+	// input events
+	virtual bool OnChar(char ch);
+	virtual bool OnKey(int keycode, int modifiers);
+	virtual bool OnDoubleClick();
+	virtual bool OnMarginClick();
+	virtual bool OnDwellStart(int pos, const char* word);
+
+	// misc events
+	virtual bool OnUserListSelection(int type, const char* selection);
 
 private:
-	void writeLog(const char *wzError);
-	bool writeError(const char *wzError);
-	bool writeError(const char *wzError, const char *wzError2);
+	ExtensionAPI* _host;
+	bool _pythonInitialized;
+
+	void writeLog(const char* wzError);
+	bool writeError(const char* wzError);
+	bool writeError(const char* wzError, const char* wzError2);
 	bool _runCallback(const char* szNameOfFunction, int nArgs, const char* szArg1);
 	bool _runCallbackArgs(const char* szNameOfFunction, PyObject* pArgsBorrowed);
 	void InitializePython();
 	void SetupPythonNamespace();
 
 public:
-	void writeText(const char *szText);
+	void writeText(const char* szText);
+	ExtensionAPI* GetHost();
+	bool FInitialized();
 
 private:
-	PythonExtension(); // Singleton
+	PythonExtension();
 	PythonExtension(const PythonExtension &); // Disable copy ctor
 	void operator=(const PythonExtension &); // Disable operator=
-
-	
-public:
-	static const IFaceConstant * const friendlyconstants;
-	static const size_t lengthfriendlyconstants;
-	static PythonExtension &Instance();
-
-	virtual ~PythonExtension();
-
-	virtual bool Initialise(ExtensionAPI *host);
-	virtual bool Finalise();
-	virtual bool Clear();
-	virtual bool Load(const char *fileName);
-
-	virtual bool InitBuffer(int index);
-	virtual bool ActivateBuffer(int index);
-	virtual bool RemoveBuffer(int index);
-
-	virtual bool OnExecute(const char *s);
-
-	// file events
-	virtual bool OnOpen(const char *fileName);
-	virtual bool OnClose(const char *filename);
-	virtual bool OnSwitchFile(const char *fileName);
-	virtual bool OnBeforeSave(const char *fileName);
-	virtual bool OnSave(const char *fileName);
-	virtual bool OnSavePointReached();
-	virtual bool OnSavePointLeft();
-	// input events
-	virtual bool OnChar(char ch);
-	virtual bool OnKey(int keycode, int modifiers);
-	virtual bool OnDoubleClick();
-	virtual bool OnMarginClick();
-	virtual bool OnDwellStart(int pos, const char *word);
-	// misc events
-	virtual bool OnUserListSelection(int type, const char *selection);
-	
 };
-

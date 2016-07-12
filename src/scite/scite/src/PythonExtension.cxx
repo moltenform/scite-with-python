@@ -5,94 +5,126 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "Scite.h"
-#include "Scintilla.h"
-#include "Extender.h"
-#include "SString.h"
-#include "SciTEKeys.h"
-#include "IFaceTable.h"
-
 #include "PythonExtension.h"
 
 #ifdef _MSC_VER
-	#pragma warning(disable: 4100) // unreferenced formal parameter
-	#pragma warning(disable: 4996) // unsafe calls (deprecated stdio)
+// allow deprecated stdio, for PyRun_SimpleFileEx
+#pragma warning(disable: 4996)
+
+// allow unreferenced parameter, for PyObject methods
+#pragma warning(disable: 4100)
 #endif
 
 #ifdef _WIN32
 #include <windows.h>
 #endif
 
-static const char* c_szExtensionModName = "scite_extend"; //looks for the file scite_extend.py
-static bool fPythonInitialized = false;
-static inline bool FInitialized() { return fPythonInitialized; }
-static ExtensionAPI *_host = NULL;
+#define ENABLEDEBUGTRACE 0
 
-PythonExtension::PythonExtension() {}
-PythonExtension::~PythonExtension() {}
+// on startup, import the python module scite_extend.py
+static const char* c_PythonModuleName = "scite_extend";
+
+PythonExtension::PythonExtension()
+{
+	_host = NULL;
+	_pythonInitialized = false;
+}
+
+PythonExtension::~PythonExtension()
+{
+}
+
+bool PythonExtension::FInitialized()
+{
+	return _pythonInitialized;
+}
+
+ExtensionAPI* PythonExtension::GetHost()
+{
+	return _host;
+}
+
+ExtensionAPI* Host()
+{
+	return PythonExtension::Instance().GetHost();
+}
+
 void PythonExtension::InitializePython()
 {
-	if (!FInitialized())
+	if (!_pythonInitialized)
 	{
-		Py_NoSiteFlag = 1; // tell python not to try to 'import site'
+		// tell python to skip running 'import site'
+		Py_NoSiteFlag = 1;
 		Py_Initialize();
 		SetupPythonNamespace();
-		fPythonInitialized = true;
+		_pythonInitialized = true;
 	}
 }
-PythonExtension &PythonExtension::Instance()
+
+PythonExtension& PythonExtension::Instance()
 {
 	static PythonExtension singleton;
 	return singleton;
 }
-bool PythonExtension::Initialise(ExtensionAPI *host)
+
+bool PythonExtension::Initialise(ExtensionAPI* host)
 {
-	_host = host;
 	writeLog("log:PythonExtension::Initialise");
+	_host = host;
 	
-	char* szDelayLoad = _host->Property("ext.python.delayload");
-	if (!(szDelayLoad && szDelayLoad[0]!='\0' && (szDelayLoad[0]!='0'||strlen(szDelayLoad)>1)))
+	char* delayLoadProp = _host->Property("ext.python.delayload");
+	bool delayLoad = delayLoadProp && delayLoadProp[0] != '\0' && delayLoadProp[0] != '0';
+
+	if (!delayLoad)
 	{
 		InitializePython();
 		_runCallback("OnStart", 0, NULL);
-#if FALSE
+
+#if _DEBUG
+		// binary search requires items to be sorted, so verify sort order
+		for (unsigned int i=0; i<PythonExtension::lengthfriendlyconstants-1; i++)
 		{
-			// binary search requires items to be sorted, verify that they are sorted
-			for (unsigned int i=0; i<PythonExtension::lengthfriendlyconstants-1; i++)
+			const char* name1 = PythonExtension::friendlyconstants[i].name;
+			const char* name2 = PythonExtension::friendlyconstants[i+1].name;
+			if (strcmp(name1, name2) != -1)
 			{
-				const char* name1 = PythonExtension::friendlyconstants[i].name;
-				const char* name2 = PythonExtension::friendlyconstants[i+1].name;
-				if (strcmp(name1, name2) != -1)
-				{
-					trace("\nWarning-unsorted-");
-					trace(name1, name2);
-				}
+				trace("\nWarning-unsorted-");
+				trace(name1, name2);
 			}
 		}
 #endif
 	}
 	return true;
 }
+
 bool PythonExtension::OnExecute(const char *s)
 {
 	InitializePython();
 	int nResult = PyRun_SimpleString(s);
-	if (nResult == 0) { return true; }
-	else { 
-		PyErr_Print(); 
-		return true; //used to be false, looked weird
-		}
+	if (nResult == 0)
+	{
+	}
+	else
+	{
+		PyErr_Print();
+		//used to be false, looked weird
+	}
+	return true;
 }
+
 bool PythonExtension::Finalise()
 {
-	_host = NULL; /* by this point _host may be already invalid */
+	// by this point _host is not valid
+	_host = NULL;
 	return false;
 }
+
 bool PythonExtension::Clear()
 {
 	writeLog("log:PythonExtension::Clear");
 	return false;
 }
+
 bool PythonExtension::Load(const char *fileName)
 {
 	FILE* f = fopen(fileName, "r");
@@ -101,113 +133,152 @@ bool PythonExtension::Load(const char *fileName)
 	if (nResult == 0) { return true; }
 	else { PyErr_Print(); return false; }
 }
+
 bool PythonExtension::InitBuffer(int index)
 {
 	writeLog("log:PythonExtension::InitBuffer");
 	return false;
 }
+
 bool PythonExtension::ActivateBuffer(int index)
 {
 	writeLog("log:PythonExtension::Activatebuffer");
 	return false;
 }
+
 bool PythonExtension::RemoveBuffer(int index)
 {
 	writeLog("log:PythonExtension::removebuffer");
 	return false;
 }
 
-
 void PythonExtension::writeText(const char *szText) { trace(szText, "\n"); }
+
 bool PythonExtension::writeError(const char *szError) { trace(">Python Error:", szError); trace("\n"); return true; }
+
 bool PythonExtension::writeError(const char *szError, const char *szError2)
 {
 	trace(">Python Error:", szError); trace(" ", szError2); trace("\n"); return true;
 }
+
 void PythonExtension::writeLog(const char *szText) { /* if (false) trace(szText, "\n"); */ } 
-
-
-//////////////////////////////////////////// callbacks //////////////////////////////////////////////////
 
 bool PythonExtension::OnOpen(const char *fileName)
 {
-	if (!FInitialized()) return false;
-	return _runCallback("OnOpen", 1, fileName);
+	return FInitialized() ?
+		_runCallback("OnOpen", 1, fileName) : false;
 }
+
 bool PythonExtension::OnClose(const char *fileName)
 {
-	if (!FInitialized()) return false;
-	return _runCallback("OnClose", 1, fileName);
+	return FInitialized() ?
+		_runCallback("OnClose", 1, fileName) : false;
 }
+
 bool PythonExtension::OnSwitchFile(const char *fileName)
 {
-	if (!FInitialized()) return false;
-	return _runCallback("OnSwitchFile", 1, fileName);
+	return FInitialized() ?
+		_runCallback("OnSwitchFile", 1, fileName) : false;
 }
+
 bool PythonExtension::OnBeforeSave(const char *fileName)
 {
-	if (!FInitialized()) return false;
-	return _runCallback("OnBeforeSave", 1, fileName);
+	return FInitialized() ?
+		_runCallback("OnBeforeSave", 1, fileName) : false;
 }
+
 bool PythonExtension::OnSave(const char *fileName)
 {
-	if (!FInitialized()) return false;
-	return _runCallback("OnSave", 1, fileName);
+	return FInitialized() ?
+		_runCallback("OnSave", 1, fileName) : false;
 }
+
 bool PythonExtension::OnSavePointReached()
 {
-	if (!FInitialized()) return false;
-	return _runCallback("OnSavePointReached", 0, NULL);
+	return FInitialized() ?
+		_runCallback("OnSavePointReached", 0, NULL) : false;
 }
+
 bool PythonExtension::OnSavePointLeft()
 {
-	if (!FInitialized()) return false;
-	return _runCallback("OnSavePointLeft", 0, NULL);
+	return FInitialized() ?
+		_runCallback("OnSavePointLeft", 0, NULL) : false;
 }
+
 bool PythonExtension::OnChar(char ch)
 {
-	if (!FInitialized()) return false;
-	CPyObjStrong pArgs = Py_BuildValue("(i)", (int) ch);
-	return _runCallbackArgs("OnChar", pArgs);
-}
-bool PythonExtension::OnKey(int keycode, int modifiers)
-{
-	if (!FInitialized()) return false;
-	int fShift = (SCMOD_SHIFT & modifiers) != 0 ? 1 : 0;
-	int fCtrl = (SCMOD_CTRL & modifiers) != 0 ? 1 : 0;
-	int fAlt = (SCMOD_ALT & modifiers) != 0 ? 1 : 0;
-	CPyObjStrong pArgs = Py_BuildValue("(i,i,i,i)", (int) keycode, fShift, fCtrl, fAlt);
-	return _runCallbackArgs("OnKey", pArgs);
-}
-bool PythonExtension::OnDoubleClick()
-{
-	if (!FInitialized()) return false;
-	return _runCallback("OnDoubleClick", 0, NULL);
-}
-bool PythonExtension::OnMarginClick()
-{
-	if (!FInitialized()) return false;
-	return _runCallback("OnMarginClick", 0, NULL);
-}
-bool PythonExtension::OnDwellStart(int pos, const char *word)
-{
-	if (!FInitialized()) return false;
-	if (pos == 0 && word[0] == 0)
+	if (FInitialized())
 	{
-		return _runCallback("OnDwellEnd", 0, NULL);
+		CPyObjStrong pArgs = Py_BuildValue("(i)", (int)ch);
+		return _runCallbackArgs("OnChar", pArgs);
 	}
 	else
 	{
-		CPyObjStrong pArgs = Py_BuildValue("(i,s)", pos, word);
-		return _runCallbackArgs("OnDwellStart", pArgs);
+		return false;
 	}
 }
+
+bool PythonExtension::OnKey(int keycode, int modifiers)
+{
+	if (FInitialized())
+	{
+		int fShift = (SCMOD_SHIFT & modifiers) != 0 ? 1 : 0;
+		int fCtrl = (SCMOD_CTRL & modifiers) != 0 ? 1 : 0;
+		int fAlt = (SCMOD_ALT & modifiers) != 0 ? 1 : 0;
+		CPyObjStrong pArgs = Py_BuildValue("(i,i,i,i)", (int)keycode, fShift, fCtrl, fAlt);
+		return _runCallbackArgs("OnKey", pArgs);
+	}
+	else
+	{
+		return false;
+	}
+}
+
+bool PythonExtension::OnDoubleClick()
+{
+	return FInitialized() ?
+		_runCallback("OnDoubleClick", 0, NULL) : false;
+}
+
+bool PythonExtension::OnMarginClick()
+{
+	return FInitialized() ?
+		_runCallback("OnMarginClick", 0, NULL) : false;
+}
+
+bool PythonExtension::OnDwellStart(int pos, const char *word)
+{
+	if (FInitialized())
+	{
+		if (pos == 0 && word[0] == 0)
+		{
+			return _runCallback("OnDwellEnd", 0, NULL);
+		}
+		else
+		{
+			CPyObjStrong pArgs = Py_BuildValue("(i,s)", pos, word);
+			return _runCallbackArgs("OnDwellStart", pArgs);
+		}
+	}
+	else
+	{
+		return false;
+	}
+}
+
 bool PythonExtension::OnUserListSelection(int type, const char *selection)
 {
-	if (!FInitialized()) return false;
-	CPyObjStrong pArgs = Py_BuildValue("(i,s)", type, selection);
-	return _runCallbackArgs("OnUserListSelection", pArgs);
+	if (FInitialized())
+	{
+		CPyObjStrong pArgs = Py_BuildValue("(i,s)", type, selection);
+		return _runCallbackArgs("OnUserListSelection", pArgs);
+	}
+	else
+	{
+		return false;
+	}
 }
+
 bool PythonExtension::_runCallback(const char* szNameOfFunction, int nArgs, const char* szArg1)
 {
 	if (nArgs == 0)
@@ -224,9 +295,10 @@ bool PythonExtension::_runCallback(const char* szNameOfFunction, int nArgs, cons
 		return writeError("Unexpected: calling _runCallback, only 0/1 args supported."); 
 	}
 }
+
 bool PythonExtension::_runCallbackArgs(const char* szNameOfFunction, PyObject* pArgsBorrowed)
 {
-	CPyObjStrong pName = PyString_FromString(c_szExtensionModName);
+	CPyObjStrong pName = PyString_FromString(c_PythonModuleName);
 	if (!pName) { return writeError("Unexpected error: could not form string."); }
 	CPyObjStrong pModule = PyImport_Import(pName);
 	if (!pModule) {
@@ -253,16 +325,15 @@ bool PythonExtension::_runCallbackArgs(const char* szNameOfFunction, PyObject* p
 		return false; // bubble up event
 }
 
-//////////////////////////////////////////// implementation //////////////////////////////////////////////////
-
 PyObject* pyfun_LogStdout(PyObject* self, PyObject* pArgs)
 {
 	char* szLogStr = NULL; /* we don't own this. */
 	if (!PyArg_ParseTuple(pArgs, "s", &szLogStr)) return NULL;
-	_host->Trace(szLogStr);
+	Host()->Trace(szLogStr);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
+
 PyObject* pyfun_MessageBox(PyObject* self, PyObject* pArgs)
 {
 	char* szLogStr = NULL; /* we don't own this. */
@@ -273,6 +344,7 @@ PyObject* pyfun_MessageBox(PyObject* self, PyObject* pArgs)
 	Py_INCREF(Py_None);
 	return Py_None;
 }
+
 PyObject* pyfun_SciteOpenFile(PyObject* self, PyObject* pArgs)
 {
 	char* szFilename = NULL; /* we don't own this. */
@@ -281,16 +353,17 @@ PyObject* pyfun_SciteOpenFile(PyObject* self, PyObject* pArgs)
 		SString cmd = "open:";
 		cmd += szFilename;
 		cmd.substitute("\\", "\\\\");
-		_host->Perform(cmd.c_str());
+		Host()->Perform(cmd.c_str());
 	}
 	Py_INCREF(Py_None);
 	return Py_None;
 }
+
 PyObject* pyfun_GetProperty(PyObject* self, PyObject* pArgs)
 {
 	char* szPropName = NULL; /* we don't own this. */
 	if (!PyArg_ParseTuple(pArgs, "s", &szPropName)) return NULL;
-	char *value = _host->Property(szPropName);
+	char *value = Host()->Property(szPropName);
 	if (value)
 	{
 		PyObject* objRet = PyString_FromString(value);
@@ -304,25 +377,24 @@ PyObject* pyfun_GetProperty(PyObject* self, PyObject* pArgs)
 		return Py_None;	
 	}
 }
+
 PyObject* pyfun_SetProperty(PyObject* self, PyObject* pArgs) 
 {
 	char* szPropName = NULL; char* szPropValue = NULL; /* we don't own this. */
 	if (!PyArg_ParseTuple(pArgs, "ss", &szPropName, &szPropValue)) return NULL;
-	_host->SetProperty(szPropName, szPropValue); // it looks like SetProperty allocates, don't need key and val on the heap.
+	Host()->SetProperty(szPropName, szPropValue); // it looks like SetProperty allocates, don't need key and val on the heap.
 	Py_INCREF(Py_None);
 	return Py_None;
 }
+
 PyObject* pyfun_UnsetProperty(PyObject* self, PyObject* pArgs)
 {
 	char* szPropName = NULL; /* we don't own this. */
 	if (!PyArg_ParseTuple(pArgs, "s", &szPropName)) return NULL;
-	_host->UnsetProperty(szPropName);
+	Host()->UnsetProperty(szPropName);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
-
-
-
 
 PyObject* pyfun_pane_Append(PyObject* self, PyObject* pArgs)
 {
@@ -330,10 +402,11 @@ PyObject* pyfun_pane_Append(PyObject* self, PyObject* pArgs)
 	int nPane = -1; ExtensionAPI::Pane pane;
 	if (!PyArg_ParseTuple(pArgs, "is", &nPane, &szText)) return NULL;
 	if (!getPaneFromInt(nPane, &pane)) return NULL;
-	_host->Insert(pane, _host->Send(pane, SCI_GETLENGTH, 0, 0), szText);
+	Host()->Insert(pane, Host()->Send(pane, SCI_GETLENGTH, 0, 0), szText);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
+
 PyObject* pyfun_pane_Insert(PyObject* self, PyObject* pArgs)
 {
 	char* szText = NULL; /* we don't own this. */
@@ -341,27 +414,29 @@ PyObject* pyfun_pane_Insert(PyObject* self, PyObject* pArgs)
 	if (!PyArg_ParseTuple(pArgs, "iis", &nPane, &nPos, &szText)) return NULL;
 	if (nPos<0) return NULL;
 	if (!getPaneFromInt(nPane, &pane)) return NULL;
-	_host->Insert(pane,nPos, szText);
+	Host()->Insert(pane,nPos, szText);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
+
 PyObject* pyfun_pane_Remove(PyObject* self, PyObject* pArgs)
 {
 	int nPane = -1, nPosStart=-1, nPosEnd=-1; ExtensionAPI::Pane pane;
 	if (!PyArg_ParseTuple(pArgs, "iii", &nPane, &nPosStart, &nPosEnd)) return NULL;
 	if (nPosStart<0 || nPosEnd<0) return NULL;
 	if (!getPaneFromInt(nPane, &pane)) return NULL;
-	_host->Remove(pane,nPosStart,nPosEnd);
+	Host()->Remove(pane,nPosStart,nPosEnd);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
+
 PyObject* pyfun_pane_TextRange(PyObject* self, PyObject* pArgs)
 {
 	int nPane = -1, nPosStart=-1, nPosEnd=-1; ExtensionAPI::Pane pane;
 	if (!PyArg_ParseTuple(pArgs, "iii", &nPane, &nPosStart, &nPosEnd)) return NULL;
 	if (nPosStart<0 || nPosEnd<0) return NULL;
 	if (!getPaneFromInt(nPane, &pane)) return NULL;
-	char *value = _host->Range(pane, nPosStart, nPosEnd);
+	char *value = Host()->Range(pane, nPosStart, nPosEnd);
 	if (value)
 	{
 		CPyObjWeak objRet = PyString_FromString(value); // weakref because we are giving ownership.
@@ -374,20 +449,21 @@ PyObject* pyfun_pane_TextRange(PyObject* self, PyObject* pArgs)
 		return Py_None;	
 	}
 }
+
 PyObject* pyfun_pane_FindText(PyObject* self, PyObject* pArgs) //returns a tuple
 {
 	char* szText = NULL; /* we don't own this. */
 	int nPane = -1, nFlags=0, nPosStart=0, nPosEnd=-1; ExtensionAPI::Pane pane;
 	if (!PyArg_ParseTuple(pArgs, "is|iii", &nPane, &szText, &nFlags, &nPosStart, &nPosEnd)) return NULL;
 	if (!getPaneFromInt(nPane, &pane)) return NULL;
-	if (nPosEnd==-1) nPosEnd= _host->Send(pane, SCI_GETLENGTH, 0, 0);
+	if (nPosEnd==-1) nPosEnd= Host()->Send(pane, SCI_GETLENGTH, 0, 0);
 	if (nPosStart<0 || nPosEnd<0) return NULL;
 	
 	Sci_TextToFind ft = {{0, 0}, 0, {0, 0}};
 	ft.lpstrText =szText; 
 	ft.chrg.cpMin = nPosStart;
 	ft.chrg.cpMax = nPosEnd;
-	int result = _host->Send(pane, SCI_FINDTEXT, static_cast<uptr_t>(nFlags), reinterpret_cast<sptr_t>(&ft));
+	int result = Host()->Send(pane, SCI_FINDTEXT, static_cast<uptr_t>(nFlags), reinterpret_cast<sptr_t>(&ft));
 	
 	if (result >= 0)
 	{
@@ -401,8 +477,6 @@ PyObject* pyfun_pane_FindText(PyObject* self, PyObject* pArgs) //returns a tuple
 		return Py_None;
 	}
 }
-
-
 
 PyObject* pyfun_pane_SendScintillaFn(PyObject* self, PyObject* pArgs)
 {
@@ -439,7 +513,7 @@ PyObject* pyfun_pane_SendScintillaFn(PyObject* self, PyObject* pArgs)
 		if (!fResult)  {	return NULL; }
 	}
 	else if (isStringResult) { // allocate space for the result
-		size_t spaceNeeded = _host->Send(pane, func.value, wParam, NULL);
+		size_t spaceNeeded = Host()->Send(pane, func.value, wParam, NULL);
 		if (strcmp(szCmd, "GetCurLine")==0) // the first param of getCurLine is useless
 			wParam = spaceNeeded + 1; //not sure if correct
 		//trace("", "allocating", spaceNeeded);
@@ -447,7 +521,7 @@ PyObject* pyfun_pane_SendScintillaFn(PyObject* self, PyObject* pArgs)
 		for (unsigned i=0; i<spaceNeeded+1; i++) ((char*)lParam)[i] = 0;
 	}
 	
-	intptr_t result = _host->Send(pane, func.value, wParam, lParam);
+	intptr_t result = Host()->Send(pane, func.value, wParam, lParam);
 	PyObject* pyObjReturn = NULL;
 	if (!isStringResult)
 	{
@@ -468,6 +542,7 @@ PyObject* pyfun_pane_SendScintillaFn(PyObject* self, PyObject* pArgs)
 	Py_INCREF(pyObjReturn); //important to incref
 	return pyObjReturn;
 }
+
 PyObject* pyfun_pane_SendScintillaGet(PyObject* self, PyObject* pArgs)
 {
 	char* szProp = NULL; /* we don't own this. */
@@ -491,7 +566,7 @@ PyObject* pyfun_pane_SendScintillaGet(PyObject* self, PyObject* pArgs)
 		if (!fResult)  { return NULL; }
 	}
 	else if (!(pyObjParam==NULL || pyObjParam == Py_None)) {PyErr_SetString(PyExc_RuntimeError,"property does not take params."); return NULL; }
-	intptr_t result = _host->Send(pane, prop.getter, wParam, lParam);
+	intptr_t result = Host()->Send(pane, prop.getter, wParam, lParam);
 	
 	PyObject* pyObjReturn = NULL;
 	bool fRet = pushPythonArgument(prop.valueType, result, &pyObjReturn); // if returns void, it simply returns NONE, so we're good
@@ -499,6 +574,7 @@ PyObject* pyfun_pane_SendScintillaGet(PyObject* self, PyObject* pArgs)
 	Py_INCREF(pyObjReturn); //important to incref
 	return pyObjReturn;
 }
+
 PyObject* pyfun_pane_SendScintillaSet(PyObject* self, PyObject* pArgs)
 {
 	char* szProp = NULL; /* we don't own this. */
@@ -529,11 +605,12 @@ PyObject* pyfun_pane_SendScintillaSet(PyObject* self, PyObject* pArgs)
 		if (!fResult)  { return NULL; }
 	}
 	
-	intptr_t result = _host->Send(pane, prop.setter, wParam, lParam);
+	intptr_t result = Host()->Send(pane, prop.setter, wParam, lParam);
 	result;
 	Py_INCREF(Py_None);
 	return Py_None;
 }
+
 PyObject* pyfun_app_GetConstant(PyObject* self, PyObject* pArgs)
 {
 	char* szProp = NULL; /* we don't own this. */
@@ -546,6 +623,7 @@ PyObject* pyfun_app_GetConstant(PyObject* self, PyObject* pArgs)
 	Py_INCREF(pyValueOut);
 	return pyValueOut;
 }
+
 PyObject* pyfun_app_SciteCommand(PyObject* self, PyObject* pArgs)
 {
 	char* szProp = NULL; /* we don't own this. */
@@ -554,17 +632,18 @@ PyObject* pyfun_app_SciteCommand(PyObject* self, PyObject* pArgs)
 	int nFnIndex = FindFriendlyNamedIDMConstant(szProp);
 	if (nFnIndex == -1) { PyErr_SetString(PyExc_RuntimeError,"Could not find command."); return NULL; }
 	IFaceConstant faceConstant =  PythonExtension::friendlyconstants[nFnIndex];
-	_host->DoMenuCommand(faceConstant.value);
+	Host()->DoMenuCommand(faceConstant.value);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
+
 PyObject* pyfun_app_UpdateStatusBar(PyObject* self, PyObject* pArgs)
 {
 	PyObject * pyObjBoolUpdate = NULL;
 	if (!PyArg_ParseTuple(pArgs, "|O",  &pyObjBoolUpdate)) return NULL;
 	bool bUpdateSlowData = false;
 	if (pyObjBoolUpdate == Py_True) bUpdateSlowData = true;
-	_host->UpdateStatusBar(bUpdateSlowData);
+	Host()->UpdateStatusBar(bUpdateSlowData);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -629,8 +708,6 @@ void PythonExtension::SetupPythonNamespace()
 	}
 }
 
-//////////////////////////////////////////// helper fns //////////////////////////////////////////////////
-
 bool pullPythonArgument(IFaceType type, CPyObjWeak pyObjNext, intptr_t* param)
 {
 	if (!pyObjNext) {  PyErr_SetString(PyExc_RuntimeError,"Unexpected: could not get next item."); return false; }
@@ -662,6 +739,7 @@ bool pullPythonArgument(IFaceType type, CPyObjWeak pyObjNext, intptr_t* param)
 	}
 	return true;
 }
+
 bool pushPythonArgument(IFaceType type, intptr_t param, PyObject** pyValueOut /* caller must incref this! */)
 {
 	switch(type) {
@@ -681,6 +759,7 @@ bool pushPythonArgument(IFaceType type, intptr_t param, PyObject** pyValueOut /*
 	}
 	return true;
 }
+
 inline bool getPaneFromInt(int nPane, ExtensionAPI::Pane* outPane)
 {
 	if (nPane==0) *outPane = ExtensionAPI::paneEditor;
@@ -688,6 +767,7 @@ inline bool getPaneFromInt(int nPane, ExtensionAPI::Pane* outPane)
 	else { PyErr_SetString(PyExc_RuntimeError,"Invalid pane, must be 0 or 1."); return false; }
 	return true;
 }
+
 int FindFriendlyNamedIDMConstant(const char *name) {
 	// pattern copied from IFaceTable.cxx
 	int lo = 0;
@@ -706,173 +786,179 @@ int FindFriendlyNamedIDMConstant(const char *name) {
 	return -1;
 }
 
-void trace(const char *szText1, const char *szText2/* =NULL */)
+void trace(const char *szText1, const char *szText2 /*=NULL*/)
 {
-	if (!_host) return;
-	if (szText1) _host->Trace(szText1);
-	if (szText2) _host->Trace(szText2); 
+	if (Host() && szText1)
+	{
+		Host()->Trace(szText1);
+	}
+
+	if (Host() && szText2)
+	{
+		Host()->Trace(szText2);
+	}
 }
+
 void trace(const char *szText1, const char *szText2, int n)
 {
 	trace(szText1, szText2);
 	char buf[256] = {0};
 	int count = snprintf(buf, sizeof(buf), "%d", n);
 	if (count > sizeof(buf) || count<0) return;
-	_host->Trace(buf);
+	Host()->Trace(buf);
 }
 
-
 static IFaceConstant rgFriendlyNamedIDMConstants[] = {
-{"Abbrev",IDM_ABBREV},
-{"About",IDM_ABOUT},
-{"Activate",IDM_ACTIVATE},
-{"BlockComment",IDM_BLOCK_COMMENT},
-{"BookmarkClearall",IDM_BOOKMARK_CLEARALL},
-{"BookmarkNext",IDM_BOOKMARK_NEXT},
-{"BookmarkNextSelect",IDM_BOOKMARK_NEXT_SELECT},
-{"BookmarkPrev",IDM_BOOKMARK_PREV},
-{"BookmarkPrevSelect",IDM_BOOKMARK_PREV_SELECT},
-{"BookmarkToggle",IDM_BOOKMARK_TOGGLE},
-{"BoxComment",IDM_BOX_COMMENT},
-{"Buffer",IDM_BUFFER},
-{"Buffersep",IDM_BUFFERSEP},
-{"Build",IDM_BUILD},
-{"Clear",IDM_CLEAR},
-{"ClearOutput",IDM_CLEAROUTPUT},
-{"Close",IDM_CLOSE},
-{"Closeall",IDM_CLOSEALL},
-{"Compile",IDM_COMPILE},
-{"Complete",IDM_COMPLETE},
-{"CompleteWord",IDM_COMPLETEWORD},
-{"Copy",IDM_COPY},
-{"CopyAsrtf",IDM_COPYASRTF},
-{"CopyPath",IDM_COPYPATH},
-{"Cut",IDM_CUT},
-{"DirectionDown",IDM_DIRECTIONDOWN},
-{"DirectionUp",IDM_DIRECTIONUP},
-{"Duplicate",IDM_DUPLICATE},
-{"Encoding_default",IDM_ENCODING_DEFAULT},
-{"Encoding_ucookie",IDM_ENCODING_UCOOKIE},
-{"Encoding_ucs2be",IDM_ENCODING_UCS2BE},
-{"Encoding_ucs2le",IDM_ENCODING_UCS2LE},
-{"Encoding_utf8",IDM_ENCODING_UTF8},
-{"EnterSelection",IDM_ENTERSELECTION},
-{"Eol_convert",IDM_EOL_CONVERT},
-{"Eol_cr",IDM_EOL_CR},
-{"Eol_crlf",IDM_EOL_CRLF},
-{"Eol_lf",IDM_EOL_LF},
-{"Expand",IDM_EXPAND},
-{"ExpandEnsurechildrenvisible",IDM_EXPAND_ENSURECHILDRENVISIBLE},
-{"Filer",IDM_FILER},
-{"Find",IDM_FIND},
-{"FindInFilesDialog",IDM_FINDINFILES},
-{"FindInFilesStart",IDM_FINDINFILESSTART},
-{"FindNext",IDM_FINDNEXT},
-{"FindNextBack",IDM_FINDNEXTBACK},
-{"FindNextBackSel",IDM_FINDNEXTBACKSEL},
-{"FindNextSel",IDM_FINDNEXTSEL},
-{"FinishedExecute",IDM_FINISHEDEXECUTE},
-{"FoldMargin",IDM_FOLDMARGIN},
-{"Fullscreen",IDM_FULLSCREEN},
-{"Go",IDM_GO},
-{"Goto",IDM_GOTO},
-{"Help",IDM_HELP},
-{"HelpScite",IDM_HELP_SCITE},
-{"Import",IDM_IMPORT},
-{"IncSearch",IDM_INCSEARCH},
-{"InsAbbrev",IDM_INS_ABBREV},
-{"Join",IDM_JOIN},
-{"Language",IDM_LANGUAGE},
-{"LineNumberMargin",IDM_LINENUMBERMARGIN},
-{"LoadSession",IDM_LOADSESSION},
-{"LwrCase",IDM_LWRCASE},
-{"MacroList",IDM_MACROLIST},
-{"MacroPlay",IDM_MACROPLAY},
-{"MacroRecord",IDM_MACRORECORD},
-{"MacroSep",IDM_MACRO_SEP},
-{"MacroStoprecord",IDM_MACROSTOPRECORD},
-{"MatchBrace",IDM_MATCHBRACE},
-{"MatchCase",IDM_MATCHCASE},
-{"MonoFont",IDM_MONOFONT},
-{"MoveTableft",IDM_MOVETABLEFT},
-{"MoveTabright",IDM_MOVETABRIGHT},
-{"MruFile",IDM_MRUFILE},
-{"MruSep",IDM_MRU_SEP},
-{"New",IDM_NEW},
-{"NextFile",IDM_NEXTFILE},
-{"NextFilestack",IDM_NEXTFILESTACK},
-{"NextMatchppc",IDM_NEXTMATCHPPC},
-{"NextMsg",IDM_NEXTMSG},
-{"OnTop",IDM_ONTOP},
-{"Open",IDM_OPEN},
-{"OpenAbbrevproperties",IDM_OPENABBREVPROPERTIES},
-{"OpenDirectoryproperties",IDM_OPENDIRECTORYPROPERTIES},
-{"OpenFileshere",IDM_OPENFILESHERE},
-{"OpenGlobalproperties",IDM_OPENGLOBALPROPERTIES},
-{"OpenLocalproperties",IDM_OPENLOCALPROPERTIES},
-{"OpenLuaexternalfile",IDM_OPENLUAEXTERNALFILE},
-{"OpenSelected",IDM_OPENSELECTED},
-{"OpenUserproperties",IDM_OPENUSERPROPERTIES},
-{"Paste",IDM_PASTE},
-{"PasteAnddown",IDM_PASTEANDDOWN},
-{"PrevFile",IDM_PREVFILE},
-{"PrevFlestack",IDM_PREVFILESTACK},
-{"PrevMatchppc",IDM_PREVMATCHPPC},
-{"PrevMsg",IDM_PREVMSG},
-{"Print",IDM_PRINT},
-{"PrintSetup",IDM_PRINTSETUP},
-{"Quit",IDM_QUIT},
-{"Readonly",IDM_READONLY},
-{"Redo",IDM_REDO},
-{"Regexp",IDM_REGEXP},
-{"Replace",IDM_REPLACE},
-{"Revert",IDM_REVERT},
-{"RunWin",IDM_RUNWIN},
-{"Save",IDM_SAVE},
-{"SaveAcopy",IDM_SAVEACOPY},
-{"SaveAll",IDM_SAVEALL},
-{"SaveAs",IDM_SAVEAS},
-{"SaveAshtml",IDM_SAVEASHTML},
-{"SaveAspdf",IDM_SAVEASPDF},
-{"SaveAsrtf",IDM_SAVEASRTF},
-{"SaveAstex",IDM_SAVEASTEX},
-{"SaveAsxml",IDM_SAVEASXML},
-{"SaveSession",IDM_SAVESESSION},
-{"SelMargin",IDM_SELMARGIN},  //apparently caps first.
-{"SelectAll",IDM_SELECTALL},
-{"SelectToBrace",IDM_SELECTTOBRACE},
-{"SelectToNextmatchppc",IDM_SELECTTONEXTMATCHPPC},
-{"SelectToPrevmatchppc",IDM_SELECTTOPREVMATCHPPC},
-{"ShowCalltip",IDM_SHOWCALLTIP},
-{"Split",IDM_SPLIT},
-{"SplitVertical",IDM_SPLITVERTICAL},
-{"SrcWin",IDM_SRCWIN},
-{"StatusWin",IDM_STATUSWIN},
-{"StopExecute",IDM_STOPEXECUTE},
-{"StreamComment",IDM_STREAM_COMMENT},
-{"SwitchPane",IDM_SWITCHPANE},
-{"TabSize",IDM_TABSIZE},
-{"TabWin",IDM_TABWIN},
-{"ToggleFoldAll",IDM_TOGGLE_FOLDALL},
-{"ToggleFoldRecursive",IDM_TOGGLE_FOLDRECURSIVE},
-{"ToggleOutput",IDM_TOGGLEOUTPUT},
-{"ToggleParameters",IDM_TOGGLEPARAMETERS},
-{"ToolWin",IDM_TOOLWIN}, //apparently caps first.
-{"Tools",IDM_TOOLS},
-{"Undo",IDM_UNDO},
-{"Unslash",IDM_UNSLASH},
-{"UprCase",IDM_UPRCASE},
-{"ViewEol",IDM_VIEWEOL},
-{"ViewGuides",IDM_VIEWGUIDES},
-{"ViewSpace",IDM_VIEWSPACE},
-{"ViewStatusbar",IDM_VIEWSTATUSBAR},
-{"ViewTabbar",IDM_VIEWTABBAR},
-{"ViewToolbar",IDM_VIEWTOOLBAR},
-{"WholeWord",IDM_WHOLEWORD},
-{"Wrap",IDM_WRAP},
-{"WrapAround",IDM_WRAPAROUND},
-{"WrapOutput",IDM_WRAPOUTPUT},
+	{"Abbrev", IDM_ABBREV},
+	{"About", IDM_ABOUT},
+	{"Activate", IDM_ACTIVATE},
+	{"BlockComment", IDM_BLOCK_COMMENT},
+	{"BookmarkClearall", IDM_BOOKMARK_CLEARALL},
+	{"BookmarkNext", IDM_BOOKMARK_NEXT},
+	{"BookmarkNextSelect", IDM_BOOKMARK_NEXT_SELECT},
+	{"BookmarkPrev", IDM_BOOKMARK_PREV},
+	{"BookmarkPrevSelect", IDM_BOOKMARK_PREV_SELECT},
+	{"BookmarkToggle", IDM_BOOKMARK_TOGGLE},
+	{"BoxComment", IDM_BOX_COMMENT},
+	{"Buffer", IDM_BUFFER},
+	{"Buffersep", IDM_BUFFERSEP},
+	{"Build", IDM_BUILD},
+	{"Clear", IDM_CLEAR},
+	{"ClearOutput", IDM_CLEAROUTPUT},
+	{"Close", IDM_CLOSE},
+	{"Closeall", IDM_CLOSEALL},
+	{"Compile", IDM_COMPILE},
+	{"Complete", IDM_COMPLETE},
+	{"CompleteWord", IDM_COMPLETEWORD},
+	{"Copy", IDM_COPY},
+	{"CopyAsrtf", IDM_COPYASRTF},
+	{"CopyPath", IDM_COPYPATH},
+	{"Cut", IDM_CUT},
+	{"DirectionDown", IDM_DIRECTIONDOWN},
+	{"DirectionUp", IDM_DIRECTIONUP},
+	{"Duplicate", IDM_DUPLICATE},
+	{"Encoding_default", IDM_ENCODING_DEFAULT},
+	{"Encoding_ucookie", IDM_ENCODING_UCOOKIE},
+	{"Encoding_ucs2be", IDM_ENCODING_UCS2BE},
+	{"Encoding_ucs2le", IDM_ENCODING_UCS2LE},
+	{"Encoding_utf8", IDM_ENCODING_UTF8},
+	{"EnterSelection", IDM_ENTERSELECTION},
+	{"Eol_convert", IDM_EOL_CONVERT},
+	{"Eol_cr", IDM_EOL_CR},
+	{"Eol_crlf", IDM_EOL_CRLF},
+	{"Eol_lf", IDM_EOL_LF},
+	{"Expand", IDM_EXPAND},
+	{"ExpandEnsurechildrenvisible", IDM_EXPAND_ENSURECHILDRENVISIBLE},
+	{"Filer", IDM_FILER},
+	{"Find", IDM_FIND},
+	{"FindInFilesDialog", IDM_FINDINFILES},
+	{"FindInFilesStart", IDM_FINDINFILESSTART},
+	{"FindNext", IDM_FINDNEXT},
+	{"FindNextBack", IDM_FINDNEXTBACK},
+	{"FindNextBackSel", IDM_FINDNEXTBACKSEL},
+	{"FindNextSel", IDM_FINDNEXTSEL},
+	{"FinishedExecute", IDM_FINISHEDEXECUTE},
+	{"FoldMargin", IDM_FOLDMARGIN},
+	{"Fullscreen", IDM_FULLSCREEN},
+	{"Go", IDM_GO},
+	{"Goto", IDM_GOTO},
+	{"Help", IDM_HELP},
+	{"HelpScite", IDM_HELP_SCITE},
+	{"Import", IDM_IMPORT},
+	{"IncSearch", IDM_INCSEARCH},
+	{"InsAbbrev", IDM_INS_ABBREV},
+	{"Join", IDM_JOIN},
+	{"Language", IDM_LANGUAGE},
+	{"LineNumberMargin", IDM_LINENUMBERMARGIN},
+	{"LoadSession", IDM_LOADSESSION},
+	{"LwrCase", IDM_LWRCASE},
+	{"MacroList", IDM_MACROLIST},
+	{"MacroPlay", IDM_MACROPLAY},
+	{"MacroRecord", IDM_MACRORECORD},
+	{"MacroSep", IDM_MACRO_SEP},
+	{"MacroStoprecord", IDM_MACROSTOPRECORD},
+	{"MatchBrace", IDM_MATCHBRACE},
+	{"MatchCase", IDM_MATCHCASE},
+	{"MonoFont", IDM_MONOFONT},
+	{"MoveTableft", IDM_MOVETABLEFT},
+	{"MoveTabright", IDM_MOVETABRIGHT},
+	{"MruFile", IDM_MRUFILE},
+	{"MruSep", IDM_MRU_SEP},
+	{"New", IDM_NEW},
+	{"NextFile", IDM_NEXTFILE},
+	{"NextFilestack", IDM_NEXTFILESTACK},
+	{"NextMatchppc", IDM_NEXTMATCHPPC},
+	{"NextMsg", IDM_NEXTMSG},
+	{"OnTop", IDM_ONTOP},
+	{"Open", IDM_OPEN},
+	{"OpenAbbrevproperties", IDM_OPENABBREVPROPERTIES},
+	{"OpenDirectoryproperties", IDM_OPENDIRECTORYPROPERTIES},
+	{"OpenFileshere", IDM_OPENFILESHERE},
+	{"OpenGlobalproperties", IDM_OPENGLOBALPROPERTIES},
+	{"OpenLocalproperties", IDM_OPENLOCALPROPERTIES},
+	{"OpenLuaexternalfile", IDM_OPENLUAEXTERNALFILE},
+	{"OpenSelected", IDM_OPENSELECTED},
+	{"OpenUserproperties", IDM_OPENUSERPROPERTIES},
+	{"Paste", IDM_PASTE},
+	{"PasteAnddown", IDM_PASTEANDDOWN},
+	{"PrevFile", IDM_PREVFILE},
+	{"PrevFlestack", IDM_PREVFILESTACK},
+	{"PrevMatchppc", IDM_PREVMATCHPPC},
+	{"PrevMsg", IDM_PREVMSG},
+	{"Print", IDM_PRINT},
+	{"PrintSetup", IDM_PRINTSETUP},
+	{"Quit", IDM_QUIT},
+	{"Readonly", IDM_READONLY},
+	{"Redo", IDM_REDO},
+	{"Regexp", IDM_REGEXP},
+	{"Replace", IDM_REPLACE},
+	{"Revert", IDM_REVERT},
+	{"RunWin", IDM_RUNWIN},
+	{"Save", IDM_SAVE},
+	{"SaveAcopy", IDM_SAVEACOPY},
+	{"SaveAll", IDM_SAVEALL},
+	{"SaveAs", IDM_SAVEAS},
+	{"SaveAshtml", IDM_SAVEASHTML},
+	{"SaveAspdf", IDM_SAVEASPDF},
+	{"SaveAsrtf", IDM_SAVEASRTF},
+	{"SaveAstex", IDM_SAVEASTEX},
+	{"SaveAsxml", IDM_SAVEASXML},
+	{"SaveSession", IDM_SAVESESSION},
+	{"SelMargin", IDM_SELMARGIN},  //apparently caps first.
+	{"SelectAll", IDM_SELECTALL},
+	{"SelectToBrace", IDM_SELECTTOBRACE},
+	{"SelectToNextmatchppc", IDM_SELECTTONEXTMATCHPPC},
+	{"SelectToPrevmatchppc", IDM_SELECTTOPREVMATCHPPC},
+	{"ShowCalltip", IDM_SHOWCALLTIP},
+	{"Split", IDM_SPLIT},
+	{"SplitVertical", IDM_SPLITVERTICAL},
+	{"SrcWin", IDM_SRCWIN},
+	{"StatusWin", IDM_STATUSWIN},
+	{"StopExecute", IDM_STOPEXECUTE},
+	{"StreamComment", IDM_STREAM_COMMENT},
+	{"SwitchPane", IDM_SWITCHPANE},
+	{"TabSize", IDM_TABSIZE},
+	{"TabWin", IDM_TABWIN},
+	{"ToggleFoldAll", IDM_TOGGLE_FOLDALL},
+	{"ToggleFoldRecursive", IDM_TOGGLE_FOLDRECURSIVE},
+	{"ToggleOutput", IDM_TOGGLEOUTPUT},
+	{"ToggleParameters", IDM_TOGGLEPARAMETERS},
+	{"ToolWin", IDM_TOOLWIN}, //apparently caps first.
+	{"Tools", IDM_TOOLS},
+	{"Undo", IDM_UNDO},
+	{"Unslash", IDM_UNSLASH},
+	{"UprCase", IDM_UPRCASE},
+	{"ViewEol", IDM_VIEWEOL},
+	{"ViewGuides", IDM_VIEWGUIDES},
+	{"ViewSpace", IDM_VIEWSPACE},
+	{"ViewStatusbar", IDM_VIEWSTATUSBAR},
+	{"ViewTabbar", IDM_VIEWTABBAR},
+	{"ViewToolbar", IDM_VIEWTOOLBAR},
+	{"WholeWord", IDM_WHOLEWORD},
+	{"Wrap", IDM_WRAP},
+	{"WrapAround", IDM_WRAPAROUND},
+	{"WrapOutput", IDM_WRAPOUTPUT},
 };
+
 const IFaceConstant * const PythonExtension::friendlyconstants = rgFriendlyNamedIDMConstants;
 const size_t PythonExtension::lengthfriendlyconstants = _countof(rgFriendlyNamedIDMConstants);
-
