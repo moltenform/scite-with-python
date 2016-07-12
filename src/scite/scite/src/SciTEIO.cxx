@@ -1262,7 +1262,7 @@ class FileReader {
 	std::string lineToShow;
 	bool caseSensitive;
 	// Deleted so FileReader objects can not be copied
-	FileReader(const FileReader &) = delete;
+	FileReader(const FileReader &);
 public:
 
 	FileReader(FilePath fPath, bool caseSensitive_) {

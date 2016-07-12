@@ -13,6 +13,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <time.h>
+#include <assert.h>
 
 #include <string>
 #include <vector>
@@ -104,8 +105,10 @@ void SciTEBase::SaveToPDF(FilePath saveName) {
 	private:
 		FILE *fp;
 		long *offsetList, tableSize;
-		// Deleted so PDFObjectTracker objects can not be copied
-		PDFObjectTracker(const PDFObjectTracker &) = delete;
+		PDFObjectTracker(const PDFObjectTracker &) {
+			// PDFObjectTracker objects should not be copied
+			assert(false);
+		}
 	public:
 		int index;
 		explicit PDFObjectTracker(FILE *fp_) {
@@ -183,8 +186,10 @@ void SciTEBase::SaveToPDF(FilePath saveName) {
 		int styleCurrent, stylePrev;
 		double leading;
 		char *buffer;
-		// Deleted so PDFRender objects can not be copied
-		PDFRender(const PDFRender &) = delete;
+		PDFRender(const PDFRender &) {
+			// PDFRender objects should not be copied
+			assert(false);
+		}
 	public:
 		PDFObjectTracker *oT;
 		PDFStyle *style;

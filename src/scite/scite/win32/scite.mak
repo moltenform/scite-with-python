@@ -201,8 +201,8 @@ CXXFLAGS=$(CXXFLAGS) -DNO_LUA
 CXXFLAGS=$(CXXFLAGS) $(INCLUDEDIRS)
 CCFLAGS=$(CCFLAGS) $(INCLUDEDIRS)
 
-
-ALL: $(PROG) $(PROGSTATIC) $(DLLS) $(PROPS)
+# don't need to build PROGSTATIC aka Sc1.exe
+ALL: $(PROG) $(DLLS) $(PROPS)
 
 clean:
 	del /q $(DIR_BIN)\*.exe *.o *.obj $(DIR_BIN)\*.dll *.res *.map $(DIR_BIN)\*.exp $(DIR_BIN)\*.lib $(DIR_BIN)\*.pdb
