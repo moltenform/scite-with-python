@@ -25,11 +25,11 @@ public:
 	void Attach(PyObject* pyo) { m_pyo = pyo; }
 	~CPyObjStrong() { if (m_pyo) Py_DECREF(m_pyo); }
 	operator PyObject*() { return m_pyo; }
-	
+
 };
 
 // unnecessary, but makes code more consistent, clear that we don't own the reference
-class CPyObjWeak 
+class CPyObjWeak
 {
 private:
 	PyObject* m_pyo;
@@ -43,7 +43,7 @@ int FindFriendlyNamedIDMConstant(const char* name);
 inline bool getPaneFromInt(int nPane, ExtensionAPI::Pane* outPane);
 bool pullPythonArgument(IFaceType type, CPyObjWeak pyObjNext, intptr_t* param);
 bool pushPythonArgument(IFaceType type, intptr_t param, PyObject** pyValueOut /* caller must incref this! */);
-void trace(const char* szText1, const char* szText2=NULL);
+void trace(const char* szText1, const char* szText2 = NULL);
 void trace(const char* szText1, const char* szText2, int n);
 
 class PythonExtension : public Extension
