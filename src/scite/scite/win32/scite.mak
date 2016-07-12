@@ -35,6 +35,7 @@ NAME=-Fo
 LDFLAGS=-OPT:REF -LTCG -DEBUG $(XP_LINK)
 LDDEBUG=
 LIBS=KERNEL32.lib USER32.lib GDI32.lib MSIMG32.lib COMDLG32.lib COMCTL32.lib ADVAPI32.lib IMM32.lib SHELL32.LIB OLE32.LIB OLEAUT32.LIB UXTHEME.LIB
+LIBS=$(LIBS) ..\python\libs\python27.lib
 NOLOGO=-nologo
 
 !IFDEF QUIET
@@ -72,6 +73,7 @@ SHAREDOBJS=\
 	MatchMarker.obj \
 	MultiplexExtension.obj \
 	PropSetFile.obj \
+	PythonExtensionStub.obj \
 	SciTEBase.obj \
 	SciTEBuffers.obj \
 	SciTEIO.obj \
@@ -314,6 +316,7 @@ SciTEWin.obj: \
 	../src/StripDefinition.h \
 	Strips.h \
 	../src/MultiplexExtension.h \
+	../src/PythonExtensionStub.h \
 	../src/Extender.h \
 	DirectorExtension.h \
 	../src/LuaExtension.h
@@ -344,6 +347,7 @@ Sc1.obj: \
 	../src/StripDefinition.h \
 	Strips.h \
 	../src/MultiplexExtension.h \
+	../src/PythonExtensionStub.h \
 	../src/Extender.h \
 	DirectorExtension.h \
 	../src/LuaExtension.h
@@ -631,6 +635,13 @@ PropSetFile.obj: \
 	../src/StringHelpers.h \
 	../src/FilePath.h \
 	../src/PropSetFile.h
+PythonExtensionStub.obj: \
+	../src/PythonExtensionStub.cxx \
+	../../scintilla/include/Scintilla.h \
+	../../scintilla/include/Sci_Position.h \
+	../src/GUI.h \
+	../src/PythonExtensionStub.h \
+	../src/Extender.h
 SciTEBase.obj: \
 	../src/SciTEBase.cxx \
 	../../scintilla/include/Scintilla.h \
