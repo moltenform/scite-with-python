@@ -49,8 +49,8 @@ void trace(const char* szText1, const char* szText2, int n);
 class PythonExtension : public Extension
 {
 public:
-	static const IFaceConstant* const friendlyconstants;
-	static const size_t lengthfriendlyconstants;
+	static const IFaceConstant* const constantsTable;
+	static const size_t constantsTableLen;
 	static PythonExtension &Instance();
 	virtual ~PythonExtension();
 

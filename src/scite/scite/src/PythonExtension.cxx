@@ -73,7 +73,8 @@ bool PythonExtension::Initialise(ExtensionAPI* host)
 	_host = host;
 
 	char* delayLoadProp = _host->Property("ext.python.delayload");
-	bool delayLoad = delayLoadProp && delayLoadProp[0] != '\0' && delayLoadProp[0] != '0';
+	bool delayLoad = delayLoadProp && delayLoadProp[0] != '\0' &&
+		delayLoadProp[0] != '0';
 
 	if (!delayLoad)
 	{
@@ -82,13 +83,13 @@ bool PythonExtension::Initialise(ExtensionAPI* host)
 
 #if _DEBUG
 		// binary search requires items to be sorted, so verify sort order
-		for (unsigned int i = 0; i < PythonExtension::lengthfriendlyconstants - 1; i++)
+		for (unsigned int i = 0; i < PythonExtension::constantsTableLen - 1; i++)
 		{
-			const char* first = PythonExtension::friendlyconstants[i].name;
-			const char* second = PythonExtension::friendlyconstants[i + 1].name;
+			const char* first = PythonExtension::constantsTable[i].name;
+			const char* second = PythonExtension::constantsTable[i + 1].name;
 			if (strcmp(first, second) != -1)
 			{
-				trace("\nWarning-unsorted-");
+				trace("Warning, unsorted.");
 				trace(first, second);
 			}
 		}
@@ -97,24 +98,23 @@ bool PythonExtension::Initialise(ExtensionAPI* host)
 	return true;
 }
 
-bool PythonExtension::OnExecute(const char *s)
+bool PythonExtension::OnExecute(const char* s)
 {
 	InitializePython();
-	int nResult = PyRun_SimpleString(s);
-	if (nResult == 0)
-	{
-	}
-	else
+
+	int result = PyRun_SimpleString(s);
+	if (nResult != 0)
 	{
 		PyErr_Print();
-		//used to be false, looked weird
 	}
+	
+	// need to return true even on error
 	return true;
 }
 
 bool PythonExtension::Finalise()
 {
-	// by this point _host is not valid
+	// _host is no longer valid
 	_host = NULL;
 	return false;
 }
@@ -125,7 +125,7 @@ bool PythonExtension::Clear()
 	return false;
 }
 
-bool PythonExtension::Load(const char *fileName)
+bool PythonExtension::Load(const char* fileName)
 {
 	FILE* f = fopen(fileName, "r");
 	if (!f) { _host->Trace(">Python: could not open file.\n"); return false; }
@@ -152,19 +152,19 @@ bool PythonExtension::RemoveBuffer(int index)
 	return false;
 }
 
-void PythonExtension::WriteText(const char *szText)
+void PythonExtension::WriteText(const char* szText)
 {
 	trace(szText, "\n");
 }
 
-bool PythonExtension::WriteError(const char *szError)
+bool PythonExtension::WriteError(const char* szError)
 {
 	trace(">Python Error:", szError);
 	trace("\n");
 	return true;
 }
 
-bool PythonExtension::WriteError(const char *szError, const char *szError2)
+bool PythonExtension::WriteError(const char* szError, const char* szError2)
 {
 	trace(">Python Error:", szError);
 	trace(" ", szError2);
@@ -172,7 +172,7 @@ bool PythonExtension::WriteError(const char *szError, const char *szError2)
 	return true;
 }
 
-void PythonExtension::WriteLog(const char *szText)
+void PythonExtension::WriteLog(const char* szText)
 {
 #if ENABLEDEBUGTRACE
 	trace(szText, "\n");
@@ -282,7 +282,7 @@ bool PythonExtension::OnDwellStart(int pos, const char *word)
 	}
 }
 
-bool PythonExtension::OnUserListSelection(int type, const char *selection)
+bool PythonExtension::OnUserListSelection(int type, const char* selection)
 {
 	if (FInitialized())
 	{
@@ -649,7 +649,7 @@ PyObject* pyfun_app_SciteCommand(PyObject* self, PyObject* pArgs)
 
 	int nFnIndex = FindFriendlyNamedIDMConstant(szProp);
 	if (nFnIndex == -1) { PyErr_SetString(PyExc_RuntimeError, "Could not find command."); return NULL; }
-	IFaceConstant faceConstant = PythonExtension::friendlyconstants[nFnIndex];
+	IFaceConstant faceConstant = PythonExtension::constantsTable[nFnIndex];
 	Host()->DoMenuCommand(faceConstant.value);
 	Py_INCREF(Py_None);
 	return Py_None;
@@ -805,11 +805,11 @@ int FindFriendlyNamedIDMConstant(const char *name)
 {
 	// pattern from IFaceTable.cxx
 	int lo = 0;
-	int hi = PythonExtension::lengthfriendlyconstants - 1;
+	int hi = PythonExtension::constantsTableLen - 1;
 	do
 	{
 		int idx = (lo + hi) / 2;
-		int cmp = strcmp(name, PythonExtension::friendlyconstants[idx].name);
+		int cmp = strcmp(name, PythonExtension::constantsTable[idx].name);
 		if (cmp > 0)
 		{
 			lo = idx + 1;
@@ -826,7 +826,7 @@ int FindFriendlyNamedIDMConstant(const char *name)
 	return -1;
 }
 
-void trace(const char *szText1, const char *szText2 /*=NULL*/)
+void trace(const char* szText1, const char* szText2 /*=NULL*/)
 {
 	if (Host() && szText1)
 	{
@@ -839,7 +839,7 @@ void trace(const char *szText1, const char *szText2 /*=NULL*/)
 	}
 }
 
-void trace(const char *szText1, const char *szText2, int n)
+void trace(const char* szText1, const char* szText2, int n)
 {
 	trace(szText1, szText2);
 	char buf[256] = { 0 };
@@ -1000,5 +1000,5 @@ static IFaceConstant rgFriendlyNamedIDMConstants[] = {
 	{"WrapOutput", IDM_WRAPOUTPUT},
 };
 
-const IFaceConstant * const PythonExtension::friendlyconstants = rgFriendlyNamedIDMConstants;
-const size_t PythonExtension::lengthfriendlyconstants = _countof(rgFriendlyNamedIDMConstants);
+const IFaceConstant * const PythonExtension::constantsTable = rgFriendlyNamedIDMConstants;
+const size_t PythonExtension::constantsTableLen = _countof(rgFriendlyNamedIDMConstants);
