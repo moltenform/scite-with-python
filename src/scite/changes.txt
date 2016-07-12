@@ -1,0 +1,5 @@
+
+Moved properties and doc to a subdirectory,
+	updated cxx source to look for properties/SciTEGlobal.properties instead of SciTEGlobal.properties
+
+
