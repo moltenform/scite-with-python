@@ -23,4 +23,7 @@ A specific compiler should be used, because of python's conventions for the msvc
 	run vcvarsall.bat
 	cd to src/scite/scite/win32
 	run nmake -f scite.mak
-	
+
+- unzip libs
+	Unzip src/scite/scite/python/libs.zip into src/scite/scite/python/libs
+	Unzip src/scite/scite/bin/pythonbinaries.zip into src/scite/scite/bin
