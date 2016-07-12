@@ -128,10 +128,25 @@ bool PythonExtension::Clear()
 bool PythonExtension::Load(const char* fileName)
 {
 	FILE* f = fopen(fileName, "r");
-	if (!f) { _host->Trace(">Python: could not open file.\n"); return false; }
-	int nResult = PyRun_SimpleFileEx(f, fileName, 1); //Python will close file handle.
-	if (nResult == 0) { return true; }
-	else { PyErr_Print(); return false; }
+	if (f)
+	{
+		// Python will close the file handle
+		int result = PyRun_SimpleFileEx(f, fileName, 1);
+		if (result == 0)
+		{ 
+			return true;
+		}
+		else 
+		{
+			PyErr_Print();
+			return false; 
+		}
+	}
+	else
+	{
+		_host->Trace(">Python: could not open file.\n");
+		return false;
+	}
 }
 
 bool PythonExtension::InitBuffer(int index)
@@ -225,8 +240,8 @@ bool PythonExtension::OnChar(char ch)
 {
 	if (FInitialized())
 	{
-		CPyObjStrong pArgs = Py_BuildValue("(i)", (int)ch);
-		return RunCallbackArgs("OnChar", pArgs);
+		CPyObjStrong args = Py_BuildValue("(i)", (int)ch);
+		return RunCallbackArgs("OnChar", args);
 	}
 	else
 	{
@@ -241,8 +256,9 @@ bool PythonExtension::OnKey(int keycode, int modifiers)
 		int fShift = (SCMOD_SHIFT & modifiers) != 0 ? 1 : 0;
 		int fCtrl = (SCMOD_CTRL & modifiers) != 0 ? 1 : 0;
 		int fAlt = (SCMOD_ALT & modifiers) != 0 ? 1 : 0;
-		CPyObjStrong pArgs = Py_BuildValue("(i,i,i,i)", (int)keycode, fShift, fCtrl, fAlt);
-		return RunCallbackArgs("OnKey", pArgs);
+		CPyObjStrong args = Py_BuildValue("(i,i,i,i)",
+			(int)keycode, fShift, fCtrl, fAlt);
+		return RunCallbackArgs("OnKey", args);
 	}
 	else
 	{
@@ -272,8 +288,8 @@ bool PythonExtension::OnDwellStart(int pos, const char *word)
 		}
 		else
 		{
-			CPyObjStrong pArgs = Py_BuildValue("(i,s)", pos, word);
-			return RunCallbackArgs("OnDwellStart", pArgs);
+			CPyObjStrong args = Py_BuildValue("(i,s)", pos, word);
+			return RunCallbackArgs("OnDwellStart", args);
 		}
 	}
 	else
@@ -286,8 +302,8 @@ bool PythonExtension::OnUserListSelection(int type, const char* selection)
 {
 	if (FInitialized())
 	{
-		CPyObjStrong pArgs = Py_BuildValue("(i,s)", type, selection);
-		return RunCallbackArgs("OnUserListSelection", pArgs);
+		CPyObjStrong args = Py_BuildValue("(i,s)", type, selection);
+		return RunCallbackArgs("OnUserListSelection", args);
 	}
 	else
 	{
@@ -303,8 +319,8 @@ bool PythonExtension::RunCallback(const char* szNameOfFunction, int nArgs, const
 	}
 	else if (nArgs == 1)
 	{
-		CPyObjStrong pArgs = Py_BuildValue("(s)", szArg1);
-		return RunCallbackArgs(szNameOfFunction, pArgs);
+		CPyObjStrong args = Py_BuildValue("(s)", szArg1);
+		return RunCallbackArgs(szNameOfFunction, args);
 	}
 	else
 	{
@@ -341,19 +357,19 @@ bool PythonExtension::RunCallbackArgs(const char* szNameOfFunction, PyObject* pA
 		return false; // bubble up event
 }
 
-PyObject* pyfun_LogStdout(PyObject* self, PyObject* pArgs)
+PyObject* pyfun_LogStdout(PyObject* self, PyObject* args)
 {
 	char* szLogStr = NULL; /* we don't own this. */
-	if (!PyArg_ParseTuple(pArgs, "s", &szLogStr)) return NULL;
+	if (!PyArg_ParseTuple(args, "s", &szLogStr)) return NULL;
 	Host()->Trace(szLogStr);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
 
-PyObject* pyfun_MessageBox(PyObject* self, PyObject* pArgs)
+PyObject* pyfun_MessageBox(PyObject* self, PyObject* args)
 {
 	char* szLogStr = NULL; /* we don't own this. */
-	if (!PyArg_ParseTuple(pArgs, "s", &szLogStr)) return NULL;
+	if (!PyArg_ParseTuple(args, "s", &szLogStr)) return NULL;
 #ifdef _WIN32
 	MessageBoxA(NULL, szLogStr, "SciTEPython", 0);
 #endif
@@ -361,10 +377,10 @@ PyObject* pyfun_MessageBox(PyObject* self, PyObject* pArgs)
 	return Py_None;
 }
 
-PyObject* pyfun_SciteOpenFile(PyObject* self, PyObject* pArgs)
+PyObject* pyfun_SciteOpenFile(PyObject* self, PyObject* args)
 {
 	char* szFilename = NULL; /* we don't own this. */
-	if (!PyArg_ParseTuple(pArgs, "s", &szFilename)) return NULL;
+	if (!PyArg_ParseTuple(args, "s", &szFilename)) return NULL;
 	if (szFilename) {
 		SString cmd = "open:";
 		cmd += szFilename;
@@ -375,10 +391,10 @@ PyObject* pyfun_SciteOpenFile(PyObject* self, PyObject* pArgs)
 	return Py_None;
 }
 
-PyObject* pyfun_GetProperty(PyObject* self, PyObject* pArgs)
+PyObject* pyfun_GetProperty(PyObject* self, PyObject* args)
 {
 	char* szPropName = NULL; /* we don't own this. */
-	if (!PyArg_ParseTuple(pArgs, "s", &szPropName)) return NULL;
+	if (!PyArg_ParseTuple(args, "s", &szPropName)) return NULL;
 	char *value = Host()->Property(szPropName);
 	if (value)
 	{
@@ -394,40 +410,40 @@ PyObject* pyfun_GetProperty(PyObject* self, PyObject* pArgs)
 	}
 }
 
-PyObject* pyfun_SetProperty(PyObject* self, PyObject* pArgs)
+PyObject* pyfun_SetProperty(PyObject* self, PyObject* args)
 {
 	char* szPropName = NULL; char* szPropValue = NULL; /* we don't own this. */
-	if (!PyArg_ParseTuple(pArgs, "ss", &szPropName, &szPropValue)) return NULL;
+	if (!PyArg_ParseTuple(args, "ss", &szPropName, &szPropValue)) return NULL;
 	Host()->SetProperty(szPropName, szPropValue); // it looks like SetProperty allocates, don't need key and val on the heap.
 	Py_INCREF(Py_None);
 	return Py_None;
 }
 
-PyObject* pyfun_UnsetProperty(PyObject* self, PyObject* pArgs)
+PyObject* pyfun_UnsetProperty(PyObject* self, PyObject* args)
 {
 	char* szPropName = NULL; /* we don't own this. */
-	if (!PyArg_ParseTuple(pArgs, "s", &szPropName)) return NULL;
+	if (!PyArg_ParseTuple(args, "s", &szPropName)) return NULL;
 	Host()->UnsetProperty(szPropName);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
 
-PyObject* pyfun_pane_Append(PyObject* self, PyObject* pArgs)
+PyObject* pyfun_pane_Append(PyObject* self, PyObject* args)
 {
 	char* szText = NULL; /* we don't own this. */
 	int nPane = -1; ExtensionAPI::Pane pane;
-	if (!PyArg_ParseTuple(pArgs, "is", &nPane, &szText)) return NULL;
+	if (!PyArg_ParseTuple(args, "is", &nPane, &szText)) return NULL;
 	if (!getPaneFromInt(nPane, &pane)) return NULL;
 	Host()->Insert(pane, Host()->Send(pane, SCI_GETLENGTH, 0, 0), szText);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
 
-PyObject* pyfun_pane_Insert(PyObject* self, PyObject* pArgs)
+PyObject* pyfun_pane_Insert(PyObject* self, PyObject* args)
 {
 	char* szText = NULL; /* we don't own this. */
 	int nPane = -1, nPos = -1; ExtensionAPI::Pane pane;
-	if (!PyArg_ParseTuple(pArgs, "iis", &nPane, &nPos, &szText)) return NULL;
+	if (!PyArg_ParseTuple(args, "iis", &nPane, &nPos, &szText)) return NULL;
 	if (nPos < 0) return NULL;
 	if (!getPaneFromInt(nPane, &pane)) return NULL;
 	Host()->Insert(pane, nPos, szText);
@@ -435,10 +451,10 @@ PyObject* pyfun_pane_Insert(PyObject* self, PyObject* pArgs)
 	return Py_None;
 }
 
-PyObject* pyfun_pane_Remove(PyObject* self, PyObject* pArgs)
+PyObject* pyfun_pane_Remove(PyObject* self, PyObject* args)
 {
 	int nPane = -1, nPosStart = -1, nPosEnd = -1; ExtensionAPI::Pane pane;
-	if (!PyArg_ParseTuple(pArgs, "iii", &nPane, &nPosStart, &nPosEnd)) return NULL;
+	if (!PyArg_ParseTuple(args, "iii", &nPane, &nPosStart, &nPosEnd)) return NULL;
 	if (nPosStart < 0 || nPosEnd < 0) return NULL;
 	if (!getPaneFromInt(nPane, &pane)) return NULL;
 	Host()->Remove(pane, nPosStart, nPosEnd);
@@ -446,10 +462,10 @@ PyObject* pyfun_pane_Remove(PyObject* self, PyObject* pArgs)
 	return Py_None;
 }
 
-PyObject* pyfun_pane_TextRange(PyObject* self, PyObject* pArgs)
+PyObject* pyfun_pane_TextRange(PyObject* self, PyObject* args)
 {
 	int nPane = -1, nPosStart = -1, nPosEnd = -1; ExtensionAPI::Pane pane;
-	if (!PyArg_ParseTuple(pArgs, "iii", &nPane, &nPosStart, &nPosEnd)) return NULL;
+	if (!PyArg_ParseTuple(args, "iii", &nPane, &nPosStart, &nPosEnd)) return NULL;
 	if (nPosStart < 0 || nPosEnd < 0) return NULL;
 	if (!getPaneFromInt(nPane, &pane)) return NULL;
 	char *value = Host()->Range(pane, nPosStart, nPosEnd);
@@ -466,11 +482,11 @@ PyObject* pyfun_pane_TextRange(PyObject* self, PyObject* pArgs)
 	}
 }
 
-PyObject* pyfun_pane_FindText(PyObject* self, PyObject* pArgs) //returns a tuple
+PyObject* pyfun_pane_FindText(PyObject* self, PyObject* args) //returns a tuple
 {
 	char* szText = NULL; /* we don't own this. */
 	int nPane = -1, nFlags = 0, nPosStart = 0, nPosEnd = -1; ExtensionAPI::Pane pane;
-	if (!PyArg_ParseTuple(pArgs, "is|iii", &nPane, &szText, &nFlags, &nPosStart, &nPosEnd)) return NULL;
+	if (!PyArg_ParseTuple(args, "is|iii", &nPane, &szText, &nFlags, &nPosStart, &nPosEnd)) return NULL;
 	if (!getPaneFromInt(nPane, &pane)) return NULL;
 	if (nPosEnd == -1) nPosEnd = Host()->Send(pane, SCI_GETLENGTH, 0, 0);
 	if (nPosStart < 0 || nPosEnd < 0) return NULL;
@@ -494,20 +510,20 @@ PyObject* pyfun_pane_FindText(PyObject* self, PyObject* pArgs) //returns a tuple
 	}
 }
 
-PyObject* pyfun_pane_SendScintillaFn(PyObject* self, PyObject* pArgs)
+PyObject* pyfun_pane_SendScintillaFn(PyObject* self, PyObject* args)
 {
 	char* szCmd = NULL; /* we don't own this. */
 	int nPane = -1; ExtensionAPI::Pane pane;
 	PyObject* pSciArgs; //borrowed reference, so ok.
-	if (!PyArg_ParseTuple(pArgs, "isO", &nPane, &szCmd, &pSciArgs)) return NULL;
+	if (!PyArg_ParseTuple(args, "isO", &nPane, &szCmd, &pSciArgs)) return NULL;
 	if (!getPaneFromInt(nPane, &pane)) return NULL;
 	if (!PyTuple_Check(pSciArgs)) { PyErr_SetString(PyExc_RuntimeError, "Third arg must be a tuple."); return NULL; }
 
 	int nFnIndex = IFaceTable::FindFunction(szCmd);
 	if (nFnIndex == -1) { PyErr_SetString(PyExc_RuntimeError, "Could not find fn."); return NULL; }
 
-	intptr_t wParam = 0; //args to be passed to Scite
-	intptr_t lParam = 0; //args to be passed to Scite
+	intptr_t wParam = 0; // args to be passed to Scite
+	intptr_t lParam = 0; // args to be passed to Scite
 	IFaceFunction func = IFaceTable::functions[nFnIndex];
 	bool isStringResult = func.returnType == iface_int && func.paramType[1] == iface_stringresult;
 	size_t nArgCount = PyTuple_GET_SIZE((PyObject*)pSciArgs);
@@ -561,19 +577,19 @@ PyObject* pyfun_pane_SendScintillaFn(PyObject* self, PyObject* pArgs)
 	return pyObjReturn;
 }
 
-PyObject* pyfun_pane_SendScintillaGet(PyObject* self, PyObject* pArgs)
+PyObject* pyfun_pane_SendScintillaGet(PyObject* self, PyObject* args)
 {
 	char* szProp = NULL; /* we don't own this. */
 	int nPane = -1; ExtensionAPI::Pane pane; PyObject* pyObjParam = NULL;
-	if (!PyArg_ParseTuple(pArgs, "is|O", &nPane, &szProp, &pyObjParam)) return NULL;
+	if (!PyArg_ParseTuple(args, "is|O", &nPane, &szProp, &pyObjParam)) return NULL;
 	if (!getPaneFromInt(nPane, &pane)) return NULL;
 
 	int nFnIndex = IFaceTable::FindProperty(szProp);
 	if (nFnIndex == -1) { PyErr_SetString(PyExc_RuntimeError, "Could not find prop."); return NULL; }
 	IFaceProperty prop = IFaceTable::properties[nFnIndex];
 	if (prop.getter == 0) { PyErr_SetString(PyExc_RuntimeError, "prop can't be get."); return NULL; }
-	intptr_t wParam = 0; //args to be passed to Scite
-	intptr_t lParam = 0; //args to be passed to Scite
+	intptr_t wParam = 0; // args to be passed to Scite
+	intptr_t lParam = 0; // args to be passed to Scite
 
 	if (strcmp(szProp, "Property") == 0 || strcmp(szProp, "PropertyInt") == 0) { PyErr_SetString(PyExc_RuntimeError, "Not supported."); return NULL; }
 
@@ -593,19 +609,19 @@ PyObject* pyfun_pane_SendScintillaGet(PyObject* self, PyObject* pArgs)
 	return pyObjReturn;
 }
 
-PyObject* pyfun_pane_SendScintillaSet(PyObject* self, PyObject* pArgs)
+PyObject* pyfun_pane_SendScintillaSet(PyObject* self, PyObject* args)
 {
 	char* szProp = NULL; /* we don't own this. */
 	int nPane = -1; ExtensionAPI::Pane pane; PyObject* pyObjArg1 = NULL; PyObject* pyObjArg2 = NULL;
-	if (!PyArg_ParseTuple(pArgs, "isO|O", &nPane, &szProp, &pyObjArg1, &pyObjArg2)) return NULL;
+	if (!PyArg_ParseTuple(args, "isO|O", &nPane, &szProp, &pyObjArg1, &pyObjArg2)) return NULL;
 	if (!getPaneFromInt(nPane, &pane)) return NULL;
 
 	int nFnIndex = IFaceTable::FindProperty(szProp);
 	if (nFnIndex == -1) { PyErr_SetString(PyExc_RuntimeError, "Could not find prop."); return NULL; }
 	IFaceProperty prop = IFaceTable::properties[nFnIndex];
 	if (prop.setter == 0) { PyErr_SetString(PyExc_RuntimeError, "prop can't be set."); return NULL; }
-	intptr_t wParam = 0; //args to be passed to Scite
-	intptr_t lParam = 0; //args to be passed to Scite
+	intptr_t wParam = 0; // args to be passed to Scite
+	intptr_t lParam = 0; // args to be passed to Scite
 
 	if (prop.paramType == iface_void)
 	{
@@ -629,10 +645,10 @@ PyObject* pyfun_pane_SendScintillaSet(PyObject* self, PyObject* pArgs)
 	return Py_None;
 }
 
-PyObject* pyfun_app_GetConstant(PyObject* self, PyObject* pArgs)
+PyObject* pyfun_app_GetConstant(PyObject* self, PyObject* args)
 {
 	char* szProp = NULL; /* we don't own this. */
-	if (!PyArg_ParseTuple(pArgs, "s", &szProp)) return NULL;
+	if (!PyArg_ParseTuple(args, "s", &szProp)) return NULL;
 
 	int nFnIndex = IFaceTable::FindConstant(szProp);
 	if (nFnIndex == -1) { PyErr_SetString(PyExc_RuntimeError, "Could not find constant."); return NULL; }
@@ -642,10 +658,10 @@ PyObject* pyfun_app_GetConstant(PyObject* self, PyObject* pArgs)
 	return pyValueOut;
 }
 
-PyObject* pyfun_app_SciteCommand(PyObject* self, PyObject* pArgs)
+PyObject* pyfun_app_SciteCommand(PyObject* self, PyObject* args)
 {
 	char* szProp = NULL; /* we don't own this. */
-	if (!PyArg_ParseTuple(pArgs, "s", &szProp)) return NULL;
+	if (!PyArg_ParseTuple(args, "s", &szProp)) return NULL;
 
 	int nFnIndex = FindFriendlyNamedIDMConstant(szProp);
 	if (nFnIndex == -1) { PyErr_SetString(PyExc_RuntimeError, "Could not find command."); return NULL; }
@@ -655,10 +671,10 @@ PyObject* pyfun_app_SciteCommand(PyObject* self, PyObject* pArgs)
 	return Py_None;
 }
 
-PyObject* pyfun_app_UpdateStatusBar(PyObject* self, PyObject* pArgs)
+PyObject* pyfun_app_UpdateStatusBar(PyObject* self, PyObject* args)
 {
 	PyObject * pyObjBoolUpdate = NULL;
-	if (!PyArg_ParseTuple(pArgs, "|O", &pyObjBoolUpdate)) return NULL;
+	if (!PyArg_ParseTuple(args, "|O", &pyObjBoolUpdate)) return NULL;
 	bool bUpdateSlowData = false;
 	if (pyObjBoolUpdate == Py_True) bUpdateSlowData = true;
 	Host()->UpdateStatusBar(bUpdateSlowData);
