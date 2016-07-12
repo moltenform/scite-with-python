@@ -86,16 +86,16 @@ private:
 	ExtensionAPI* _host;
 	bool _pythonInitialized;
 
-	void writeLog(const char* wzError);
-	bool writeError(const char* wzError);
-	bool writeError(const char* wzError, const char* wzError2);
-	bool _runCallback(const char* szNameOfFunction, int nArgs, const char* szArg1);
-	bool _runCallbackArgs(const char* szNameOfFunction, PyObject* pArgsBorrowed);
+	void WriteLog(const char* wzError);
+	bool WriteError(const char* wzError);
+	bool WriteError(const char* wzError, const char* wzError2);
+	bool RunCallback(const char* szNameOfFunction, int nArgs, const char* szArg1);
+	bool RunCallbackArgs(const char* szNameOfFunction, PyObject* pArgsBorrowed);
 	void InitializePython();
 	void SetupPythonNamespace();
 
 public:
-	void writeText(const char* szText);
+	void WriteText(const char* szText);
 	ExtensionAPI* GetHost();
 	bool FInitialized();
 

@@ -69,7 +69,7 @@ PythonExtension& PythonExtension::Instance()
 
 bool PythonExtension::Initialise(ExtensionAPI* host)
 {
-	writeLog("log:PythonExtension::Initialise");
+	WriteLog("log:PythonExtension::Initialise");
 	_host = host;
 	
 	char* delayLoadProp = _host->Property("ext.python.delayload");
@@ -78,7 +78,7 @@ bool PythonExtension::Initialise(ExtensionAPI* host)
 	if (!delayLoad)
 	{
 		InitializePython();
-		_runCallback("OnStart", 0, NULL);
+		RunCallback("OnStart", 0, NULL);
 
 #if _DEBUG
 		// binary search requires items to be sorted, so verify sort order
@@ -121,7 +121,7 @@ bool PythonExtension::Finalise()
 
 bool PythonExtension::Clear()
 {
-	writeLog("log:PythonExtension::Clear");
+	WriteLog("log:PythonExtension::Clear");
 	return false;
 }
 
@@ -136,73 +136,73 @@ bool PythonExtension::Load(const char *fileName)
 
 bool PythonExtension::InitBuffer(int index)
 {
-	writeLog("log:PythonExtension::InitBuffer");
+	WriteLog("log:PythonExtension::InitBuffer");
 	return false;
 }
 
 bool PythonExtension::ActivateBuffer(int index)
 {
-	writeLog("log:PythonExtension::Activatebuffer");
+	WriteLog("log:PythonExtension::Activatebuffer");
 	return false;
 }
 
 bool PythonExtension::RemoveBuffer(int index)
 {
-	writeLog("log:PythonExtension::removebuffer");
+	WriteLog("log:PythonExtension::removebuffer");
 	return false;
 }
 
-void PythonExtension::writeText(const char *szText) { trace(szText, "\n"); }
+void PythonExtension::WriteText(const char *szText) { trace(szText, "\n"); }
 
-bool PythonExtension::writeError(const char *szError) { trace(">Python Error:", szError); trace("\n"); return true; }
+bool PythonExtension::WriteError(const char *szError) { trace(">Python Error:", szError); trace("\n"); return true; }
 
-bool PythonExtension::writeError(const char *szError, const char *szError2)
+bool PythonExtension::WriteError(const char *szError, const char *szError2)
 {
 	trace(">Python Error:", szError); trace(" ", szError2); trace("\n"); return true;
 }
 
-void PythonExtension::writeLog(const char *szText) { /* if (false) trace(szText, "\n"); */ } 
+void PythonExtension::WriteLog(const char *szText) { /* if (false) trace(szText, "\n"); */ } 
 
 bool PythonExtension::OnOpen(const char *fileName)
 {
 	return FInitialized() ?
-		_runCallback("OnOpen", 1, fileName) : false;
+		RunCallback("OnOpen", 1, fileName) : false;
 }
 
 bool PythonExtension::OnClose(const char *fileName)
 {
 	return FInitialized() ?
-		_runCallback("OnClose", 1, fileName) : false;
+		RunCallback("OnClose", 1, fileName) : false;
 }
 
 bool PythonExtension::OnSwitchFile(const char *fileName)
 {
 	return FInitialized() ?
-		_runCallback("OnSwitchFile", 1, fileName) : false;
+		RunCallback("OnSwitchFile", 1, fileName) : false;
 }
 
 bool PythonExtension::OnBeforeSave(const char *fileName)
 {
 	return FInitialized() ?
-		_runCallback("OnBeforeSave", 1, fileName) : false;
+		RunCallback("OnBeforeSave", 1, fileName) : false;
 }
 
 bool PythonExtension::OnSave(const char *fileName)
 {
 	return FInitialized() ?
-		_runCallback("OnSave", 1, fileName) : false;
+		RunCallback("OnSave", 1, fileName) : false;
 }
 
 bool PythonExtension::OnSavePointReached()
 {
 	return FInitialized() ?
-		_runCallback("OnSavePointReached", 0, NULL) : false;
+		RunCallback("OnSavePointReached", 0, NULL) : false;
 }
 
 bool PythonExtension::OnSavePointLeft()
 {
 	return FInitialized() ?
-		_runCallback("OnSavePointLeft", 0, NULL) : false;
+		RunCallback("OnSavePointLeft", 0, NULL) : false;
 }
 
 bool PythonExtension::OnChar(char ch)
@@ -210,7 +210,7 @@ bool PythonExtension::OnChar(char ch)
 	if (FInitialized())
 	{
 		CPyObjStrong pArgs = Py_BuildValue("(i)", (int)ch);
-		return _runCallbackArgs("OnChar", pArgs);
+		return RunCallbackArgs("OnChar", pArgs);
 	}
 	else
 	{
@@ -226,7 +226,7 @@ bool PythonExtension::OnKey(int keycode, int modifiers)
 		int fCtrl = (SCMOD_CTRL & modifiers) != 0 ? 1 : 0;
 		int fAlt = (SCMOD_ALT & modifiers) != 0 ? 1 : 0;
 		CPyObjStrong pArgs = Py_BuildValue("(i,i,i,i)", (int)keycode, fShift, fCtrl, fAlt);
-		return _runCallbackArgs("OnKey", pArgs);
+		return RunCallbackArgs("OnKey", pArgs);
 	}
 	else
 	{
@@ -237,13 +237,13 @@ bool PythonExtension::OnKey(int keycode, int modifiers)
 bool PythonExtension::OnDoubleClick()
 {
 	return FInitialized() ?
-		_runCallback("OnDoubleClick", 0, NULL) : false;
+		RunCallback("OnDoubleClick", 0, NULL) : false;
 }
 
 bool PythonExtension::OnMarginClick()
 {
 	return FInitialized() ?
-		_runCallback("OnMarginClick", 0, NULL) : false;
+		RunCallback("OnMarginClick", 0, NULL) : false;
 }
 
 bool PythonExtension::OnDwellStart(int pos, const char *word)
@@ -252,12 +252,12 @@ bool PythonExtension::OnDwellStart(int pos, const char *word)
 	{
 		if (pos == 0 && word[0] == 0)
 		{
-			return _runCallback("OnDwellEnd", 0, NULL);
+			return RunCallback("OnDwellEnd", 0, NULL);
 		}
 		else
 		{
 			CPyObjStrong pArgs = Py_BuildValue("(i,s)", pos, word);
-			return _runCallbackArgs("OnDwellStart", pArgs);
+			return RunCallbackArgs("OnDwellStart", pArgs);
 		}
 	}
 	else
@@ -271,7 +271,7 @@ bool PythonExtension::OnUserListSelection(int type, const char *selection)
 	if (FInitialized())
 	{
 		CPyObjStrong pArgs = Py_BuildValue("(i,s)", type, selection);
-		return _runCallbackArgs("OnUserListSelection", pArgs);
+		return RunCallbackArgs("OnUserListSelection", pArgs);
 	}
 	else
 	{
@@ -279,42 +279,42 @@ bool PythonExtension::OnUserListSelection(int type, const char *selection)
 	}
 }
 
-bool PythonExtension::_runCallback(const char* szNameOfFunction, int nArgs, const char* szArg1)
+bool PythonExtension::RunCallback(const char* szNameOfFunction, int nArgs, const char* szArg1)
 {
 	if (nArgs == 0)
 	{
-		return _runCallbackArgs(szNameOfFunction, NULL);
+		return RunCallbackArgs(szNameOfFunction, NULL);
 	}
 	else if (nArgs == 1)
 	{
 		CPyObjStrong pArgs = Py_BuildValue("(s)", szArg1);
-		return _runCallbackArgs(szNameOfFunction, pArgs);
+		return RunCallbackArgs(szNameOfFunction, pArgs);
 	}
 	else
 	{
-		return writeError("Unexpected: calling _runCallback, only 0/1 args supported."); 
+		return WriteError("Unexpected: calling RunCallback, only 0/1 args supported."); 
 	}
 }
 
-bool PythonExtension::_runCallbackArgs(const char* szNameOfFunction, PyObject* pArgsBorrowed)
+bool PythonExtension::RunCallbackArgs(const char* szNameOfFunction, PyObject* pArgsBorrowed)
 {
 	CPyObjStrong pName = PyString_FromString(c_PythonModuleName);
-	if (!pName) { return writeError("Unexpected error: could not form string."); }
+	if (!pName) { return WriteError("Unexpected error: could not form string."); }
 	CPyObjStrong pModule = PyImport_Import(pName);
 	if (!pModule) {
-		writeError("Error importing module.");
+		WriteError("Error importing module.");
 		PyErr_Print();
 		return false;
 	}
 	CPyObjWeak pDict = PyModule_GetDict(pModule);
-	if (!pDict) { return writeError("Unexpected: could not get module dict."); }
+	if (!pDict) { return WriteError("Unexpected: could not get module dict."); }
 	CPyObjWeak pFn = PyDict_GetItemString(pDict, szNameOfFunction);
 	if (!pFn) { /* module does not define that callback. */ return false;	}
-	if (!PyCallable_Check(pFn)) { return writeError("callback not a function", szNameOfFunction); }
+	if (!PyCallable_Check(pFn)) { return WriteError("callback not a function", szNameOfFunction); }
 
 	CPyObjStrong pResult = PyObject_CallObject(pFn, pArgsBorrowed);
 	if (!pResult) {
-		writeError("Error in callback ", szNameOfFunction);
+		WriteError("Error in callback ", szNameOfFunction);
 		PyErr_Print();
 		return false;
 	}
@@ -689,7 +689,7 @@ void PythonExtension::SetupPythonNamespace()
 	);
 	if (ret!=0)
 	{
-		writeError("Unexpected: error capturing stdout from Python. make sure python26.zip is present?");
+		WriteError("Unexpected: error capturing stdout from Python. make sure python26.zip is present?");
 		PyErr_Print(); //of course, if printing isn't set up, will not help, but at least will clear python's error bit
 		return;
 	}
@@ -699,11 +699,11 @@ void PythonExtension::SetupPythonNamespace()
 	// using PyRun_AnyFile(fp, "pythonsetup.py"); ran into those issues
 	// pythonsetup.py modifies the CScite module object, so others importing CScite will see the changes.
 	CPyObjStrong pName = PyString_FromString("pythonsetup");
-	if (!pName) { writeError("Unexpected error: could not form string pythonsetup."); }
+	if (!pName) { WriteError("Unexpected error: could not form string pythonsetup."); }
 	CPyObjStrong pModule = PyImport_Import(pName);
 	if (!pModule) 
 	{
-		writeError("Error importing pythonsetup module.");
+		WriteError("Error importing pythonsetup module.");
 		PyErr_Print();
 	}
 }
