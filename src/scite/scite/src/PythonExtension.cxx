@@ -8,82 +8,17 @@
 #include "PythonExtension.h"
 #include "..\python\include\python.h"
 
-#ifdef _MSC_VER
-// allow deprecated stdio, for PyRun_SimpleFileEx
-#pragma warning(disable: 4996)
-
-// allow unreferenced parameter, for PyObject methods
-#pragma warning(disable: 4100)
-#endif
-
 #ifdef _WIN32
 #include <windows.h>
 #endif
 
 #define ENABLEDEBUGTRACE 1
 
-// Holder for PyObject, to ensure Py_DECREF is called.
-class CPyObjectOwned
-{
-private:
-	PyObject* _obj;
-
-public:
-	CPyObjectOwned()
-	{
-		_obj = NULL;
-	}
-	CPyObjectOwned(PyObject* obj)
-	{
-		_obj = obj;
-	}
-	void Attach(PyObject* obj)
-	{
-		_obj = obj;
-	}
-	~CPyObjectOwned()
-	{
-		if (_obj)
-		{
-// warning "conditional expression is constant" triggered by Python's code, not our code
-#pragma warning(push)
-#pragma warning(disable: 4127)
-			Py_DECREF(_obj);
-#pragma warning(pop)
-		}
-	}
-	operator PyObject*()
-	{
-		return _obj;
-	}
-};
-
-// Holder for PyObject, when Py_DECREF isn't called, e.g. a borrowed reference.
-class CPyObjectPtr
-{
-private:
-	PyObject* _obj;
-
-public:
-	CPyObjectPtr(PyObject* obj)
-	{
-		_obj = obj;
-	}
-	~CPyObjectPtr()
-	{
-		// don't need to decref 
-	}
-	operator PyObject*()
-	{
-		return _obj;
-	}
-};
-
 // on startup, import the python module scite_extend.py
 static const char* c_PythonModuleName = "scite_extend";
 int FindFriendlyNamedIDMConstant(const char* name);
 bool GetPaneFromInt(int nPane, ExtensionAPI::Pane* outPane);
-bool PullPythonArgument(IFaceType type, CPyObjectPtr pyObjNext, intptr_t* param);
+bool PullPythonArgument(IFaceType type, PyObject* pyObjNext, intptr_t* param);
 bool PushPythonArgument(IFaceType type, intptr_t param, PyObject** pyValueOut);
 
 void trace(const char* text1, const char* text2 = NULL);
@@ -210,19 +145,19 @@ bool PythonExtension::Load(const char *filename)
 	}
 }
 
-bool PythonExtension::InitBuffer(int index)
+bool PythonExtension::InitBuffer(int)
 {
 	WriteLog("log:PythonExtension::InitBuffer");
 	return false;
 }
 
-bool PythonExtension::ActivateBuffer(int index)
+bool PythonExtension::ActivateBuffer(int)
 {
 	WriteLog("log:PythonExtension::ActivateBuffer");
 	return false;
 }
 
-bool PythonExtension::RemoveBuffer(int index)
+bool PythonExtension::RemoveBuffer(int)
 {
 	WriteLog("log:PythonExtension::RemoveBuffer");
 	return false;
@@ -250,19 +185,6 @@ bool PythonExtension::OnSave(const char *filename)
 {
 	return FInitialized() ?
 		RunCallback("OnSave", 1, filename) : false;
-}
-
-bool PythonExtension::OnChar(char ch)
-{
-	if (FInitialized())
-	{
-		CPyObjectOwned args = Py_BuildValue("(i)", (int)ch);
-		return RunCallbackArgs("OnChar", args);
-	}
-	else
-	{
-		return false;
-	}
 }
 
 bool PythonExtension::OnExecute(const char* cmd)
@@ -329,40 +251,10 @@ bool PythonExtension::OnMacro(const char *, const char *)
 	return false;
 }
 
-bool PythonExtension::OnUserListSelection(int type, const char *selection)
-{
-	if (FInitialized())
-	{
-		CPyObjectOwned args = Py_BuildValue("(i,s)", type, selection);
-		return RunCallbackArgs("OnUserListSelection", args);
-	}
-	else
-	{
-		return false;
-	}
-}
-
 bool PythonExtension::SendProperty(const char *)
 {
 	WriteLog("log:PythonExtension::SendProperty");
 	return false;
-}
-
-bool PythonExtension::OnKey(int keyval, int modifiers)
-{
-	if (FInitialized())
-	{
-		int fShift = (SCMOD_SHIFT & modifiers) != 0 ? 1 : 0;
-		int fCtrl = (SCMOD_CTRL & modifiers) != 0 ? 1 : 0;
-		int fAlt = (SCMOD_ALT & modifiers) != 0 ? 1 : 0;
-		CPyObjectOwned args = Py_BuildValue("(i,i,i,i)",
-			(int)keyval, fShift, fCtrl, fAlt);
-		return RunCallbackArgs("OnKey", args);
-	}
-	else
-	{
-		return false;
-	}
 }
 
 bool PythonExtension::OnDwellStart(int, const char *)
@@ -375,13 +267,6 @@ bool PythonExtension::OnClose(const char *filename)
 {
 	return FInitialized() ?
 		RunCallback("OnClose", 1, filename) : false;
-}
-
-bool PythonExtension::OnUserStrip(int control, int change)
-{
-	//for (int i = 0; i < extensionCount; ++i)
-	//	extensions[i]->OnUserStrip(control, change);
-	return false;
 }
 
 bool PythonExtension::NeedsOnClose()
@@ -440,7 +325,118 @@ void trace(const char* text1, const char* text2, int n)
 	}
 }
 
-PyObject* pyfun_LogStdout(PyObject* self, PyObject* args)
+// Holder for PyObject, to ensure Py_DECREF is called.
+class CPyObjectOwned
+{
+private:
+	PyObject* _obj;
+
+public:
+	CPyObjectOwned()
+	{
+		_obj = NULL;
+	}
+	CPyObjectOwned(PyObject* obj)
+	{
+		_obj = obj;
+	}
+	void Attach(PyObject* obj)
+	{
+		_obj = obj;
+	}
+	~CPyObjectOwned()
+	{
+		if (_obj)
+		{
+// warning "conditional expression is constant" triggered by Python's code, not our code
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4127)
+#endif
+			Py_DECREF(_obj);
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+		}
+	}
+	operator PyObject*()
+	{
+		return _obj;
+	}
+};
+
+// Holder for PyObject, when Py_DECREF isn't called, e.g. a borrowed reference.
+class CPyObjectPtr
+{
+private:
+	PyObject* _obj;
+
+public:
+	CPyObjectPtr(PyObject* obj)
+	{
+		_obj = obj;
+	}
+	~CPyObjectPtr()
+	{
+		// don't need to decref 
+	}
+	operator PyObject*()
+	{
+		return _obj;
+	}
+};
+
+bool PythonExtension::OnChar(char ch)
+{
+	if (FInitialized())
+	{
+		CPyObjectOwned args = Py_BuildValue("(i)", (int)ch);
+		return RunCallbackArgs("OnChar", args);
+	}
+	else
+	{
+		return false;
+	}
+}
+
+bool PythonExtension::OnUserListSelection(int type, const char *selection)
+{
+	if (FInitialized())
+	{
+		CPyObjectOwned args = Py_BuildValue("(i,s)", type, selection);
+		return RunCallbackArgs("OnUserListSelection", args);
+	}
+	else
+	{
+		return false;
+	}
+}
+
+bool PythonExtension::OnKey(int keyval, int modifiers)
+{
+	if (FInitialized())
+	{
+		int fShift = (SCMOD_SHIFT & modifiers) != 0 ? 1 : 0;
+		int fCtrl = (SCMOD_CTRL & modifiers) != 0 ? 1 : 0;
+		int fAlt = (SCMOD_ALT & modifiers) != 0 ? 1 : 0;
+		CPyObjectOwned args = Py_BuildValue("(i,i,i,i)",
+			(int)keyval, fShift, fCtrl, fAlt);
+		return RunCallbackArgs("OnKey", args);
+	}
+	else
+	{
+		return false;
+	}
+}
+
+bool PythonExtension::OnUserStrip(int, int)
+{
+	//for (int i = 0; i < extensionCount; ++i)
+	//	extensions[i]->OnUserStrip(control, change);
+	return false;
+}
+
+PyObject* pyfun_LogStdout(PyObject*, PyObject* args)
 {
 	char* msg = NULL; // we don't own this.
 	if (PyArg_ParseTuple(args, "s", &msg))
@@ -459,7 +455,7 @@ PyObject* pyfun_LogStdout(PyObject* self, PyObject* args)
 	}
 }
 
-PyObject* pyfun_MessageBox(PyObject* self, PyObject* args)
+PyObject* pyfun_MessageBox(PyObject*, PyObject* args)
 {
 	char* msg = NULL; // we don't own this.
 	if (PyArg_ParseTuple(args, "s", &msg))
@@ -476,7 +472,7 @@ PyObject* pyfun_MessageBox(PyObject* self, PyObject* args)
 	}
 }
 
-PyObject* pyfun_SciteOpenFile(PyObject* self, PyObject* args)
+PyObject* pyfun_SciteOpenFile(PyObject*, PyObject* args)
 {
 	char* filename = NULL; // we don't own this.
 	if (PyArg_ParseTuple(args, "s", &filename) && filename)
@@ -504,7 +500,7 @@ PyObject* pyfun_SciteOpenFile(PyObject* self, PyObject* args)
 	}
 }
 
-PyObject* pyfun_GetProperty(PyObject* self, PyObject* args)
+PyObject* pyfun_GetProperty(PyObject*, PyObject* args)
 {
 	char* propName = NULL; // we don't own this.
 	if (PyArg_ParseTuple(args, "s", &propName))
@@ -528,7 +524,7 @@ PyObject* pyfun_GetProperty(PyObject* self, PyObject* args)
 	}
 }
 
-PyObject* pyfun_SetProperty(PyObject* self, PyObject* args)
+PyObject* pyfun_SetProperty(PyObject*, PyObject* args)
 {
 	char* propName = NULL; // we don't own this.
 	char* propValue = NULL; // we don't own this.
@@ -545,7 +541,7 @@ PyObject* pyfun_SetProperty(PyObject* self, PyObject* args)
 	}
 }
 
-PyObject* pyfun_UnsetProperty(PyObject* self, PyObject* args)
+PyObject* pyfun_UnsetProperty(PyObject*, PyObject* args)
 {
 	char* propName = NULL; // we don't own this.
 	if (PyArg_ParseTuple(args, "s", &propName))
@@ -560,7 +556,7 @@ PyObject* pyfun_UnsetProperty(PyObject* self, PyObject* args)
 	}
 }
 
-PyObject* pyfun_pane_Append(PyObject* self, PyObject* args)
+PyObject* pyfun_pane_Append(PyObject*, PyObject* args)
 {
 	char* text = NULL; // we don't own this.
 	int nPane = -1;
@@ -578,7 +574,7 @@ PyObject* pyfun_pane_Append(PyObject* self, PyObject* args)
 	}
 }
 
-PyObject* pyfun_pane_Insert(PyObject* self, PyObject* args)
+PyObject* pyfun_pane_Insert(PyObject*, PyObject* args)
 {
 	char* text = NULL; // we don't own this.
 	int nPane = -1, nPos = -1;
@@ -597,7 +593,7 @@ PyObject* pyfun_pane_Insert(PyObject* self, PyObject* args)
 	}
 }
 
-PyObject* pyfun_pane_Remove(PyObject* self, PyObject* args)
+PyObject* pyfun_pane_Remove(PyObject*, PyObject* args)
 {
 	int nPane = -1, nPosStart = -1, nPosEnd = -1;
 	ExtensionAPI::Pane pane;
@@ -615,7 +611,7 @@ PyObject* pyfun_pane_Remove(PyObject* self, PyObject* args)
 	}
 }
 
-PyObject* pyfun_pane_TextRange(PyObject* self, PyObject* args)
+PyObject* pyfun_pane_TextRange(PyObject*, PyObject* args)
 {
 	int nPane = -1, nPosStart = -1, nPosEnd = -1; ExtensionAPI::Pane pane;
 	if (!PyArg_ParseTuple(args, "iii", &nPane, &nPosStart, &nPosEnd)) return NULL;
@@ -636,7 +632,7 @@ PyObject* pyfun_pane_TextRange(PyObject* self, PyObject* args)
 	}
 }
 
-PyObject* pyfun_pane_FindText(PyObject* self, PyObject* args) //returns a tuple
+PyObject* pyfun_pane_FindText(PyObject*, PyObject* args) //returns a tuple
 {
 	char* text = NULL; // we don't own this.
 	int nPane = -1, nFlags = 0, nPosStart = 0, nPosEnd = -1;
@@ -676,7 +672,7 @@ PyObject* pyfun_pane_FindText(PyObject* self, PyObject* args) //returns a tuple
 	return NULL;
 }
 
-PyObject* pyfun_pane_SendScintillaFn(PyObject* self, PyObject* args)
+PyObject* pyfun_pane_SendScintillaFn(PyObject*, PyObject* args)
 {
 	// parse arguments
 	PyObject* tuplePassedIn; // we don't own this.
@@ -787,7 +783,7 @@ PyObject* pyfun_pane_SendScintillaFn(PyObject* self, PyObject* args)
 	return pyObjReturn;
 }
 
-PyObject* pyfun_pane_SendScintillaGet(PyObject* self, PyObject* args)
+PyObject* pyfun_pane_SendScintillaGet(PyObject*, PyObject* args)
 {
 	char* propName = NULL; // we don't own this.
 	int nPane = -1;
@@ -850,7 +846,7 @@ PyObject* pyfun_pane_SendScintillaGet(PyObject* self, PyObject* args)
 	}
 }
 
-PyObject* pyfun_pane_SendScintillaSet(PyObject* self, PyObject* args)
+PyObject* pyfun_pane_SendScintillaSet(PyObject*, PyObject* args)
 {
 	char* propName = NULL; // we don't own this.
 	int nPane = -1;
@@ -914,7 +910,7 @@ PyObject* pyfun_pane_SendScintillaSet(PyObject* self, PyObject* args)
 	return Py_None;
 }
 
-PyObject* pyfun_app_GetConstant(PyObject* self, PyObject* args)
+PyObject* pyfun_app_GetConstant(PyObject*, PyObject* args)
 {
 	char* propName = NULL; // we don't own this.
 	if (!PyArg_ParseTuple(args, "s", &propName))
@@ -935,7 +931,7 @@ PyObject* pyfun_app_GetConstant(PyObject* self, PyObject* args)
 	return pyValueOut;
 }
 
-PyObject* pyfun_app_SciteCommand(PyObject* self, PyObject* args)
+PyObject* pyfun_app_SciteCommand(PyObject*, PyObject* args)
 {
 	char* propName = NULL; // we don't own this.
 	if (!PyArg_ParseTuple(args, "s", &propName))
@@ -956,7 +952,7 @@ PyObject* pyfun_app_SciteCommand(PyObject* self, PyObject* args)
 	return Py_None;
 }
 
-PyObject* pyfun_app_UpdateStatusBar(PyObject* self, PyObject* args)
+PyObject* pyfun_app_UpdateStatusBar(PyObject*, PyObject* args)
 {
 	PyObject * pyObjBoolUpdate = NULL;
 	if (!PyArg_ParseTuple(args, "|O", &pyObjBoolUpdate))
@@ -997,16 +993,16 @@ void PythonExtension::SetupPythonNamespace()
 	Py_NoSiteFlag = 1;
 	Py_Initialize();
 
-	CPyObjectPtr module = Py_InitModule("CScite", methodsExportedToPython);
+	CPyObjectPtr module = Py_InitModule("SciTEModule", methodsExportedToPython);
 
 	// PyRun_SimpleString does not handle errors well,
 	// check return value and not ErrorsOccurred() or it might leave python in a weird state.
 	int ret = PyRun_SimpleString(
-		"import CScite\n"
+		"import SciTEModule\n"
 		"import sys\n"
 		"class StdoutCatcher:\n"
 		"    def write(self, str):\n"
-		"        CScite.LogStdout(str)\n"
+		"        SciTEModule.LogStdout(str)\n"
 		"sys.stdout = StdoutCatcher()\n"
 		"sys.stderr = StdoutCatcher()\n"
 	);
@@ -1018,7 +1014,7 @@ void PythonExtension::SetupPythonNamespace()
 	}
 }
 
-bool PullPythonArgument(IFaceType type, CPyObjectPtr pyObjNext, intptr_t* param)
+bool PullPythonArgument(IFaceType type, PyObject* pyObjNext, intptr_t* param)
 {
 	if (!pyObjNext)
 	{
@@ -1063,7 +1059,7 @@ bool PullPythonArgument(IFaceType type, CPyObjectPtr pyObjNext, intptr_t* param)
 		break;
 	case iface_textrange:
 		PyErr_SetString(PyExc_RuntimeError,
-			"raw textrange unsupported, but you can use CScite.Editor.Textrange(s,e)");
+			"raw textrange unsupported, but you can use SciTEModule.Editor.Textrange(s,e)");
 		return false;
 		break;
 	default:

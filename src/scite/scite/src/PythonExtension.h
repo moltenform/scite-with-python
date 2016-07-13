@@ -9,9 +9,6 @@
 #include "SciTEKeys.h"
 #include "IFaceTable.h"
 
-#include <vector>
-#include <map>
-
 class PythonExtension : public Extension
 {
 public:
