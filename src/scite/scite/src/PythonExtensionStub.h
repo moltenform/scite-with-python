@@ -52,14 +52,15 @@ public:
 	static void WriteLog(const char* error);
 	static bool WriteError(const char* error);
 	static bool WriteError(const char* error, const char* error2);
-
+	static const IFaceConstant* const constantsTable;
+	static const size_t constantsTableLen;
+	
 private:
 	ExtensionAPI* _host;
 	bool _pythonInitialized;
 
 	void InitializePython();
 	void SetupPythonNamespace();
-	
 
 	// Copying is unsupported.
 	PythonExtension();

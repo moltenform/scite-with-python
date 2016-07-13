@@ -1,4 +1,6 @@
 
+Leaving notes here, these steps will be taken when a new version of SciTE is released.
+
 Moved properties and doc to a subdirectory,
 	updated cxx source to look for properties/SciTEGlobal.properties instead of SciTEGlobal.properties
 
@@ -8,4 +10,8 @@ Combine some uncommonly used properties files into one file (others.properties)
 	tail -n +1 * > ../others.properties
 	open ../others.properties and replace "==> " with "## ==> "
 	
-
+Generate table of SciTE commands
+	edit archive/generate/constantsTable.py to point to SciTE.h
+	run archive/generate/constantsTable.py
+	review the output and fill in any missing entries marked by "NOTSEENBEFORE"
+	paste the output into scite/scite/src/PythonExtension.cxx, into the table "static IFaceConstant rgFriendlyNamedIDMConstants[]"
