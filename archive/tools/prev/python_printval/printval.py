@@ -1,7 +1,6 @@
 # Python printval, by Ben Fisher
 # halfhourhacks.blogspot.com
 import inspect, itertools
-from filesystem import *
 class PythonPrintVal(object):
     def _output(self, name, val):
         # expands a struct to one level.
@@ -30,7 +29,6 @@ printval = PythonPrintVal()
 
 if __name__=='__main__':
     def examples():
-        print getClipboardText()
         a=4
         b=5
         printval| a
