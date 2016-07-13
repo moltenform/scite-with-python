@@ -30,7 +30,7 @@ private:
 
 public:
 	CPyObjectOwned()
-	{ 
+	{
 		_obj = NULL;
 	}
 	CPyObjectOwned(PyObject* obj)
@@ -45,6 +45,7 @@ public:
 	{
 		if (_obj)
 		{
+// warning "conditional expression is constant" triggered by Python's code, not our code
 #pragma warning(push)
 #pragma warning(disable: 4127)
 			Py_DECREF(_obj);
@@ -89,7 +90,7 @@ void trace(const char* text1, const char* text2 = NULL);
 void trace(const char* text1, const char* text2, int n);
 
 bool RunCallback(
-	const char* nameOfFunction, int nArgs=0, const char* arg1=0);
+	const char* nameOfFunction, int nArgs = 0, const char* arg1 = 0);
 bool RunCallbackArgs(
 	const char* nameOfFunction, PyObject* pArgsBorrowed);
 
@@ -164,12 +165,14 @@ bool PythonExtension::Initialise(ExtensionAPI* host)
 	return true;
 }
 
-bool PythonExtension::Finalise() {
+bool PythonExtension::Finalise()
+{
 	_host = NULL;
 	return false;
 }
 
-bool PythonExtension::Clear() {
+bool PythonExtension::Clear()
+{
 	WriteLog("log:PythonExtension::Clear");
 	return false;
 }
@@ -185,13 +188,13 @@ bool PythonExtension::Load(const char *filename)
 			// Python will close the file handle
 			int result = PyRun_SimpleFileEx(f, filename, 1);
 			if (result == 0)
-			{ 
+			{
 				return true;
 			}
-			else 
+			else
 			{
 				PyErr_Print();
-				return false; 
+				return false;
 			}
 		}
 		else
@@ -207,42 +210,50 @@ bool PythonExtension::Load(const char *filename)
 	}
 }
 
-bool PythonExtension::InitBuffer(int index) {
+bool PythonExtension::InitBuffer(int index)
+{
 	WriteLog("log:PythonExtension::InitBuffer");
 	return false;
 }
 
-bool PythonExtension::ActivateBuffer(int index) {
+bool PythonExtension::ActivateBuffer(int index)
+{
 	WriteLog("log:PythonExtension::ActivateBuffer");
 	return false;
 }
 
-bool PythonExtension::RemoveBuffer(int index) {
+bool PythonExtension::RemoveBuffer(int index)
+{
 	WriteLog("log:PythonExtension::RemoveBuffer");
 	return false;
 }
 
-bool PythonExtension::OnOpen(const char *filename) {
+bool PythonExtension::OnOpen(const char *filename)
+{
 	return FInitialized() ?
 		RunCallback("OnOpen", 1, filename) : false;
 }
 
-bool PythonExtension::OnSwitchFile(const char *filename) {
+bool PythonExtension::OnSwitchFile(const char *filename)
+{
 	return FInitialized() ?
 		RunCallback("OnSwitchFile", 1, filename) : false;
 }
 
-bool PythonExtension::OnBeforeSave(const char *filename) {
+bool PythonExtension::OnBeforeSave(const char *filename)
+{
 	return FInitialized() ?
 		RunCallback("OnBeforeSave", 1, filename) : false;
 }
 
-bool PythonExtension::OnSave(const char *filename) {
+bool PythonExtension::OnSave(const char *filename)
+{
 	return FInitialized() ?
 		RunCallback("OnSave", 1, filename) : false;
 }
 
-bool PythonExtension::OnChar(char ch) {
+bool PythonExtension::OnChar(char ch)
+{
 	if (FInitialized())
 	{
 		CPyObjectOwned args = Py_BuildValue("(i)", (int)ch);
@@ -254,7 +265,8 @@ bool PythonExtension::OnChar(char ch) {
 	}
 }
 
-bool PythonExtension::OnExecute(const char* cmd) {
+bool PythonExtension::OnExecute(const char* cmd)
+{
 	if (cmd[0] == 'p' && cmd[1] == 'y' && cmd[2] == ':')
 	{
 		cmd += strlen("py:");
@@ -265,7 +277,7 @@ bool PythonExtension::OnExecute(const char* cmd) {
 		{
 			PyErr_Print();
 		}
-		
+
 		// need to return true even on error
 		return true;
 	}
@@ -276,41 +288,49 @@ bool PythonExtension::OnExecute(const char* cmd) {
 	}
 }
 
-bool PythonExtension::OnSavePointReached() {
+bool PythonExtension::OnSavePointReached()
+{
 	return FInitialized() ?
 		RunCallback("OnSavePointReached") : false;
 }
 
-bool PythonExtension::OnSavePointLeft() {
+bool PythonExtension::OnSavePointLeft()
+{
 	return FInitialized() ?
 		RunCallback("OnSavePointLeft") : false;
 }
 
-bool PythonExtension::OnStyle(unsigned int p, int q, int r, StyleWriter *s) {
+bool PythonExtension::OnStyle(unsigned int, int, int, StyleWriter*)
+{
 	WriteLog("log:PythonExtension::OnStyle");
 	return false;
 }
 
-bool PythonExtension::OnDoubleClick() {
+bool PythonExtension::OnDoubleClick()
+{
 	return FInitialized() ?
 		RunCallback("OnDoubleClick") : false;
 }
 
-bool PythonExtension::OnUpdateUI() {
+bool PythonExtension::OnUpdateUI()
+{
 	return false;
 }
 
-bool PythonExtension::OnMarginClick() {
+bool PythonExtension::OnMarginClick()
+{
 	return FInitialized() ?
 		RunCallback("OnMarginClick") : false;
 }
 
-bool PythonExtension::OnMacro(const char *, const char *) {
+bool PythonExtension::OnMacro(const char *, const char *)
+{
 	WriteLog("log:PythonExtension::OnMacro");
 	return false;
 }
 
-bool PythonExtension::OnUserListSelection(int type, const char *selection) {
+bool PythonExtension::OnUserListSelection(int type, const char *selection)
+{
 	if (FInitialized())
 	{
 		CPyObjectOwned args = Py_BuildValue("(i,s)", type, selection);
@@ -322,12 +342,14 @@ bool PythonExtension::OnUserListSelection(int type, const char *selection) {
 	}
 }
 
-bool PythonExtension::SendProperty(const char *) {
+bool PythonExtension::SendProperty(const char *)
+{
 	WriteLog("log:PythonExtension::SendProperty");
 	return false;
 }
 
-bool PythonExtension::OnKey(int keyval, int modifiers) {
+bool PythonExtension::OnKey(int keyval, int modifiers)
+{
 	if (FInitialized())
 	{
 		int fShift = (SCMOD_SHIFT & modifiers) != 0 ? 1 : 0;
@@ -343,17 +365,20 @@ bool PythonExtension::OnKey(int keyval, int modifiers) {
 	}
 }
 
-bool PythonExtension::OnDwellStart(int, const char *) {
+bool PythonExtension::OnDwellStart(int, const char *)
+{
 	WriteLog("log:PythonExtension::OnDwellStart");
 	return false;
 }
 
-bool PythonExtension::OnClose(const char *filename) {
+bool PythonExtension::OnClose(const char *filename)
+{
 	return FInitialized() ?
 		RunCallback("OnClose", 1, filename) : false;
 }
 
-bool PythonExtension::OnUserStrip(int control, int change) {
+bool PythonExtension::OnUserStrip(int control, int change)
+{
 	//for (int i = 0; i < extensionCount; ++i)
 	//	extensions[i]->OnUserStrip(control, change);
 	return false;
@@ -418,7 +443,7 @@ void trace(const char* text1, const char* text2, int n)
 PyObject* pyfun_LogStdout(PyObject* self, PyObject* args)
 {
 	char* msg = NULL; // we don't own this.
-	if (PyArg_ParseTuple(args, "s", &msg)) 
+	if (PyArg_ParseTuple(args, "s", &msg))
 	{
 		if (Host())
 		{
@@ -457,7 +482,7 @@ PyObject* pyfun_SciteOpenFile(PyObject* self, PyObject* args)
 	if (PyArg_ParseTuple(args, "s", &filename) && filename)
 	{
 		std::string cmd = "open:";
-		for (unsigned int i=0; i<strlen(filename); i++)
+		for (unsigned int i = 0; i < strlen(filename); i++)
 		{
 			if (filename[i] == '\\')
 			{
@@ -468,7 +493,7 @@ PyObject* pyfun_SciteOpenFile(PyObject* self, PyObject* args)
 				cmd += filename[i];
 			}
 		}
-		
+
 		Host()->Perform(cmd.c_str());
 		Py_INCREF(Py_None);
 		return Py_None;
@@ -661,7 +686,7 @@ PyObject* pyfun_pane_SendScintillaFn(PyObject* self, PyObject* args)
 	if (!PyArg_ParseTuple(args, "isO", &nPane, &commandName, &tuplePassedIn) ||
 		!GetPaneFromInt(nPane, &pane) ||
 		!PyTuple_Check(tuplePassedIn))
-	{ 
+	{
 		PyErr_SetString(PyExc_RuntimeError, "Third arg must be a tuple.");
 		return NULL;
 	}
@@ -680,6 +705,7 @@ PyObject* pyfun_pane_SendScintillaFn(PyObject* self, PyObject* args)
 	size_t nArgCount = PyTuple_GET_SIZE((PyObject*)tuplePassedIn);
 	size_t nArgsExpected = isStringResult ? ((func.paramType[0] != iface_void) ? 1 : 0) :
 		((func.paramType[1] != iface_void) ? 2 : ((func.paramType[0] != iface_void) ? 1 : 0));
+
 	if (strcmp(commandName, "GetCurLine") == 0)
 	{
 		nArgsExpected = 0;
@@ -688,7 +714,7 @@ PyObject* pyfun_pane_SendScintillaFn(PyObject* self, PyObject* args)
 	}
 
 	if (nArgCount != nArgsExpected)
-	{ 
+	{
 		PyErr_SetString(PyExc_RuntimeError, "Wrong # of args");
 		return NULL;
 	}
@@ -708,7 +734,7 @@ PyObject* pyfun_pane_SendScintillaFn(PyObject* self, PyObject* args)
 		}
 	}
 	else if (isStringResult)
-	{ 
+	{
 		// allocate space for the result
 		size_t spaceNeeded = Host()->Send(pane, func.value, wParam, NULL);
 		if (strcmp(commandName, "GetCurLine") == 0) // the first param of getCurLine is useless
@@ -752,7 +778,7 @@ PyObject* pyfun_pane_SendScintillaFn(PyObject* self, PyObject* args)
 	{
 		// this translates void into None, which makes sense
 		if (!PushPythonArgument(func.returnType, result, &pyObjReturn))
-		{ 
+		{
 			return NULL;
 		}
 	}
@@ -774,10 +800,10 @@ PyObject* pyfun_pane_SendScintillaGet(PyObject* self, PyObject* args)
 	}
 
 	int nFnIndex = IFaceTable::FindProperty(propName);
-	if (nFnIndex == -1) 
-	{ 
-		PyErr_SetString(PyExc_RuntimeError, "Could not find prop."); 
-		return NULL; 
+	if (nFnIndex == -1)
+	{
+		PyErr_SetString(PyExc_RuntimeError, "Could not find prop.");
+		return NULL;
 	}
 
 	IFaceProperty prop = IFaceTable::properties[nFnIndex];
@@ -838,9 +864,19 @@ PyObject* pyfun_pane_SendScintillaSet(PyObject* self, PyObject* args)
 	}
 
 	int nFnIndex = IFaceTable::FindProperty(propName);
-	if (nFnIndex == -1) { PyErr_SetString(PyExc_RuntimeError, "Could not find prop."); return NULL; }
+	if (nFnIndex == -1)
+	{
+		PyErr_SetString(PyExc_RuntimeError, "Could not find prop.");
+		return NULL;
+	}
+
 	IFaceProperty prop = IFaceTable::properties[nFnIndex];
-	if (prop.setter == 0) { PyErr_SetString(PyExc_RuntimeError, "prop can't be set."); return NULL; }
+	if (prop.setter == 0)
+	{
+		PyErr_SetString(PyExc_RuntimeError, "prop can't be set.");
+		return NULL;
+	}
+
 	intptr_t wParam = 0; // args to be passed to Scite
 	intptr_t lParam = 0; // args to be passed to Scite
 
@@ -944,7 +980,6 @@ static PyMethodDef methodsExportedToPython[] =
 	{"app_SetProperty", pyfun_SetProperty, METH_VARARGS, "Set SciTE Property"},
 	{"app_UnsetProperty", pyfun_UnsetProperty, METH_VARARGS, "Unset SciTE Property"},
 	{"app_GetConstant", pyfun_app_GetConstant, METH_VARARGS, ""},
-	
 	{"pane_Append", pyfun_pane_Append, METH_VARARGS, ""},
 	{"pane_Insert", pyfun_pane_Insert, METH_VARARGS, ""},
 	{"pane_Remove", pyfun_pane_Remove, METH_VARARGS, ""},
@@ -953,7 +988,6 @@ static PyMethodDef methodsExportedToPython[] =
 	{"pane_ScintillaFn", pyfun_pane_SendScintillaFn, METH_VARARGS, ""},
 	{"pane_ScintillaGet", pyfun_pane_SendScintillaGet, METH_VARARGS, ""},
 	{"pane_ScintillaSet", pyfun_pane_SendScintillaSet, METH_VARARGS, ""},
-	// the match object, if it's needed at all, can be written in Python.
 	{NULL, NULL, 0, NULL}
 };
 
@@ -962,7 +996,7 @@ void PythonExtension::SetupPythonNamespace()
 	// tell python to skip running 'import site'
 	Py_NoSiteFlag = 1;
 	Py_Initialize();
-	
+
 	CPyObjectPtr module = Py_InitModule("CScite", methodsExportedToPython);
 
 	// PyRun_SimpleString does not handle errors well,
@@ -999,7 +1033,7 @@ bool PullPythonArgument(IFaceType type, CPyObjectPtr pyObjNext, intptr_t* param)
 	case iface_length:
 	case iface_position:
 	case iface_colour:
-	case iface_keymod:  
+	case iface_keymod:
 		// no urgent need to make keymods in c++, because AssignCmdKey / ClearCmdKey
 		// are only ones using this... see py's makeKeyMod
 		if (!PyInt_Check((PyObject*)pyObjNext))
@@ -1105,8 +1139,8 @@ bool RunCallbackArgs(
 {
 	CPyObjectOwned pName = PyString_FromString(c_PythonModuleName);
 	if (!pName)
-	{ 
-		return PythonExtension::WriteError("Unexpected error: could not form string."); 
+	{
+		return PythonExtension::WriteError("Unexpected error: could not form string.");
 	}
 
 	CPyObjectOwned pModule = PyImport_Import(pName);
@@ -1174,9 +1208,9 @@ int FindFriendlyNamedIDMConstant(const char* name)
 	return -1;
 }
 
-static IFaceConstant rgFriendlyNamedIDMConstants[] = 
+static IFaceConstant rgFriendlyNamedIDMConstants[] =
 {
-//++Autogenerated -- when new SciTE version is released, run archive/generate/constantsTable.py and paste the results here
+	//++Autogenerated -- when new SciTE version is released, run archive/generate/constantsTable.py and paste the results here
 	{"Abbrev", IDM_ABBREV},
 	{"About", IDM_ABOUT},
 	{"Activate", IDM_ACTIVATE},
@@ -1331,7 +1365,7 @@ static IFaceConstant rgFriendlyNamedIDMConstants[] =
 	{"Wrap", IDM_WRAP},
 	{"WrapAround", IDM_WRAPAROUND},
 	{"WrapOutput", IDM_WRAPOUTPUT},
-//--Autogenerated -- end of automatically generated section
+	//--Autogenerated -- end of automatically generated section
 };
 
 const IFaceConstant* const PythonExtension::constantsTable = rgFriendlyNamedIDMConstants;

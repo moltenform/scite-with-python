@@ -12,7 +12,7 @@
 #include <vector>
 #include <map>
 
-class PythonExtension: public Extension
+class PythonExtension : public Extension
 {
 public:
 	virtual ~PythonExtension();
@@ -21,10 +21,10 @@ public:
 	ExtensionAPI* GetHost();
 	bool FInitialized();
 
-	virtual bool Initialise(ExtensionAPI* host_);
+	virtual bool Initialise(ExtensionAPI*);
 	virtual bool Finalise();
 	virtual bool Clear();
-	virtual bool Load(const char* filename);
+	virtual bool Load(const char*);
 	virtual bool InitBuffer(int);
 	virtual bool ActivateBuffer(int);
 	virtual bool RemoveBuffer(int);
@@ -46,15 +46,15 @@ public:
 	virtual bool OnKey(int, int);
 	virtual bool OnDwellStart(int, const char*);
 	virtual bool OnClose(const char*);
-	virtual bool OnUserStrip(int control, int change);
+	virtual bool OnUserStrip(int, int);
 	virtual bool NeedsOnClose();
-	
+
 	static void WriteLog(const char* error);
 	static bool WriteError(const char* error);
 	static bool WriteError(const char* error, const char* error2);
 	static const IFaceConstant* const constantsTable;
 	static const size_t constantsTableLen;
-	
+
 private:
 	ExtensionAPI* _host;
 	bool _pythonInitialized;
