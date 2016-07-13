@@ -20,6 +20,8 @@
 #include "LuaExtension.h"
 #endif
 
+#include "PythonExtensionStub.h"
+
 #endif
 
 #ifdef STATIC_BUILD
@@ -2159,8 +2161,6 @@ uptr_t SciTEWin::EventLoop() {
 #pragma warning(disable: 28251)
 #endif
 
-void runPythonTest();
-
 int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 
 	typedef BOOL (WINAPI *SetDllDirectorySig)(LPCTSTR lpPathName);
@@ -2180,12 +2180,13 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 #ifndef NO_LUA
 	multiExtender.RegisterExtension(LuaExtension::Instance());
 #endif
-
+	
 #ifndef NO_FILER
 	multiExtender.RegisterExtension(DirectorExtension::Instance());
 #endif
 #endif
-
+	
+	multiExtender.RegisterExtension(PythonExtension::Instance());
 	SciTEWin::Register(hInstance);
 #ifdef STATIC_BUILD
 
@@ -2222,10 +2223,6 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 			lptszCmdLine++;
 		try {
 			MainWind.Run(lptszCmdLine);
-			
-			runPythonTest();
-			
-			
 			result = MainWind.EventLoop();
 		} catch (GUI::ScintillaFailure &sf) {
 			MainWind.CheckForScintillaFailure(static_cast<int>(sf.status));
