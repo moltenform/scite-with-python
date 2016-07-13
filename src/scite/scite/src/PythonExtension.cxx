@@ -325,7 +325,7 @@ void trace(const char* text1, const char* text2, int n)
 	}
 }
 
-// Holder for PyObject, to ensure Py_DECREF is called.
+// holder for a PyObject, to ensure Py_DECREF is called.
 class CPyObjectOwned
 {
 private:
@@ -365,7 +365,7 @@ public:
 	}
 };
 
-// Holder for PyObject, when Py_DECREF isn't called, e.g. a borrowed reference.
+// holder for a PyObject, when Py_DECREF isn't needed, e.g. a borrowed reference.
 class CPyObjectPtr
 {
 private:
@@ -416,11 +416,11 @@ bool PythonExtension::OnKey(int keyval, int modifiers)
 {
 	if (FInitialized())
 	{
-		int fShift = (SCMOD_SHIFT & modifiers) != 0 ? 1 : 0;
-		int fCtrl = (SCMOD_CTRL & modifiers) != 0 ? 1 : 0;
-		int fAlt = (SCMOD_ALT & modifiers) != 0 ? 1 : 0;
+		int shift = (SCMOD_SHIFT & modifiers) != 0 ? 1 : 0;
+		int ctrl = (SCMOD_CTRL & modifiers) != 0 ? 1 : 0;
+		int alt = (SCMOD_ALT & modifiers) != 0 ? 1 : 0;
 		CPyObjectOwned args = Py_BuildValue("(i,i,i,i)",
-			(int)keyval, fShift, fCtrl, fAlt);
+			keyval, shift, ctrl, alt);
 		return RunCallbackArgs("OnKey", args);
 	}
 	else
@@ -429,11 +429,18 @@ bool PythonExtension::OnKey(int keyval, int modifiers)
 	}
 }
 
-bool PythonExtension::OnUserStrip(int, int)
+bool PythonExtension::OnUserStrip(int control, int change)
 {
-	//for (int i = 0; i < extensionCount; ++i)
-	//	extensions[i]->OnUserStrip(control, change);
-	return false;
+	if (FInitialized())
+	{
+		CPyObjectOwned args = Py_BuildValue("(i,i)",
+			control, change);
+		return RunCallbackArgs("OnUserStrip", args);
+	}
+	else
+	{
+		return false;
+	}
 }
 
 PyObject* pyfun_LogStdout(PyObject*, PyObject* args)
@@ -632,7 +639,7 @@ PyObject* pyfun_pane_TextRange(PyObject*, PyObject* args)
 	}
 }
 
-PyObject* pyfun_pane_FindText(PyObject*, PyObject* args) //returns a tuple
+PyObject* pyfun_pane_FindText(PyObject*, PyObject* args) // returns a tuple
 {
 	char* text = NULL; // we don't own this.
 	int nPane = -1, nFlags = 0, nPosStart = 0, nPosEnd = -1;
@@ -751,7 +758,7 @@ PyObject* pyfun_pane_SendScintillaFn(PyObject*, PyObject* args)
 	{
 		if (!lParam)
 		{
-			// It apparently returned null instead of string
+			// it apparently returned null instead of string
 			Py_INCREF(Py_None);
 			return Py_None;
 		}
