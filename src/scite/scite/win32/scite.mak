@@ -5,7 +5,7 @@
 # Usage for Microsoft:
 #     nmake -f scite.mak
 # For debug versions define DEBUG on the command line.
-# For a build without Lua, define NO_LUA on the command line.
+# For a build with Lua, define INCLUDE_LUA on the command line.
 # The main makefile uses mingw32 gcc and may be more current than this file.
 
 .SUFFIXES: .cxx .properties
@@ -183,7 +183,7 @@ $(DIR_BIN)\yaml.properties
 
 PROPS=$(DIR_BIN)\SciTEGlobal.properties $(DIR_BIN)\abbrev.properties $(LEXPROPS)
 
-!IFNDEF NO_LUA
+!IFDEF INCLUDE_LUA
 LUA_CORE_OBJS = lapi.obj lcode.obj ldebug.obj ldo.obj ldump.obj lfunc.obj lgc.obj llex.obj \
                 lmem.obj lobject.obj lopcodes.obj lparser.obj lstate.obj lstring.obj \
                 ltable.obj ltm.obj lundump.obj lvm.obj lzio.obj
@@ -760,7 +760,7 @@ Utf8_16.obj: \
 	../src/Utf8_16.cxx \
 	../src/Utf8_16.h
 
-!IFNDEF NO_LUA
+!IFDEF INCLUDE_LUA
 LuaExtension.obj: \
 	../src/LuaExtension.cxx \
 	../../scintilla/include/Scintilla.h \
