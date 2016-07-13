@@ -15,3 +15,39 @@ Generate table of SciTE commands
 	run archive/generate/constantsTable.py
 	review the output and fill in any missing entries marked by "NOTSEENBEFORE"
 	paste the output into scite/scite/src/PythonExtension.cxx, into the table "static IFaceConstant rgFriendlyNamedIDMConstants[]"
+
+Trim languages menu
+	Comment out these properties lines
+	*language.vb=&VB|vb||
+	*language.css=CSS|css||
+	*language.ada=Ada|ads||
+	*language.batch=&Batch|bat||
+	*language.difference=&Difference|diff||
+	*language.errorlist=&Errorlist|err||
+	*language.properties=&Properties|properties||
+	*language.fortran=&Fortran|f90||
+	*language.pascal=Pascal|pas||
+	*language.matlab=Matlab|m.matlab||
+	*language.tcl=&TCL|tcl||
+	*language.d=D|d||
+	*language.yaml=YAML|yaml||
+	*language.tex=TeX|tex||
+	*language.php=P&HP|php||
+	*language.perl=Pe&rl|pl||
+	*language.sql=S&QL|sql||
+	*language.lua=Lu&a|lua||
+	*language.java=&Java|java||
+	*language.csharp=C&#|cs||
+	*language.ruby=Ruby|rb||
+	*language.rust=Rust|rs||
+	*language.lisp=Lisp|lisp||
+	Hypertext to *language.html=H&TML|html|$(keyHTML)|
+
+
+
+
+
+
+---------------------
+Tips I've learned
+	Other features of properties files: $(star, $(escape
