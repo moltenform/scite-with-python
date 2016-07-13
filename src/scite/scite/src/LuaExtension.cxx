@@ -1487,6 +1487,12 @@ bool LuaExtension::Clear() {
 
 bool LuaExtension::Load(const char *filename) {
 	bool loaded = false;
+	
+	unsigned int len = strlen(filename);
+	if (len > 3 && filename[len - 3] == '.' && filename[len - 2] == 'p' && filename[len - 1] == 'y') {
+		// this looks like a Python script, I'll let Python handle it
+		return false;
+	}
 
 	if (!luaDisabled) {
 		size_t sl = strlen(filename);
@@ -1586,6 +1592,11 @@ bool LuaExtension::RemoveBuffer(int index) {
 
 bool LuaExtension::OnExecute(const char *s) {
 	bool handled = false;
+	
+	if (s[0] == 'p' && s[1] == 'y' && s[2] == ':') {
+		// let Python handle this
+		return handled;
+	}
 
 	if (luaState || InitGlobalScope(false)) {
 		// May as well use Lua's pattern matcher to parse the command.
