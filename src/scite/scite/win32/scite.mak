@@ -73,7 +73,7 @@ SHAREDOBJS=\
 	MatchMarker.obj \
 	MultiplexExtension.obj \
 	PropSetFile.obj \
-	PythonExtensionStub.obj \
+	PythonExtension.obj \
 	SciTEBase.obj \
 	SciTEBuffers.obj \
 	SciTEIO.obj \
@@ -316,7 +316,7 @@ SciTEWin.obj: \
 	../src/StripDefinition.h \
 	Strips.h \
 	../src/MultiplexExtension.h \
-	../src/PythonExtensionStub.h \
+	../src/PythonExtension.h \
 	../src/Extender.h \
 	DirectorExtension.h \
 	../src/LuaExtension.h
@@ -347,7 +347,7 @@ Sc1.obj: \
 	../src/StripDefinition.h \
 	Strips.h \
 	../src/MultiplexExtension.h \
-	../src/PythonExtensionStub.h \
+	../src/PythonExtension.h \
 	../src/Extender.h \
 	DirectorExtension.h \
 	../src/LuaExtension.h
@@ -635,12 +635,12 @@ PropSetFile.obj: \
 	../src/StringHelpers.h \
 	../src/FilePath.h \
 	../src/PropSetFile.h
-PythonExtensionStub.obj: \
-	../src/PythonExtensionStub.cxx \
+PythonExtension.obj: \
+	../src/PythonExtension.cxx \
 	../../scintilla/include/Scintilla.h \
 	../../scintilla/include/Sci_Position.h \
 	../src/GUI.h \
-	../src/PythonExtensionStub.h \
+	../src/PythonExtension.h \
 	../src/Extender.h
 SciTEBase.obj: \
 	../src/SciTEBase.cxx \

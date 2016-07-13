@@ -20,7 +20,7 @@
 #include "LuaExtension.h"
 #endif
 
-#include "PythonExtensionStub.h"
+#include "PythonExtension.h"
 
 #endif
 
