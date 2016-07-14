@@ -25,9 +25,9 @@ void trace(const char* text1, const char* text2 = NULL);
 void trace(const char* text1, const char* text2, int n);
 
 bool RunCallback(
-	const char* nameOfFunction, int nArgs = 0, const char* arg1 = 0);
+	const char* eventName, int nArgs = 0, const char* arg1 = 0);
 bool RunCallbackArgs(
-	const char* nameOfFunction, PyObject* pArgsBorrowed);
+	const char* eventName, PyObject* pArgsBorrowed);
 
 PythonExtension::PythonExtension()
 {
@@ -37,6 +37,24 @@ PythonExtension::PythonExtension()
 
 PythonExtension::~PythonExtension()
 {
+}
+
+void PythonExtension::EnableNotification(const char* eventName, bool enabled)
+{
+	if (enabled)
+	{
+		_enabledNotifications[eventName] = true;
+	}
+	else
+	{
+		_enabledNotifications.erase(eventName);
+	}
+}
+
+bool PythonExtension::NeedsNotification(const char* eventName)
+{
+	std::map<std::string, bool>::iterator found = _enabledNotifications.find(eventName);
+	return found != _enabledNotifications.end();
 }
 
 bool PythonExtension::FInitialized()
@@ -271,7 +289,7 @@ bool PythonExtension::OnClose(const char *filename)
 
 bool PythonExtension::NeedsOnClose()
 {
-	return false;
+	return NeedsNotification("OnClose");
 }
 
 /*static*/ void PythonExtension::WriteText(const char* text)
@@ -938,6 +956,20 @@ PyObject* pyfun_app_GetConstant(PyObject*, PyObject* args)
 	return pyValueOut;
 }
 
+PyObject* pyfun_app_EnableNotification(PyObject*, PyObject* args)
+{
+	char* eventName = NULL; // we don't own this.
+	int value = 0;
+	if (!PyArg_ParseTuple(args, "si", &value))
+	{
+		return NULL;
+	}
+	
+	PythonExtension::Instance().EnableNotification(eventName, !!value);
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
 PyObject* pyfun_app_SciteCommand(PyObject*, PyObject* args)
 {
 	char* propName = NULL; // we don't own this.
@@ -983,6 +1015,7 @@ static PyMethodDef methodsExportedToPython[] =
 	{"app_SetProperty", pyfun_SetProperty, METH_VARARGS, "Set SciTE Property"},
 	{"app_UnsetProperty", pyfun_UnsetProperty, METH_VARARGS, "Unset SciTE Property"},
 	{"app_GetConstant", pyfun_app_GetConstant, METH_VARARGS, ""},
+	{"app_EnableNotification", pyfun_app_EnableNotification, METH_VARARGS, ""},
 	{"pane_Append", pyfun_pane_Append, METH_VARARGS, ""},
 	{"pane_Insert", pyfun_pane_Insert, METH_VARARGS, ""},
 	{"pane_Remove", pyfun_pane_Remove, METH_VARARGS, ""},
@@ -1119,16 +1152,16 @@ bool GetPaneFromInt(int nPane, ExtensionAPI::Pane* outPane)
 }
 
 bool RunCallback(
-	const char* nameOfFunction, int nArgs, const char* arg1)
+	const char* eventName, int nArgs, const char* arg1)
 {
 	if (nArgs == 0)
 	{
-		return RunCallbackArgs(nameOfFunction, NULL);
+		return RunCallbackArgs(eventName, NULL);
 	}
 	else if (nArgs == 1)
 	{
 		CPyObjectOwned args = Py_BuildValue("(s)", arg1);
-		return RunCallbackArgs(nameOfFunction, args);
+		return RunCallbackArgs(eventName, args);
 	}
 	else
 	{
@@ -1138,14 +1171,34 @@ bool RunCallback(
 }
 
 bool RunCallbackArgs(
-	const char* nameOfFunction, PyObject* pArgsBorrowed)
+	const char* eventName, PyObject* pArgsBorrowed)
 {
 	CPyObjectOwned pName = PyString_FromString(c_PythonModuleName);
 	if (!pName)
 	{
 		return PythonExtension::WriteError("Unexpected error: could not form string.");
 	}
-
+	
+	CPyObjectOwned pEventName = PyString_FromString(eventName);
+	if (!pEventName)
+	{
+		return PythonExtension::WriteError("Unexpected error: could not form string for event name.");
+	}
+	
+	// use None if no args given
+	CPyObjectOwned pArgsTempNone = Py_None;
+	Py_INCREF(pArgsTempNone);
+	if (!pArgsBorrowed)
+	{
+		pArgsBorrowed = pArgsTempNone;
+	}
+	
+	CPyObjectOwned fullArgs = Py_BuildValue("sO", eventName, pArgsBorrowed);
+	if (!fullArgs)
+	{
+		return PythonExtension::WriteError("failed to create args");
+	}
+	
 	CPyObjectOwned pModule = PyImport_Import(pName);
 	if (!pModule)
 	{
@@ -1159,8 +1212,8 @@ bool RunCallbackArgs(
 	{
 		return PythonExtension::WriteError("Unexpected: could not get module dict.");
 	}
-
-	CPyObjectPtr pFn = PyDict_GetItemString(pDict, nameOfFunction);
+	
+	CPyObjectPtr pFn = PyDict_GetItemString(pDict, "OnEvent");
 	if (!pFn)
 	{
 		// module does not define that callback.
@@ -1169,13 +1222,13 @@ bool RunCallbackArgs(
 
 	if (!PyCallable_Check(pFn))
 	{
-		return PythonExtension::WriteError("callback not a function", nameOfFunction);
+		return PythonExtension::WriteError("OnEvent not a function");
 	}
-
-	CPyObjectOwned pResult = PyObject_CallObject(pFn, pArgsBorrowed);
+	
+	CPyObjectOwned pResult = PyObject_CallObject(pFn, fullArgs);
 	if (!pResult)
 	{
-		PythonExtension::WriteError("Error in callback ", nameOfFunction);
+		PythonExtension::WriteError("Error in callback ", eventName);
 		PyErr_Print();
 		return false;
 	}

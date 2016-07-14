@@ -156,7 +156,7 @@ class ScPane():
         
     # helpers
     def Write(self, txt, pos=-1):
-        if pos==-1:
+        if pos == -1:
             pos = self.GetCurrentPos()
         SciTEModule.pane_Insert(self.paneNumber, pos, txt)
         self.GotoPos(pos + len(txt))
@@ -217,64 +217,6 @@ SciTEModule.ScConst = ScConst()
 
 echoEvents = True
 
-def OnStart():
-    if echoEvents: print 'See OnStart'
-
-def OnOpen(filename):
-    if echoEvents:
-        from ctypes import windll
-        print windll.kernel32
-        
-        import platform
-        print platform.architecture()
-        print platform.platform()
-        import os
-        print os.name
-        
-        print 'See OnOpen', filename
-        
-    if echoEvents: print 'See OnOpen', filename
-
-def OnClose(filename):
-    if echoEvents: print 'See OnClose', filename
-
-def OnMarginClick():
-    if echoEvents: 
-        print 'See OnMarginClick'
-
-def OnSwitchFile(filename):
-    if echoEvents: print 'See OnSwitchFile', filename
-    # testing if ScApp commands can be sent
-    SciTEModule.ScApp.Quit()
-    
-def OnBeforeSave(filename):
-    if echoEvents: print 'See OnBeforeSave', filename
-    
-def OnSave(filename):
-    if echoEvents: print 'See OnSave', filename
-    
-def OnSavePointReached():
-    if echoEvents: print 'See OnSavePointReached'
-    
-def OnSavePointLeft():
-    if echoEvents: print 'See OnSavePointLeft'
-
-def OnChar(nChar):
-    pass
-
-def OnDoubleClick():
-    if echoEvents: print 'See OnDoubleClick'
-
-def OnUserListSelection(type, selectedText):
-    if echoEvents: print 'See OnUserListSelection', type, selectedText
-
-def OnUserStrip(control, change):
-    if echoEvents:
-        print 'See OnUserStrip', control, change
-
-# A "plugin" is run inside the internal python context, must be a python script
-# A "tool" is run outside the internal python context, uses system installed python if it's a python script
-
-# def OnKey(keycode, shift, ctrl, alt):
-#     print 'See OnKey', keycode, shift, ctrl, alt
+def OnEvent(eventName, args):
+    print eventName, args
 

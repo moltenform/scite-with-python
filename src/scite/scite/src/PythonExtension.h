@@ -1,6 +1,7 @@
 // SciTE Python Extension
 // Ben Fisher, 2016
 
+#include <map>
 #include <string>
 #include "Scite.h"
 #include "Scintilla.h"
@@ -16,6 +17,7 @@ public:
 	static PythonExtension &Instance();
 	void WriteText(const char* text);
 	ExtensionAPI* GetHost();
+	void EnableNotification(const char* eventName, bool enabled);
 	bool FInitialized();
 
 	virtual bool Initialise(ExtensionAPI*);
@@ -55,7 +57,9 @@ public:
 private:
 	ExtensionAPI* _host;
 	bool _pythonInitialized;
+	std::map<std::string, bool> _enabledNotifications;
 
+	bool NeedsNotification(const char* eventName);
 	void InitializePython();
 	void SetupPythonNamespace();
 
