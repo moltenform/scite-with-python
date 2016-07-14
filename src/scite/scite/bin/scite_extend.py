@@ -219,4 +219,12 @@ echoEvents = True
 
 def OnEvent(eventName, args):
     print eventName, args
+    if eventName == 'OnKey':
+        keyval, shift, alt, ctrl = args
+        if keyval == 69:
+            print 'muted'
+            return 'StopEventPropagation'
+        
+    
+            
 

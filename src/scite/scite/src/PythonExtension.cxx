@@ -90,6 +90,9 @@ PythonExtension& PythonExtension::Instance()
 	return singleton;
 }
 
+// returning true can swallow a message so that it isn't sent to the default SciTE handler,
+// so be careful about returning true.
+
 bool PythonExtension::Initialise(ExtensionAPI* host)
 {
 	WriteLog("log:PythonExtension::Initialise");
@@ -115,7 +118,8 @@ bool PythonExtension::Initialise(ExtensionAPI* host)
 			}
 		}
 	}
-	return true;
+	
+	return false;
 }
 
 bool PythonExtension::Finalise()
@@ -132,6 +136,7 @@ bool PythonExtension::Clear()
 
 bool PythonExtension::Load(const char *filename)
 {
+	// only run files with a .py extension
 	unsigned int len = strlen(filename);
 	if (len > 3 && filename[len - 3] == '.' && filename[len - 2] == 'p' && filename[len - 1] == 'y')
 	{
@@ -140,27 +145,18 @@ bool PythonExtension::Load(const char *filename)
 		{
 			// Python will close the file handle
 			int result = PyRun_SimpleFileEx(f, filename, 1);
-			if (result == 0)
-			{
-				return true;
-			}
-			else
+			if (result != 0)
 			{
 				PyErr_Print();
-				return false;
 			}
 		}
 		else
 		{
 			_host->Trace(">Python: could not open file.\n");
-			return false;
 		}
 	}
-	else
-	{
-		// doesn't look like a python file. maybe a lua script?
-		return false;
-	}
+	
+	return false;
 }
 
 bool PythonExtension::InitBuffer(int)
@@ -218,7 +214,8 @@ bool PythonExtension::OnExecute(const char* cmd)
 			PyErr_Print();
 		}
 
-		// need to return true even on error
+		// for this case we want to return true, we want to indicate the event as handled.
+		// return true even on error
 		return true;
 	}
 	else
@@ -297,19 +294,17 @@ bool PythonExtension::NeedsOnClose()
 	trace(text, "\n");
 }
 
-/*static*/ bool PythonExtension::WriteError(const char* error)
+/*static*/ void PythonExtension::WriteError(const char* error)
 {
 	trace(">Python Error:", error);
 	trace("\n");
-	return true;
 }
 
-/*static*/ bool PythonExtension::WriteError(const char* error, const char* error2)
+/*static*/ void PythonExtension::WriteError(const char* error, const char* error2)
 {
 	trace(">Python Error:", error);
 	trace(" ", error2);
 	trace("\n");
-	return true;
 }
 
 /*static*/ void PythonExtension::WriteLog(const char* text)
@@ -463,7 +458,7 @@ bool PythonExtension::OnUserStrip(int control, int change)
 
 PyObject* pyfun_LogStdout(PyObject*, PyObject* args)
 {
-	char* msg = NULL; // we don't own this.
+	const char* msg = NULL; // we don't own this.
 	if (PyArg_ParseTuple(args, "s", &msg))
 	{
 		if (Host())
@@ -482,7 +477,7 @@ PyObject* pyfun_LogStdout(PyObject*, PyObject* args)
 
 PyObject* pyfun_MessageBox(PyObject*, PyObject* args)
 {
-	char* msg = NULL; // we don't own this.
+	const char* msg = NULL; // we don't own this.
 	if (PyArg_ParseTuple(args, "s", &msg))
 	{
 #ifdef _WIN32
@@ -499,7 +494,7 @@ PyObject* pyfun_MessageBox(PyObject*, PyObject* args)
 
 PyObject* pyfun_SciteOpenFile(PyObject*, PyObject* args)
 {
-	char* filename = NULL; // we don't own this.
+	const char* filename = NULL; // we don't own this.
 	if (PyArg_ParseTuple(args, "s", &filename) && filename)
 	{
 		std::string cmd = "open:";
@@ -527,7 +522,7 @@ PyObject* pyfun_SciteOpenFile(PyObject*, PyObject* args)
 
 PyObject* pyfun_GetProperty(PyObject*, PyObject* args)
 {
-	char* propName = NULL; // we don't own this.
+	const char* propName = NULL; // we don't own this.
 	if (PyArg_ParseTuple(args, "s", &propName))
 	{
 		std::string value = Host()->Property(propName);
@@ -551,8 +546,8 @@ PyObject* pyfun_GetProperty(PyObject*, PyObject* args)
 
 PyObject* pyfun_SetProperty(PyObject*, PyObject* args)
 {
-	char* propName = NULL; // we don't own this.
-	char* propValue = NULL; // we don't own this.
+	const char* propName = NULL; // we don't own this.
+	const char* propValue = NULL; // we don't own this.
 	if (PyArg_ParseTuple(args, "ss", &propName, &propValue))
 	{
 		// it looks like SetProperty allocates, it's ok if key and val go out of scope.
@@ -568,7 +563,7 @@ PyObject* pyfun_SetProperty(PyObject*, PyObject* args)
 
 PyObject* pyfun_UnsetProperty(PyObject*, PyObject* args)
 {
-	char* propName = NULL; // we don't own this.
+	const char* propName = NULL; // we don't own this.
 	if (PyArg_ParseTuple(args, "s", &propName))
 	{
 		Host()->UnsetProperty(propName);
@@ -583,7 +578,7 @@ PyObject* pyfun_UnsetProperty(PyObject*, PyObject* args)
 
 PyObject* pyfun_pane_Append(PyObject*, PyObject* args)
 {
-	char* text = NULL; // we don't own this.
+	const char* text = NULL; // we don't own this.
 	int nPane = -1;
 	ExtensionAPI::Pane pane;
 	if (PyArg_ParseTuple(args, "is", &nPane, &text) &&
@@ -601,7 +596,7 @@ PyObject* pyfun_pane_Append(PyObject*, PyObject* args)
 
 PyObject* pyfun_pane_Insert(PyObject*, PyObject* args)
 {
-	char* text = NULL; // we don't own this.
+	const char* text = NULL; // we don't own this.
 	int nPane = -1, nPos = -1;
 	ExtensionAPI::Pane pane;
 	if (PyArg_ParseTuple(args, "iis", &nPane, &nPos, &text) &&
@@ -659,7 +654,7 @@ PyObject* pyfun_pane_TextRange(PyObject*, PyObject* args)
 
 PyObject* pyfun_pane_FindText(PyObject*, PyObject* args) // returns a tuple
 {
-	char* text = NULL; // we don't own this.
+	const char* text = NULL; // we don't own this.
 	int nPane = -1, nFlags = 0, nPosStart = 0, nPosEnd = -1;
 	ExtensionAPI::Pane pane;
 	if (!PyArg_ParseTuple(args, "is|iii", &nPane, &text, &nFlags, &nPosStart, &nPosEnd) &&
@@ -701,7 +696,7 @@ PyObject* pyfun_pane_SendScintillaFn(PyObject*, PyObject* args)
 {
 	// parse arguments
 	PyObject* tuplePassedIn; // we don't own this.
-	char* commandName = NULL; // we don't own this.
+	const char* commandName = NULL; // we don't own this.
 	int nPane = -1;
 	ExtensionAPI::Pane pane;
 	if (!PyArg_ParseTuple(args, "isO", &nPane, &commandName, &tuplePassedIn) ||
@@ -810,7 +805,7 @@ PyObject* pyfun_pane_SendScintillaFn(PyObject*, PyObject* args)
 
 PyObject* pyfun_pane_SendScintillaGet(PyObject*, PyObject* args)
 {
-	char* propName = NULL; // we don't own this.
+	const char* propName = NULL; // we don't own this.
 	int nPane = -1;
 	ExtensionAPI::Pane pane;
 	PyObject* pyObjParam = NULL;
@@ -873,7 +868,7 @@ PyObject* pyfun_pane_SendScintillaGet(PyObject*, PyObject* args)
 
 PyObject* pyfun_pane_SendScintillaSet(PyObject*, PyObject* args)
 {
-	char* propName = NULL; // we don't own this.
+	const char* propName = NULL; // we don't own this.
 	int nPane = -1;
 	ExtensionAPI::Pane pane;
 	PyObject* pyObjArg1 = NULL;
@@ -937,7 +932,7 @@ PyObject* pyfun_pane_SendScintillaSet(PyObject*, PyObject* args)
 
 PyObject* pyfun_app_GetConstant(PyObject*, PyObject* args)
 {
-	char* propName = NULL; // we don't own this.
+	const char* propName = NULL; // we don't own this.
 	if (!PyArg_ParseTuple(args, "s", &propName))
 	{
 		return NULL;
@@ -958,7 +953,7 @@ PyObject* pyfun_app_GetConstant(PyObject*, PyObject* args)
 
 PyObject* pyfun_app_EnableNotification(PyObject*, PyObject* args)
 {
-	char* eventName = NULL; // we don't own this.
+	const char* eventName = NULL; // we don't own this.
 	int value = 0;
 	if (!PyArg_ParseTuple(args, "si", &value))
 	{
@@ -972,7 +967,7 @@ PyObject* pyfun_app_EnableNotification(PyObject*, PyObject* args)
 
 PyObject* pyfun_app_SciteCommand(PyObject*, PyObject* args)
 {
-	char* propName = NULL; // we don't own this.
+	const char* propName = NULL; // we don't own this.
 	if (!PyArg_ParseTuple(args, "s", &propName))
 	{
 		return NULL;
@@ -1165,8 +1160,9 @@ bool RunCallback(
 	}
 	else
 	{
-		return PythonExtension::WriteError(
+		PythonExtension::WriteError(
 			"Unexpected: calling RunCallback, only 0/1 args supported.");
+		return false;
 	}
 }
 
@@ -1176,13 +1172,15 @@ bool RunCallbackArgs(
 	CPyObjectOwned pName = PyString_FromString(c_PythonModuleName);
 	if (!pName)
 	{
-		return PythonExtension::WriteError("Unexpected error: could not form string.");
+		PythonExtension::WriteError("Unexpected error: could not form string.");
+		return false;
 	}
 	
 	CPyObjectOwned pEventName = PyString_FromString(eventName);
 	if (!pEventName)
 	{
-		return PythonExtension::WriteError("Unexpected error: could not form string for event name.");
+		PythonExtension::WriteError("Unexpected error: could not form string for event name.");
+		return false;
 	}
 	
 	// use None if no args given
@@ -1196,7 +1194,8 @@ bool RunCallbackArgs(
 	CPyObjectOwned fullArgs = Py_BuildValue("sO", eventName, pArgsBorrowed);
 	if (!fullArgs)
 	{
-		return PythonExtension::WriteError("failed to create args");
+		PythonExtension::WriteError("failed to create args");
+		return false;
 	}
 	
 	CPyObjectOwned pModule = PyImport_Import(pName);
@@ -1210,7 +1209,8 @@ bool RunCallbackArgs(
 	CPyObjectPtr pDict = PyModule_GetDict(pModule);
 	if (!pDict)
 	{
-		return PythonExtension::WriteError("Unexpected: could not get module dict.");
+		PythonExtension::WriteError("Unexpected: could not get module dict.");
+		return false;
 	}
 	
 	CPyObjectPtr pFn = PyDict_GetItemString(pDict, "OnEvent");
@@ -1222,7 +1222,8 @@ bool RunCallbackArgs(
 
 	if (!PyCallable_Check(pFn))
 	{
-		return PythonExtension::WriteError("OnEvent not a function");
+		PythonExtension::WriteError("OnEvent not a function");
+		return false;
 	}
 	
 	CPyObjectOwned pResult = PyObject_CallObject(pFn, fullArgs);
@@ -1232,11 +1233,20 @@ bool RunCallbackArgs(
 		PyErr_Print();
 		return false;
 	}
-
-	// bubble event up by default, unless they explicitly return false.
-	bool shouldBubbleUpEvent = !(PyBool_Check(((PyObject*)pResult)) &&
-		pResult == Py_False);
-	return shouldBubbleUpEvent;
+	
+	// only prevent propagation if the special string StopEventPropagation is returned.
+	bool isString = PyString_Check(pResult);
+	if (isString)
+	{
+		const char* string = NULL; // we don't own this
+		string = PyString_AsString(pResult);
+		if (strcmp("StopEventPropagation", string) == 0)
+		{
+			return true;
+		}
+	}
+	
+	return false;
 }
 
 int FindFriendlyNamedIDMConstant(const char* name)
