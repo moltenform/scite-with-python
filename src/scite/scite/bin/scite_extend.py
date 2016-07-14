@@ -4,7 +4,7 @@
 import SciTEModule
 import exceptions
 
-class ScApp():
+class ScApp(object):
     '''
     Methods starting with "Cmd" are routed to SciTE,
     See documentation for a list of supported methods.
@@ -32,18 +32,6 @@ class ScApp():
         
     def UpdateStatusBar(self, updateSlowData=False):
         return SciTEModule.app_UpdateStatusBar(updateSlowData)
-    
-    def UserStripShow(self, s):
-        return SciTEModule.app_UserStripShow(s)
-
-    def UserStripSet(self, control, value):
-        return SciTEModule.app_UserStripSet(control, value)
-        
-    def UserStripSetList(self, control, value):
-        return SciTEModule.app_UserStripSetList(control, value)
-        
-    def UserStripGetValue(self, control):
-        return SciTEModule.app_UserStripGetValue(control)
         
     def EnableNotification(self, eventName, enabled=True):
         return SciTEModule.app_EnableNotification(eventName, 1 if enabled else 0)
@@ -79,18 +67,18 @@ class ScApp():
         else:
             raise exceptions.AttributeError
 
-class ScConst():
+class ScConst(object):
     '''
     ScApp is a class for retrieving a SciTE constants from IFaceTable.cxx
     example: n = ScConst.SCFIND_WHOLEWORD
     See documentation for a list of supported constants.
     '''
     def __init__(self):
-        self.stripActionUnknown = 0
-        self.stripActionClicked = 1
-        self.stripActionChange = 2
-        self.stripActionFocusIn = 3
-        self.stripActionFocusOut = 4
+        self.eventTypeUnknown = 0
+        self.eventTypeClicked = 1
+        self.eventTypeChange = 2
+        self.eventTypeFocusIn = 3
+        self.eventTypeFocusOut = 4
         
     def __getattr__(self, s):
         if s.startswith('_'):
@@ -128,7 +116,7 @@ class ScConst():
     def StopEventPropagation(self):
         return 'StopEventPropagation'
 
-class ScPane():
+class ScPane(object):
     '''
     ScPane represents a Scintilla window: either the main code editor or the output pane.
     Methods beginning with 'Get' are property queries sent to Scintilla.
@@ -237,13 +225,12 @@ class ScPane():
             return (lambda *args: SciTEModule.pane_ScintillaFn(self.paneNumber, sprop, args))
         else:
             raise exceptions.AttributeError
-
-class ScToolUI():
-    pass
-
+    
 def OnEvent(eventName, args):
-    # this function called directly from C++
-    #~ print eventName, args
+    # user strip events are handled differently
+    if eventName == 'OnUserStrip':
+        return SciTEModule.ScToolUIManager.OnUserStrip(*args)
+        
     callbacks = SciTEModule.registeredCallbacks.get(eventName, None)
     if callbacks:
         for command, path in callbacks:
@@ -349,13 +336,16 @@ def lookForRegistration():
             
             number += 1
     
-
+from scite_extend_ui import ScToolUIManager, ScToolUIBase
 SciTEModule.ScEditor = ScPane(0)
 SciTEModule.ScOutput = ScPane(1)
 SciTEModule.ScApp = ScApp()
 SciTEModule.ScConst = ScConst()
+SciTEModule.ScToolUIManager = ScToolUIManager()
+SciTEModule.ScToolUIBase = ScToolUIBase
 SciTEModule.registeredCallbacks = dict()
 SciTEModule.cacheCallbackModule = dict()
 SciTEModule.findCallbackModule = findCallbackModule
+
 lookForRegistration()
 

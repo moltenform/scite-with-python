@@ -445,12 +445,12 @@ bool PythonExtension::OnKey(int keyval, int modifiers)
 	}
 }
 
-bool PythonExtension::OnUserStrip(int control, int change)
+bool PythonExtension::OnUserStrip(int control, int eventType)
 {
 	if (FInitialized() && NeedsNotification("OnUserStrip"))
 	{
 		CPyObjectOwned args = Py_BuildValue("(i,i)",
-			control, change);
+			control, eventType);
 		return RunCallbackArgs("OnUserStrip", args);
 	}
 	else
