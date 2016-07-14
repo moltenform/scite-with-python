@@ -4,7 +4,6 @@
 import SciTEModule
 import exceptions
 
-
 class ScApp():
     '''
     Methods starting with "Cmd" are routed to SciTE,
@@ -24,7 +23,8 @@ class ScApp():
     def GetProperty(self, s):
         return SciTEModule.app_GetProperty(s)
         
-    def SetProperty(self, s, v): 
+    def SetProperty(self, s, v):
+        print 'setting %s to %s'%(s,v)
         return SciTEModule.app_SetProperty(s, v)
     
     def UnsetProperty(self, s):
@@ -100,6 +100,9 @@ class ScConst():
         green = (val & 0x0000ff00) >> 8
         blue = (val & 0x000ff0000) >> 16
         return (red, green, blue)
+    
+    def StopEventPropagation(self):
+        return 'StopEventPropagation'
 
 
 class ScPane():
@@ -162,13 +165,13 @@ class ScPane():
         if pos == -1:
             pos = self.GetCurrentPos()
         SciTEModule.pane_Insert(self.paneNumber, pos, txt)
-        self.GotoPos(pos + len(txt))
+        self.CmdGotoPos(pos + len(txt))
         
     def GetAllText(self):
-        return self.Textrange(0, self.GetLength())
+        return self.CmdTextrange(0, self.GetLength())
         
     def GetCurLine(self):
-        nLine = self.LineFromPosition(self.GetCurrentPos())
+        nLine = self.CmdLineFromPosition(self.GetCurrentPos())
         return self.GetLine(nLine)
         
     def CopyText(self, s):
@@ -212,20 +215,108 @@ class ScPane():
         else:
             raise exceptions.AttributeError
 
+def OnEvent(eventName, args):
+    # this function called directly from C++
+    print eventName, args
+    callbacks = SciTEModule.registeredCallbacks.get(eventName, None)
+    if callbacks:
+        for command, path in callbacks:
+            try:
+                module = findCallbackModule(command, path)
+                val = callCallbackModule(module, command, eventName, args)
+                if val == SciTEModule.ScConst.StopEventPropagation():
+                    # the user has asked that we not process any other callbacks
+                    return val
+            except Exception:
+                # print the Exception, but let other event handlers run
+                import traceback
+                print('Exception thrown when calling event %s for %s; %s' % (eventName, command, traceback.format_exc()))
+
+def findCallbackModule(command, path):
+    # it's more intuitive for each module's state to persist.
+    cached = SciTEModule.cacheCallbackModule.get(path, None)
+    if cached:
+        return cached
+    
+    import imp, os
+    expectedPythonInit = os.path.join(SciTEModule.ScApp.GetSciteDirectory(), path, '__init__.py')
+    if not os.path.isfile(expectedPythonInit):
+        raise RuntimeError, 'command %s could not find a file at %s' % (command, expectedPythonInit)
+    
+    module = imp.load_source('module' + command, expectedPythonInit)
+    SciTEModule.cacheCallbackModule[path] = module
+    return module
+    
+def callCallbackModule(module, command, eventName, args):
+    function = getattr(module, eventName, None)
+    if not function:
+        raise RuntimeError, 'command %s registered for event %s but we could not find function of this name' % (command, eventName)
+    else:
+        return function(*args)
+
+def registerCallbacks(command, path, callbacks):
+    if not path:
+        raise RuntimeError, 'command %s needs a path in order to have callbacks' % command
+        
+    callbacks = callbacks.split('|')
+    for eventName in callbacks:
+        eventName = eventName.strip()
+        if eventName:
+            assert eventName.startswith('On')
+            SciTEModule.ScApp.EnableNotification(eventName)
+            
+            if eventName not in SciTEModule.registeredCallbacks:
+                SciTEModule.registeredCallbacks[eventName] = []
+                
+            SciTEModule.registeredCallbacks[eventName].append((command, path))
+        
+def lookForRegistration():
+    SciTEModule.ScApp.SetProperty('ScitePythonExtension.Temp', '$(star *customcommandsregister.)')
+    commands = SciTEModule.ScApp.GetProperty('ScitePythonExtension.Temp')
+    commands = commands.split('|')
+    number = 11 # 1-10 show up with numbers in the tools menu.
+    heuristicDuplicateShortcut = dict()
+    for command in commands:
+        command = command.strip()
+        if command:
+            path = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.path')
+            callbacks = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.callbacks')
+            if callbacks:
+                registerCallbacks(command, path, callbacks)
+                
+            name = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.name')
+            if not name:
+                raise RuntimeError, 'command %s needs a name' % command
+                
+            filetypes = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.filetypes')
+            if not filetypes:
+                raise RuntimeError, 'command %s needs filetypes to be defined' % command
+            
+            action = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.action')
+            if not action:
+                raise RuntimeError, 'command %s needs an action to be defined' % command
+            
+            shortcut = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.shortcut')
+            if shortcut and shortcut.lower() in heuristicDuplicateShortcut:
+                raise RuntimeError, 'command %s , the shortcut %s was apparently already registered ' % (command, shortcut)
+            heuristicDuplicateShortcut[shortcut.lower()] = True
+            
+            # dynamically add a command
+            SciTEModule.ScApp.SetProperty('command.name.%d.%s' % (number, filetypes), '$(customcommand.' + command + '.name)')
+            SciTEModule.ScApp.SetProperty('command.shortcut.%d.%s' % (number, filetypes), '$(customcommand.' + command + '.shortcut)')
+            SciTEModule.ScApp.SetProperty('command.%d.%s' % (number, filetypes), '$(customcommand.' + command + '.action)')
+            SciTEModule.ScApp.SetProperty('command.mode.%d.%s' % (number, filetypes), '$(customcommand.' + command + '.mode)')
+
+            number += 1
+    
+    # note: closing the current file resets Tools, could be used on startup to refresh tools
 
 SciTEModule.ScEditor = ScPane(0)
 SciTEModule.ScOutput = ScPane(1)
 SciTEModule.ScApp = ScApp()
 SciTEModule.ScConst = ScConst()
-
-echoEvents = True
-SciTEModule.ScApp.EnableNotification('OnOpen')
-SciTEModule.ScApp.EnableNotification('OnSwitchFile')
-
-def OnEvent(eventName, args):
-    print eventName, args
-    
-        
-    
-            
+SciTEModule.registeredCallbacks = dict()
+SciTEModule.cacheCallbackModule = dict()
+SciTEModule.findCallbackModule = findCallbackModule
+lookForRegistration()
 
