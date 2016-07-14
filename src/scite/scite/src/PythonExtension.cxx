@@ -12,8 +12,6 @@
 #include <windows.h>
 #endif
 
-#define ENABLEDEBUGTRACE 1
-
 // on startup, import the python module scite_extend.py
 static const char* c_PythonModuleName = "scite_extend";
 int FindFriendlyNamedIDMConstant(const char* name);
@@ -124,6 +122,7 @@ bool PythonExtension::Initialise(ExtensionAPI* host)
 
 bool PythonExtension::Finalise()
 {
+	Py_Finalize();
 	_host = NULL;
 	return false;
 }
@@ -307,12 +306,16 @@ bool PythonExtension::NeedsOnClose()
 	trace("\n");
 }
 
+#if _DEBUG
 /*static*/ void PythonExtension::WriteLog(const char* text)
 {
-#if ENABLEDEBUGTRACE
 	trace(text, "\n");
-#endif
 }
+#else
+/*static*/ void PythonExtension::WriteLog(const char*)
+{
+}
+#endif
 
 void trace(const char* text1, const char* text2 /*=NULL*/)
 {
@@ -989,7 +992,7 @@ PyObject* pyfun_app_SciteCommand(PyObject*, PyObject* args)
 PyObject* pyfun_app_UpdateStatusBar(PyObject*, PyObject* args)
 {
 	PyObject * pyObjBoolUpdate = NULL;
-	if (!PyArg_ParseTuple(args, "|O", &pyObjBoolUpdate))
+	if (!PyArg_ParseTuple(args, "O", &pyObjBoolUpdate))
 	{
 		return NULL;
 	}
@@ -998,6 +1001,69 @@ PyObject* pyfun_app_UpdateStatusBar(PyObject*, PyObject* args)
 	Host()->UpdateStatusBar(bUpdateSlowData);
 	Py_INCREF(Py_None);
 	return Py_None;
+}
+
+PyObject* pyfun_app_UserStripShow(PyObject*, PyObject* args)
+{
+	const char* s = NULL; // we don't own this.
+	if (!PyArg_ParseTuple(args, "s", &s))
+	{
+		return NULL;
+	}
+	
+	Host()->UserStripShow(s);
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+PyObject* pyfun_app_UserStripSet(PyObject*, PyObject* args)
+{
+	int control = 0;
+	const char* value = NULL; // we don't own this.
+	if (!PyArg_ParseTuple(args, "is", &control, &value))
+	{
+		return NULL;
+	}
+	
+	Host()->UserStripSet(control, value);
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+PyObject* pyfun_app_UserStripSetList(PyObject*, PyObject* args)
+{
+	int control = 0;
+	const char* value = NULL; // we don't own this.
+	if (!PyArg_ParseTuple(args, "is", &control, &value))
+	{
+		return NULL;
+	}
+	
+	Host()->UserStripSetList(control, value);
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+PyObject* pyfun_app_UserStripGetValue(PyObject*, PyObject* args)
+{
+	int control = 0;
+	if (!PyArg_ParseTuple(args, "i", &control))
+	{
+		return NULL;
+	}
+	
+	const char *value = Host()->UserStripValue(control);
+	if (value)
+	{
+		// give the caller ownership of this object.
+		CPyObjectPtr pythonStr = PyString_FromString(value);
+		return pythonStr;
+	}
+	else
+	{
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
 }
 
 static PyMethodDef methodsExportedToPython[] =
@@ -1011,6 +1077,11 @@ static PyMethodDef methodsExportedToPython[] =
 	{"app_UnsetProperty", pyfun_UnsetProperty, METH_VARARGS, "Unset SciTE Property"},
 	{"app_GetConstant", pyfun_app_GetConstant, METH_VARARGS, ""},
 	{"app_EnableNotification", pyfun_app_EnableNotification, METH_VARARGS, ""},
+	{"app_UpdateStatusBar", pyfun_app_UpdateStatusBar, METH_VARARGS, ""},
+	{"app_UserStripShow", pyfun_app_UserStripShow, METH_VARARGS, ""},
+	{"app_UserStripSet", pyfun_app_UserStripSet, METH_VARARGS, ""},
+	{"app_UserStripSetList", pyfun_app_UserStripSetList, METH_VARARGS, ""},
+	{"app_UserStripGetValue", pyfun_app_UserStripGetValue, METH_VARARGS, ""},
 	{"pane_Append", pyfun_pane_Append, METH_VARARGS, ""},
 	{"pane_Insert", pyfun_pane_Insert, METH_VARARGS, ""},
 	{"pane_Remove", pyfun_pane_Remove, METH_VARARGS, ""},

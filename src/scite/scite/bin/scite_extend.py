@@ -30,8 +30,20 @@ class ScApp():
     def UnsetProperty(self, s):
         return SciTEModule.app_UnsetProperty(s)
         
-    def UpdateStatusBar(self, v=None):
-        return SciTEModule.app_UpdateStatusBar(v)
+    def UpdateStatusBar(self, updateSlowData=False):
+        return SciTEModule.app_UpdateStatusBar(updateSlowData)
+    
+    def UserStripShow(self, s):
+        return SciTEModule.app_UserStripShow(s)
+
+    def UserStripSet(self, control, value):
+        return SciTEModule.app_UserStripSet(control, value)
+        
+    def UserStripSetList(self, control, value):
+        return SciTEModule.app_UserStripSetList(control, value)
+        
+    def UserStripGetValue(self, control):
+        return SciTEModule.app_UserStripGetValue(control)
         
     def EnableNotification(self, eventName, enabled=True):
         return SciTEModule.app_EnableNotification(eventName, 1 if enabled else 0)
@@ -42,9 +54,15 @@ class ScApp():
     def GetFileName(self):
         return self.GetProperty('FileNameExt')
         
+    def GetFileDirectory(self):
+        return self.GetProperty('FileDir')
+        
     def GetLanguage(self):
         return self.GetProperty('Language')
         
+    def GetCurrentSelection(self):
+        return self.GetProperty('CurrentSelection')
+    
     def GetCurrentWord(self):
         return self.GetProperty('CurrentWord')
         
@@ -61,13 +79,19 @@ class ScApp():
         else:
             raise exceptions.AttributeError
 
-
 class ScConst():
     '''
     ScApp is a class for retrieving a SciTE constants from IFaceTable.cxx
     example: n = ScConst.SCFIND_WHOLEWORD
     See documentation for a list of supported constants.
     '''
+    def __init__(self):
+        self.stripActionUnknown = 0
+        self.stripActionClicked = 1
+        self.stripActionChange = 2
+        self.stripActionFocusIn = 3
+        self.stripActionFocusOut = 4
+        
     def __getattr__(self, s):
         if s.startswith('_'):
             raise exceptions.AttributeError
@@ -103,7 +127,6 @@ class ScConst():
     
     def StopEventPropagation(self):
         return 'StopEventPropagation'
-
 
 class ScPane():
     '''
@@ -147,7 +170,7 @@ class ScPane():
     def Remove(self, npos1, npos2):
         return SciTEModule.pane_Remove(self.paneNumber, npos1, npos2)
         
-    def Textrange(self, n1, n2):
+    def GetText(self, n1, n2):
         return SciTEModule.pane_Textrange(self.paneNumber, n1, n2)
     
     def FindText(self, s, pos1=0, pos2=-1, wholeWord=False, matchCase=False, regExp=False, flags=0): 
@@ -215,9 +238,12 @@ class ScPane():
         else:
             raise exceptions.AttributeError
 
+class ScToolUI():
+    pass
+
 def OnEvent(eventName, args):
     # this function called directly from C++
-    print eventName, args
+    #~ print eventName, args
     callbacks = SciTEModule.registeredCallbacks.get(eventName, None)
     if callbacks:
         for command, path in callbacks:
@@ -238,12 +264,20 @@ def findCallbackModule(command, path):
     if cached:
         return cached
     
-    import imp, os
-    expectedPythonInit = os.path.join(SciTEModule.ScApp.GetSciteDirectory(), path, '__init__.py')
+    import sys, os, importlib
+    expectedPythonModdir = os.path.join(SciTEModule.ScApp.GetSciteDirectory(), path)
+    expectedPythonInit = os.path.join(expectedPythonModdir, '__init__.py')
     if not os.path.isfile(expectedPythonInit):
         raise RuntimeError, 'command %s could not find a file at %s' % (command, expectedPythonInit)
     
-    module = imp.load_source('module' + command, expectedPythonInit)
+    # I could use imp.load_source to load the __init__.py directly, but then it can't access its submodules
+    pathsaved = sys.path
+    try:
+        sys.path.append(os.path.split(expectedPythonModdir)[0])
+        module = importlib.import_module(os.path.split(expectedPythonModdir)[1])
+    finally:
+        sys.path = pathsaved
+    
     SciTEModule.cacheCallbackModule[path] = module
     return module
     
@@ -274,7 +308,7 @@ def lookForRegistration():
     SciTEModule.ScApp.SetProperty('ScitePythonExtension.Temp', '$(star *customcommandsregister.)')
     commands = SciTEModule.ScApp.GetProperty('ScitePythonExtension.Temp')
     commands = commands.split('|')
-    number = 11 # 1-10 show up with numbers in the tools menu.
+    number = 10 # assign this command number, 0 to 9 are given shortcuts Ctrl+0 to Ctrl+9
     heuristicDuplicateShortcut = dict()
     for command in commands:
         command = command.strip()
@@ -283,6 +317,10 @@ def lookForRegistration():
             callbacks = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.callbacks')
             if callbacks:
                 registerCallbacks(command, path, callbacks)
+            
+            stdin = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.stdin')
+            if stdin:
+                SciTEModule.ScApp.SetProperty('command.input.%d.%s' % (number, filetypes), '$(customcommand.' + command + '.stdin)')
                 
             name = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.name')
             if not name:
@@ -295,21 +333,22 @@ def lookForRegistration():
             action = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.action')
             if not action:
                 raise RuntimeError, 'command %s needs an action to be defined' % command
-            
+                
             shortcut = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.shortcut')
             if shortcut and shortcut.lower() in heuristicDuplicateShortcut:
                 raise RuntimeError, 'command %s , the shortcut %s was apparently already registered ' % (command, shortcut)
-            heuristicDuplicateShortcut[shortcut.lower()] = True
+            else:
+                heuristicDuplicateShortcut[shortcut.lower()] = True
             
             # dynamically add a command
+            # direct each property to another property so that we'll still have runtime expansion.
             SciTEModule.ScApp.SetProperty('command.name.%d.%s' % (number, filetypes), '$(customcommand.' + command + '.name)')
             SciTEModule.ScApp.SetProperty('command.shortcut.%d.%s' % (number, filetypes), '$(customcommand.' + command + '.shortcut)')
             SciTEModule.ScApp.SetProperty('command.%d.%s' % (number, filetypes), '$(customcommand.' + command + '.action)')
             SciTEModule.ScApp.SetProperty('command.mode.%d.%s' % (number, filetypes), '$(customcommand.' + command + '.mode)')
-
+            
             number += 1
     
-    # note: closing the current file resets Tools, could be used on startup to refresh tools
 
 SciTEModule.ScEditor = ScPane(0)
 SciTEModule.ScOutput = ScPane(1)
