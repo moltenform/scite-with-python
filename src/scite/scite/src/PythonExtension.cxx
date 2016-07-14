@@ -179,25 +179,25 @@ bool PythonExtension::RemoveBuffer(int)
 
 bool PythonExtension::OnOpen(const char *filename)
 {
-	return FInitialized() ?
+	return FInitialized() && NeedsNotification("OnOpen") ?
 		RunCallback("OnOpen", 1, filename) : false;
 }
 
 bool PythonExtension::OnSwitchFile(const char *filename)
 {
-	return FInitialized() ?
+	return FInitialized() && NeedsNotification("OnSwitchFile") ?
 		RunCallback("OnSwitchFile", 1, filename) : false;
 }
 
 bool PythonExtension::OnBeforeSave(const char *filename)
 {
-	return FInitialized() ?
+	return FInitialized() && NeedsNotification("OnBeforeSave") ?
 		RunCallback("OnBeforeSave", 1, filename) : false;
 }
 
 bool PythonExtension::OnSave(const char *filename)
 {
-	return FInitialized() ?
+	return FInitialized() && NeedsNotification("OnSave") ?
 		RunCallback("OnSave", 1, filename) : false;
 }
 
@@ -227,13 +227,13 @@ bool PythonExtension::OnExecute(const char* cmd)
 
 bool PythonExtension::OnSavePointReached()
 {
-	return FInitialized() ?
+	return FInitialized() && NeedsNotification("OnSavePointReached") ?
 		RunCallback("OnSavePointReached") : false;
 }
 
 bool PythonExtension::OnSavePointLeft()
 {
-	return FInitialized() ?
+	return FInitialized() && NeedsNotification("OnSavePointLeft") ?
 		RunCallback("OnSavePointLeft") : false;
 }
 
@@ -245,7 +245,7 @@ bool PythonExtension::OnStyle(unsigned int, int, int, StyleWriter*)
 
 bool PythonExtension::OnDoubleClick()
 {
-	return FInitialized() ?
+	return FInitialized() && NeedsNotification("OnDoubleClick") ?
 		RunCallback("OnDoubleClick") : false;
 }
 
@@ -256,7 +256,7 @@ bool PythonExtension::OnUpdateUI()
 
 bool PythonExtension::OnMarginClick()
 {
-	return FInitialized() ?
+	return FInitialized() && NeedsNotification("OnMarginClick") ?
 		RunCallback("OnMarginClick") : false;
 }
 
@@ -280,7 +280,7 @@ bool PythonExtension::OnDwellStart(int, const char *)
 
 bool PythonExtension::OnClose(const char *filename)
 {
-	return FInitialized() ?
+	return FInitialized() && NeedsNotification("OnClose") ?
 		RunCallback("OnClose", 1, filename) : false;
 }
 
@@ -401,7 +401,7 @@ public:
 
 bool PythonExtension::OnChar(char ch)
 {
-	if (FInitialized())
+	if (FInitialized() && NeedsNotification("OnChar"))
 	{
 		CPyObjectOwned args = Py_BuildValue("(i)", (int)ch);
 		return RunCallbackArgs("OnChar", args);
@@ -414,7 +414,7 @@ bool PythonExtension::OnChar(char ch)
 
 bool PythonExtension::OnUserListSelection(int type, const char *selection)
 {
-	if (FInitialized())
+	if (FInitialized() && NeedsNotification("OnUserListSelection"))
 	{
 		CPyObjectOwned args = Py_BuildValue("(i,s)", type, selection);
 		return RunCallbackArgs("OnUserListSelection", args);
@@ -427,7 +427,7 @@ bool PythonExtension::OnUserListSelection(int type, const char *selection)
 
 bool PythonExtension::OnKey(int keyval, int modifiers)
 {
-	if (FInitialized())
+	if (FInitialized() && NeedsNotification("OnKey"))
 	{
 		int shift = (SCMOD_SHIFT & modifiers) != 0 ? 1 : 0;
 		int ctrl = (SCMOD_CTRL & modifiers) != 0 ? 1 : 0;
@@ -444,7 +444,7 @@ bool PythonExtension::OnKey(int keyval, int modifiers)
 
 bool PythonExtension::OnUserStrip(int control, int change)
 {
-	if (FInitialized())
+	if (FInitialized() && NeedsNotification("OnUserStrip"))
 	{
 		CPyObjectOwned args = Py_BuildValue("(i,i)",
 			control, change);
@@ -955,7 +955,7 @@ PyObject* pyfun_app_EnableNotification(PyObject*, PyObject* args)
 {
 	const char* eventName = NULL; // we don't own this.
 	int value = 0;
-	if (!PyArg_ParseTuple(args, "si", &value))
+	if (!PyArg_ParseTuple(args, "si", &eventName, &value))
 	{
 		return NULL;
 	}

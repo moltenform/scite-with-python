@@ -33,6 +33,9 @@ class ScApp():
     def UpdateStatusBar(self, v=None):
         return SciTEModule.app_UpdateStatusBar(v)
         
+    def EnableNotification(self, eventName, enabled=True):
+        return SciTEModule.app_EnableNotification(eventName, 1 if enabled else 0)
+        
     def GetFilePath(self):
         return self.GetProperty('FilePath')
         
@@ -216,14 +219,12 @@ SciTEModule.ScApp = ScApp()
 SciTEModule.ScConst = ScConst()
 
 echoEvents = True
+SciTEModule.ScApp.EnableNotification('OnOpen')
+SciTEModule.ScApp.EnableNotification('OnSwitchFile')
 
 def OnEvent(eventName, args):
     print eventName, args
-    if eventName == 'OnKey':
-        keyval, shift, alt, ctrl = args
-        if keyval == 69:
-            print 'muted'
-            return 'StopEventPropagation'
+    
         
     
             
