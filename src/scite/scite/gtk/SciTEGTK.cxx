@@ -4910,6 +4910,7 @@ void SciTEGTK::CreateUI() {
 
  	// The Menubar
 	CreateMenu();
+	HideMenusHiddenByUser();
 	gtk_box_pack_start(GTK_BOX(boxMain), menuBar, FALSE, FALSE, 0);
 
 	// The Toolbar

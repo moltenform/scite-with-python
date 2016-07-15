@@ -38,7 +38,7 @@ inline long LongFromTwoShorts(short a,short b) {
 enum {
     menuFile = 0, menuEdit = 1, menuSearch = 2, menuView = 3,
     menuTools = 4, menuOptions = 5, menuLanguage = 6, menuBuffers = 7,
-    menuHelp = 8
+    menuHelp = 8, menuMAX = 9
 };
 
 struct SelectedRange {
@@ -828,6 +828,7 @@ protected:
 	virtual void EnableAMenuItem(int wIDCheckItem, bool val) = 0;
 	virtual void CheckMenusClipboard();
 	virtual void CheckMenus();
+	void HideMenusHiddenByUser();
 	virtual void AddToPopUp(const char *label, int cmd = 0, bool enabled = true) = 0;
 	void ContextMenu(GUI::ScintillaWindow &wSource, GUI::Point pt, GUI::Window wCmd);
 

@@ -1351,11 +1351,13 @@ void SciTEWin::CreateUI() {
 	             this);
 	if (!wSciTE.Created())
 		exit(FALSE);
-
+	
 	if (props.GetInt("save.position"))
 		RestorePosition();
 
 	LocaliseMenus();
+	HideMenusHiddenByUser();
+	
 	std::string pageSetup = props.GetString("print.margins");
 	char val[32];
 	const char *ps = pageSetup.c_str();

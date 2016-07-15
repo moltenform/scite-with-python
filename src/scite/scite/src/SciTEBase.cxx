@@ -4113,6 +4113,21 @@ void SciTEBase::CheckMenus() {
 	EnableAMenuItem(IDM_MACROSTOPRECORD, recording);
 }
 
+void SciTEBase::HideMenusHiddenByUser() {
+	std::string hiddenByUser = props.GetNewExpandString("menu.hidemenuitems");
+	std::vector<std::string> items = StringSplit(hiddenByUser, '|');
+	for (std::vector<std::string>::iterator it = items.begin(); it != items.end(); ++it) {
+		if (it->length() == 0) 
+			continue;
+		
+		// try on all menus, since we've provided a specific id and it doesn't hurt to fail
+		int itemID = GetMenuCommandAsInt(*it);
+		for (int menuNumber = 0; menuNumber < menuMAX; menuNumber++) {
+			DestroyMenuItem(menuNumber, itemID);
+		}
+	}
+}
+
 void SciTEBase::ContextMenu(GUI::ScintillaWindow &wSource, GUI::Point pt, GUI::Window wCmd) {
 	int currentPos = wSource.Call(SCI_GETCURRENTPOS);
 	int anchor = wSource.Call(SCI_GETANCHOR);
