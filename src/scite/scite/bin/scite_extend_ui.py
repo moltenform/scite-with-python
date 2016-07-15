@@ -119,6 +119,52 @@ class ScToolUIBase(object):
     def OnEvent(self, control, eventType):
         pass
 
+class ScAskUserChoiceClass(ScToolUIBase):
+    '''
+    Asks the user to choose between some options, using a combo box.
+    Provide a list in the form 'choiceID|Shown In UI', and a callback which will be sent choiceID.
+    '''
+    def __init__(self, choices, callback, label='Please choose:', leaveOpen=False):
+        self.callback = callback
+        self.label = label
+        self.leaveOpen = leaveOpen
+        
+        if len(choices) == 0 or not '|' in choices[0]:
+            raise ValueError('choices must be a non-empty list of strings')
+
+        self.choiceIDs = [s.split('|')[0] for s in choices]
+        self.choiceShown = [s.split('|')[1] for s in choices]
+        super(ScAskUserChoiceClass, self).__init__()
+    
+    def AddControls(self):
+        self.AddLabel(self.label)
+        self.cmb = self.AddCombo()
+        if self.leaveOpen:
+            self.AddButton('Run', self.OnRun, closes=False, default=True)
+            self.AddButton('Close', closes=True)
+        else:
+            self.AddButton('OK', self.OnRun, closes=True, default=True)
+            self.AddButton('Cancel', closes=True)
+
+    def OnOpen(self):
+        textToSet = '\n'.join(self.choiceShown)
+        self.SetList(self.cmb, textToSet)
+        self.Set(self.cmb, self.choiceShown[0])
+    
+    def OnRun(self):
+        chosen = self.Get(self.cmb)
+        
+        try:
+            index = self.choiceShown.index(chosen)
+        except ValueError:
+            print('Not a valid choice, please choose from the list.')
+            return
+        else:
+            self.callback(self.choiceIDs[index])
+
+def ScAskUserChoice(*args, **kwargs):
+    toolUI = ScAskUserChoiceClass(*args, **kwargs)
+    toolUI.Show()
 
 # create singleton instances
 ScToolUIManager = ScToolUIManagerClass()
