@@ -4,6 +4,8 @@
 import SciTEModule
 import exceptions
 
+debugTracing = False
+
 class ScApp(object):
     '''
     Methods starting with "Cmd" are routed to SciTE,
@@ -24,6 +26,8 @@ class ScApp(object):
         return SciTEModule.app_GetProperty(s)
         
     def SetProperty(self, s, v):
+        if debugTracing:
+            print('SetProperty %s=%s'%(s, v))
         return SciTEModule.app_SetProperty(s, v)
     
     def UnsetProperty(self, s):
@@ -310,75 +314,80 @@ def findChosenProperty(command, suffixes):
 def lookForRegistration():
     SciTEModule.ScApp.SetProperty('ScitePythonExtension.Temp', '$(star *customcommandsregister.)')
     commands = SciTEModule.ScApp.GetProperty('ScitePythonExtension.Temp')
-    commands = commands.split('|')
+    commands = (commands or '').split('|')
     number = 10 # assign this command number, 0 to 9 are given shortcuts Ctrl+0 to Ctrl+9
     heuristicDuplicateShortcut = dict()
     for command in commands:
         command = command.strip()
-        if command:
-            # some of the following are 'temporary' because we shouldn't use the value in the future, it's already expanded
-            # e.g. if the action contains a reference to '$(FilePath)' then actionTemporary contains the expanded form, frozen
-            filetypes = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.filetypes')
-            callbacks = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.callbacks')
-            path = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.path')
-            nameTemporary = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.name')
-            shortcutTemporary = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.shortcut')
-            modeTemporary = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.mode')
-            stdinTemporary = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.stdin')
-            actionTemporary, subsystem = findChosenProperty(command, ['waitforcomplete_console', 'waitforcomplete', 'start', 'py'])
-            
-            if not filetypes:
-                filetypes = '*'
-            
-            if callbacks and (' ' in callbacks or '\t' in callbacks or '/' in callbacks or '\\' in callbacks):
-                assert False, 'in command %s, callbacks invalid, expected syntax like OnOpen|OnSwitchFile.' % command
-            
-            if not nameTemporary:
-                assert False, 'in command %s, must define a name' % command
-                
-            if path and subsystem != 'py':
-                assert False, 'in command %s, currently path is only needed for python modules' % command
-            
-            if shortcutTemporary and shortcutTemporary.lower() in heuristicDuplicateShortcut:
-                raise RuntimeError, 'command %s, the shortcut %s was apparently already registered ' % (command, shortcutTemporary)
-            else:
-                heuristicDuplicateShortcut[shortcutTemporary.lower()] = True
-            
-            if stdinTemporary and subsystem != 'waitforcomplete_console':
-                assert False, 'in command %s, providing stdin only supported for waitforcomplete_console' % command
-            
-            if not actionTemporary or not subsystem:
-                assert False, 'in command %s, must define exactly one action' % command
-            
-            # map subsystem names to SciTE's subsystem names
-            if subsystem == 'waitforcomplete_console':
-                modePrefix = 'subsystem:console,savebefore:no'
-            elif subsystem == 'waitforcomplete':
-                modePrefix = 'subsystem:windows,savebefore:no'
-            elif subsystem == 'start':
-                modePrefix = 'subsystem:shellexec,savebefore:no'
-            else:
-                modePrefix = 'subsystem:director,savebefore:no'
-            
-            if modeTemporary:
-                modePrefix += ','
-            
-            actionPrefix = ''
-            if subsystem == 'py':
-                actionPrefix = 'py:from SciTEModule import findCallbackModule, ScEditor, ScOutput, ScApp, ScConst; '
-                if 'ThisModule()' in actionTemporary:
-                    assert path, 'in command %s, use of ThisModule requires setting .path'
-                    actionPrefix += 'ThisModule = lambda: findCallbackModule("%s"); ' % command
-            
-            if callbacks:
-                registerCallbacks(command, path, callbacks)
-                        
-            SciTEModule.ScApp.SetProperty('command.name.%d.%s' % (number, filetypes), '$(customcommand.' + command + '.name)')
-            SciTEModule.ScApp.SetProperty('command.shortcut.%d.%s' % (number, filetypes), '$(customcommand.' + command + '.shortcut)')
-            SciTEModule.ScApp.SetProperty('command.mode.%d.%s' % (number, filetypes), modePrefix + '$(customcommand.' + command + '.mode)')
-            SciTEModule.ScApp.SetProperty('command.input.%d.%s' % (number, filetypes), '$(customcommand.' + command + '.stdin)')
-            SciTEModule.ScApp.SetProperty('command.%d.%s' % (number, filetypes), actionPrefix + '$(customcommand.' + command + '.action.' + subsystem + ')')
+        if ' ' in command or '\t' in command or '/' in command or '\\' in command:
+            assert False, 'command %s has invalid chars' % command
+        elif command:
+            registerCustomCommand(heuristicDuplicateShortcut, command, number)
             number += 1
+            
+def registerCustomCommand(heuristicDuplicateShortcut, command, number):
+    # some of the following are 'temporary' because we shouldn't use the value in the future, it's already expanded
+    # e.g. if the action contains a reference to '$(FilePath)' then actionTemporary contains the expanded form, frozen
+    filetypes = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.filetypes')
+    callbacks = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.callbacks')
+    path = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.path')
+    nameTemporary = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.name')
+    shortcutTemporary = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.shortcut')
+    modeTemporary = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.mode')
+    stdinTemporary = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.stdin')
+    actionTemporary, subsystem = findChosenProperty(command, ['waitforcomplete_console', 'waitforcomplete', 'start', 'py'])
+    
+    if not filetypes:
+        filetypes = '*'
+    
+    if callbacks and (' ' in callbacks or '\t' in callbacks or '/' in callbacks or '\\' in callbacks):
+        assert False, 'in command %s, callbacks invalid, expected syntax like OnOpen|OnSwitchFile.' % command
+    
+    if not nameTemporary:
+        assert False, 'in command %s, must define a name' % command
+        
+    if path and subsystem != 'py':
+        assert False, 'in command %s, currently path is only needed for python modules' % command
+    
+    if shortcutTemporary and shortcutTemporary.lower() in heuristicDuplicateShortcut:
+        raise RuntimeError, 'command %s, the shortcut %s was apparently already registered ' % (command, shortcutTemporary)
+    else:
+        heuristicDuplicateShortcut[(shortcutTemporary or '').lower()] = True
+    
+    if stdinTemporary and subsystem != 'waitforcomplete_console':
+        assert False, 'in command %s, providing stdin only supported for waitforcomplete_console' % command
+    
+    if not actionTemporary or not subsystem:
+        assert False, 'in command %s, must define exactly one action' % command
+    
+    # map subsystem names to SciTE's subsystem names
+    if subsystem == 'waitforcomplete_console':
+        modePrefix = 'subsystem:console,savebefore:no'
+    elif subsystem == 'waitforcomplete':
+        modePrefix = 'subsystem:windows,savebefore:no'
+    elif subsystem == 'start':
+        modePrefix = 'subsystem:shellexec,savebefore:no'
+    else:
+        modePrefix = 'subsystem:director,savebefore:no'
+    
+    if modeTemporary:
+        modePrefix += ','
+    
+    actionPrefix = ''
+    if subsystem == 'py':
+        actionPrefix = 'py:from SciTEModule import findCallbackModule, ScEditor, ScOutput, ScApp, ScConst; '
+        if 'ThisModule()' in actionTemporary:
+            assert path, 'in command %s, use of ThisModule requires setting .path'
+            actionPrefix += 'ThisModule = lambda: findCallbackModule("%s"); ' % command
+    
+    if callbacks:
+        registerCallbacks(command, path, callbacks)
+                
+    SciTEModule.ScApp.SetProperty('command.name.%d.%s' % (number, filetypes), '$(customcommand.' + command + '.name)')
+    SciTEModule.ScApp.SetProperty('command.shortcut.%d.%s' % (number, filetypes), '$(customcommand.' + command + '.shortcut)')
+    SciTEModule.ScApp.SetProperty('command.mode.%d.%s' % (number, filetypes), modePrefix + '$(customcommand.' + command + '.mode)')
+    SciTEModule.ScApp.SetProperty('command.input.%d.%s' % (number, filetypes), '$(customcommand.' + command + '.stdin)')
+    SciTEModule.ScApp.SetProperty('command.%d.%s' % (number, filetypes), actionPrefix + '$(customcommand.' + command + '.action.' + subsystem + ')')
         
 
 from scite_extend_ui import ScToolUIManager, ScToolUIBase
