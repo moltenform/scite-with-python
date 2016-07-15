@@ -127,6 +127,10 @@ BEGIN
 	MENUITEM "&Clean\tShift+F7",			IDM_CLEAN
 	MENUITEM "&Go\tF5",					IDM_GO
 	MENUITEM "&Stop Executing\tCtrl+Break",IDM_STOPEXECUTE
+	POPUP "&Tools"
+	BEGIN
+		MENUITEM "&List Macros...\tShift+F9", IDM_MACROLIST
+	END
 	MENUITEM SEPARATOR
 	MENUITEM "&Next Message\tF4",		IDM_NEXTMSG
 	MENUITEM "&Previous Message\tShift+F4",IDM_PREVMSG

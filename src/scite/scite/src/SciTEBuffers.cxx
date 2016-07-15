@@ -41,7 +41,7 @@
 #include "MatchMarker.h"
 #include "SciTEBase.h"
 
-const GUI::gui_char defaultSessionFileName[] = GUI_TEXT("SciTE.session");
+const GUI::gui_char defaultSessionFileName[] = GUI_TEXT("SciTE_with_python.session");
 
 void Buffer::DocumentModified() {
 	documentModTime = time(0);

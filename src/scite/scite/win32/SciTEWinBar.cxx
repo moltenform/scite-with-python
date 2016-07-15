@@ -470,6 +470,12 @@ void SciTEWin::SetMenuItem(int menuNumber, int position, int itemID,
 		// but for now, the menu's item data is used instead for command
 		// tools, and for other menu entries it is just discarded.
 	}
+	
+	// On Windows, tools items are added to a submenu
+	if (itemID >= IDM_TOOLS && itemID < IDM_TOOLS + toolMax) {
+		hmenu = ::GetSubMenu(hmenu, TOOLS_START + 1);
+		position -= TOOLS_START;
+	}
 
 	UINT typeFlags = (text[0]) ? MF_STRING : MF_SEPARATOR;
 	if (::GetMenuState(hmenu, itemID, MF_BYCOMMAND) == (UINT)(-1)) {
