@@ -57,7 +57,14 @@ void SciTEBase::SetImportMenu() {
 		DestroyMenuItem(menuOptions, importCmdID + i);
 	}
 	if (!importFiles.empty()) {
-		for (int stackPos = 0; stackPos < static_cast<int>(importFiles.size()) && stackPos < importMax; stackPos++) {
+		std::string limitShownItems = props.GetNewExpandString("menu.limitpropertiesmenuitems");
+	        int limit = atoi(limitShownItems.c_str());
+		if (limit == 0) {
+			limit = importMax;
+		}
+		
+		limit = std::min(limit, (int)importMax);
+		for (int stackPos = 0; stackPos < static_cast<int>(importFiles.size()) && stackPos < limit; stackPos++) {
 			int itemID = importCmdID + stackPos;
 			if (importFiles[stackPos].IsSet()) {
 				GUI::gui_string entry = localiser.Text("Open");
