@@ -272,8 +272,10 @@ def findCallbackModuleFromPath(command, path):
     
     # I could use imp.load_source to load the __init__.py directly, but then it can't access its submodules
     pathsaved = sys.path
+    newPath = list(sys.path)
+    newPath.append(os.path.split(expectedPythonModdir)[0])
     try:
-        sys.path.append(os.path.split(expectedPythonModdir)[0])
+        sys.path = newPath
         module = importlib.import_module(os.path.split(expectedPythonModdir)[1])
     finally:
         sys.path = pathsaved
@@ -321,7 +323,14 @@ def findChosenProperty(command, suffixes):
                 valChosen = val
     return valChosen, suffixChosen
 
+def addToolsInternalToPythonPath():
+    '''Make it easier for scripts to import modules from the tools_internal directory'''
+    import os, sys
+    dir = os.path.join(ScApp.GetSciteDirectory(), 'tools_internal')
+    sys.path.append(dir)
+
 def lookForRegistration():
+    addToolsInternalToPythonPath()
     ScApp.SetProperty('ScitePythonExtension.Temp', '$(star *customcommandsregister.)')
     commands = ScApp.GetProperty('ScitePythonExtension.Temp')
     commands = (commands or '').split('|')

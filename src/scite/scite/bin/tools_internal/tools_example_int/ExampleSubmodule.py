@@ -27,16 +27,15 @@ class ExampleUI(ScToolUIBase):
         if control == self.entry and eventType == ScConst.eventTypeChange:
             print 'entry changed'
 
-def OnKey(*args):
-    # stop the key f from being seen
-    if args[0] == 70:
+def OnKey(key, shift, ctrl, alt):
+    # stop the ctrl-w shortcut
+    if key == ord('W') and not shift and ctrl and not alt:
         print 'swallowed'
         return ScConst.StopEventPropagation()
-    elif args[0]==71:
+        
+    # have ctrl-alt-shift-w open an example tool ui
+    if key == ord('W') and shift and ctrl and alt:
+        print 'opening tool ui'
         toolui = ExampleUI()
         toolui.Show()
-        return ScConst.StopEventPropagation()
-    elif args[0]==72:
-        return ScConst.StopEventPropagation()
-
 
