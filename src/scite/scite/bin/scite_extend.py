@@ -24,7 +24,6 @@ class ScApp(object):
         return SciTEModule.app_GetProperty(s)
         
     def SetProperty(self, s, v):
-        print 'setting %s to %s'%(s,v)
         return SciTEModule.app_SetProperty(s, v)
     
     def UnsetProperty(self, s):
@@ -235,7 +234,7 @@ def OnEvent(eventName, args):
     if callbacks:
         for command, path in callbacks:
             try:
-                module = findCallbackModule(command, path)
+                module = findCallbackModuleFromPath(command, path)
                 val = callCallbackModule(module, command, eventName, args)
                 if val == SciTEModule.ScConst.StopEventPropagation():
                     # the user has asked that we not process any other callbacks
@@ -245,7 +244,7 @@ def OnEvent(eventName, args):
                 import traceback
                 print('Exception thrown when calling event %s for %s; %s' % (eventName, command, traceback.format_exc()))
 
-def findCallbackModule(command, path):
+def findCallbackModuleFromPath(command, path):
     # it's more intuitive for each module's state to persist.
     cached = SciTEModule.cacheCallbackModule.get(path, None)
     if cached:
@@ -267,7 +266,12 @@ def findCallbackModule(command, path):
     
     SciTEModule.cacheCallbackModule[path] = module
     return module
-    
+
+def findCallbackModule(command):
+    path = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.path')
+    assert path, 'in command %s, path must be defined to use ThisModule.' % command
+    return findCallbackModuleFromPath(command, path)
+
 def callCallbackModule(module, command, eventName, args):
     function = getattr(module, eventName, None)
     if not function:
@@ -276,10 +280,9 @@ def callCallbackModule(module, command, eventName, args):
         return function(*args)
 
 def registerCallbacks(command, path, callbacks):
-    if not path:
-        raise RuntimeError, 'command %s needs a path in order to have callbacks' % command
-        
-    callbacks = callbacks.split('|')
+    assert path, 'in command %s, defining a callback requires specifying a path' % command
+    
+    callbacks = (callbacks or '').split('|')
     for eventName in callbacks:
         eventName = eventName.strip()
         if eventName:
@@ -290,7 +293,20 @@ def registerCallbacks(command, path, callbacks):
                 SciTEModule.registeredCallbacks[eventName] = []
                 
             SciTEModule.registeredCallbacks[eventName].append((command, path))
-        
+    
+def findChosenProperty(command, suffixes):
+    suffixChosen = None
+    valChosen = None
+    for suffix in suffixes:
+        val = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.action.' + suffix)
+        if val != None:
+            if valChosen != None:
+                assert False, 'command %s shouldn\'t have an action for both %s and %s'%(command, suffixChosen, suffix)
+            else:
+                suffixChosen = suffix
+                valChosen = val
+    return valChosen, suffixChosen
+
 def lookForRegistration():
     SciTEModule.ScApp.SetProperty('ScitePythonExtension.Temp', '$(star *customcommandsregister.)')
     commands = SciTEModule.ScApp.GetProperty('ScitePythonExtension.Temp')
@@ -300,42 +316,71 @@ def lookForRegistration():
     for command in commands:
         command = command.strip()
         if command:
-            path = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.path')
+            # some of the following are 'temporary' because we shouldn't use the value in the future, it's already expanded
+            # e.g. if the action contains a reference to '$(FilePath)' then actionTemporary contains the expanded form, frozen
+            filetypes = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.filetypes')
             callbacks = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.callbacks')
+            path = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.path')
+            nameTemporary = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.name')
+            shortcutTemporary = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.shortcut')
+            modeTemporary = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.mode')
+            stdinTemporary = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.stdin')
+            actionTemporary, subsystem = findChosenProperty(command, ['waitforcomplete_console', 'waitforcomplete', 'start', 'py'])
+            
+            if not filetypes:
+                filetypes = '*'
+            
+            if callbacks and (' ' in callbacks or '\t' in callbacks or '/' in callbacks or '\\' in callbacks):
+                assert False, 'in command %s, callbacks invalid, expected syntax like OnOpen|OnSwitchFile.' % command
+            
+            if not nameTemporary:
+                assert False, 'in command %s, must define a name' % command
+                
+            if path and subsystem != 'py':
+                assert False, 'in command %s, currently path is only needed for python modules' % command
+            
+            if shortcutTemporary and shortcutTemporary.lower() in heuristicDuplicateShortcut:
+                raise RuntimeError, 'command %s, the shortcut %s was apparently already registered ' % (command, shortcutTemporary)
+            else:
+                heuristicDuplicateShortcut[shortcutTemporary.lower()] = True
+            
+            if stdinTemporary and subsystem != 'waitforcomplete_console':
+                assert False, 'in command %s, providing stdin only supported for waitforcomplete_console' % command
+            
+            if not actionTemporary or not subsystem:
+                assert False, 'in command %s, must define exactly one action' % command
+            
+            # map subsystem names to SciTE's subsystem names
+            if subsystem == 'waitforcomplete_console':
+                modePrefix = 'subsystem:console,savebefore:no'
+            elif subsystem == 'waitforcomplete':
+                modePrefix = 'subsystem:windows,savebefore:no'
+            elif subsystem == 'start':
+                modePrefix = 'subsystem:shellexec,savebefore:no'
+            else:
+                modePrefix = 'subsystem:director,savebefore:no'
+            
+            if modeTemporary:
+                modePrefix += ','
+            
+            actionPrefix = ''
+            if subsystem == 'py':
+                actionPrefix = 'py:from SciTEModule import findCallbackModule, ScEditor, ScOutput, ScApp, ScConst; '
+                if 'ThisModule()' in actionTemporary:
+                    assert path, 'in command %s, use of ThisModule requires setting .path'
+                    actionPrefix += 'ThisModule = lambda: findCallbackModule("%s"); ' % command
+            
             if callbacks:
                 registerCallbacks(command, path, callbacks)
-            
-            stdin = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.stdin')
-            if stdin:
-                SciTEModule.ScApp.SetProperty('command.input.%d.%s' % (number, filetypes), '$(customcommand.' + command + '.stdin)')
-                
-            name = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.name')
-            if not name:
-                raise RuntimeError, 'command %s needs a name' % command
-                
-            filetypes = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.filetypes')
-            if not filetypes:
-                raise RuntimeError, 'command %s needs filetypes to be defined' % command
-            
-            action = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.action')
-            if not action:
-                raise RuntimeError, 'command %s needs an action to be defined' % command
-                
-            shortcut = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.shortcut')
-            if shortcut and shortcut.lower() in heuristicDuplicateShortcut:
-                raise RuntimeError, 'command %s , the shortcut %s was apparently already registered ' % (command, shortcut)
-            else:
-                heuristicDuplicateShortcut[shortcut.lower()] = True
-            
-            # dynamically add a command
-            # direct each property to another property so that we'll still have runtime expansion.
+                        
             SciTEModule.ScApp.SetProperty('command.name.%d.%s' % (number, filetypes), '$(customcommand.' + command + '.name)')
             SciTEModule.ScApp.SetProperty('command.shortcut.%d.%s' % (number, filetypes), '$(customcommand.' + command + '.shortcut)')
-            SciTEModule.ScApp.SetProperty('command.%d.%s' % (number, filetypes), '$(customcommand.' + command + '.action)')
-            SciTEModule.ScApp.SetProperty('command.mode.%d.%s' % (number, filetypes), '$(customcommand.' + command + '.mode)')
-            
+            SciTEModule.ScApp.SetProperty('command.mode.%d.%s' % (number, filetypes), modePrefix + '$(customcommand.' + command + '.mode)')
+            SciTEModule.ScApp.SetProperty('command.input.%d.%s' % (number, filetypes), '$(customcommand.' + command + '.stdin)')
+            SciTEModule.ScApp.SetProperty('command.%d.%s' % (number, filetypes), actionPrefix + '$(customcommand.' + command + '.action.' + subsystem + ')')
             number += 1
-    
+        
+
 from scite_extend_ui import ScToolUIManager, ScToolUIBase
 SciTEModule.ScEditor = ScPane(0)
 SciTEModule.ScOutput = ScPane(1)
