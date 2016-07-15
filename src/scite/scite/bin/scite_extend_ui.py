@@ -1,7 +1,12 @@
 
 import SciTEModule
+from scite_extend import ScEditor, ScOutput, ScApp, ScConst, OnEvent, findCallbackModule
 
-class ScToolUIManager(object):
+class ScToolUIManagerClass(object):
+    '''
+    This class manages the current user strip, and also guards calls to UserStripSet
+    so that only the active UI object can get/set data from the UI.
+    '''
     currentUserStrip = None
     
     def UserStripSet(self, toolUI, control, value):
@@ -21,6 +26,10 @@ class ScToolUIManager(object):
             self.currentUserStrip.OnRawEvent(control, eventType)
             
     def Show(self, toolUI):
+        # ensure that OnUserStrip events are passed to us
+        ScApp.EnableNotification('OnUserStrip')
+        
+        # show the ui
         SciTEModule.app_UserStripShow(toolUI.spec if toolUI else '')
         self.currentUserStrip = toolUI
     
@@ -29,6 +38,10 @@ class ScToolUIManager(object):
             raise RuntimeError('the UI object %s is no longer active' % toolUI)
 
 class ScToolUIBase(object):
+    '''
+    A class to help build a UserStrip user interface and conveniently invoke callbacks.
+    Inherit from this class to use it, see ScAskUserChoiceClass for an example.
+    '''
     def __init__(self):
         self.spec = ''
         self.currentNumber = 0
@@ -41,11 +54,11 @@ class ScToolUIBase(object):
         # because we want to know when the user strip is active
         
     def Show(self):
-        SciTEModule.ScToolUIManager.Show(self)
+        ScToolUIManager.Show(self)
         self.OnOpen()
         
     def Close(self):
-        SciTEModule.ScToolUIManager.Show(None)
+        ScToolUIManager.Show(None)
         
     def AddLabel(self, text):
         return self._add(text, start="'", end="'")
@@ -77,24 +90,24 @@ class ScToolUIBase(object):
     def OnRawEvent(self, control, eventType):
         # if the implementation class wants, it can see the raw event too
         res = self.OnEvent(control, eventType)
-        if res == SciTEModule.ScConst.StopEventPropagation():
+        if res == ScConst.StopEventPropagation():
             return None
         
-        if eventType == SciTEModule.ScConst.eventTypeClicked:
+        if eventType == ScConst.eventTypeClicked:
             callback, closes = self.callbackOnClick.get(control, (None, None))
             if callback:
                 callback()
             if closes:
                 self.Close()
     
-    def Get(self, *args):
-        return SciTEModule.ScToolUIManager.UserStripGetValue(self, *args)
+    def Get(self, *args, **kwargs):
+        return ScToolUIManager.UserStripGetValue(self, *args, **kwargs)
     
-    def Set(self, *args):
-        return SciTEModule.ScToolUIManager.UserStripSet(self, *args)
+    def Set(self, *args, **kwargs):
+        return ScToolUIManager.UserStripSet(self, *args, **kwargs)
         
-    def SetList(self, *args):
-        return SciTEModule.ScToolUIManager.UserStripSetList(self, *args)
+    def SetList(self, *args, **kwargs):
+        return ScToolUIManager.UserStripSetList(self, *args, **kwargs)
     
     # for the implementation class to override
     def AddControls(self):
@@ -105,4 +118,8 @@ class ScToolUIBase(object):
         
     def OnEvent(self, control, eventType):
         pass
+
+
+# create singleton instances
+ScToolUIManager = ScToolUIManagerClass()
 

@@ -2,17 +2,22 @@
 # Ben Fisher, 2016
 
 import SciTEModule
-import exceptions
 
 debugTracing = False
 
-class ScApp(object):
+class ScAppClass(object):
     '''
     Methods starting with "Cmd" are routed to SciTE,
     See documentation for a list of supported methods.
-    example: ScApp.Trace('test')
-    example: ScApp.CmdQuit()
+    example:
+        from scite_extend_ui import ScApp
+        ScApp.Trace('test')
+        ScApp.CmdQuit()
     '''
+    def __init__(self):
+        self.registeredCallbacks = dict()
+        self.cachedCallbackModules = dict()
+    
     def Trace(self, s):
         return SciTEModule.app_Trace(s)
     
@@ -28,6 +33,7 @@ class ScApp(object):
     def SetProperty(self, s, v):
         if debugTracing:
             print('SetProperty %s=%s'%(s, v))
+
         return SciTEModule.app_SetProperty(s, v)
     
     def UnsetProperty(self, s):
@@ -38,7 +44,7 @@ class ScApp(object):
         
     def EnableNotification(self, eventName, enabled=True):
         return SciTEModule.app_EnableNotification(eventName, 1 if enabled else 0)
-        
+    
     def GetFilePath(self):
         return self.GetProperty('FilePath')
         
@@ -68,12 +74,14 @@ class ScApp(object):
             # return a callable object; it looks like a method to the caller.
             return (lambda: SciTEModule.app_SciteCommand(s))
         else:
-            raise exceptions.AttributeError
+            raise AttributeError()
 
-class ScConst(object):
+class ScConstClass(object):
     '''
-    ScApp is a class for retrieving a SciTE constants from IFaceTable.cxx
-    example: n = ScConst.SCFIND_WHOLEWORD
+    a class for retrieving a SciTE constants from IFaceTable.cxx
+    example:
+        from scite_extend_ui import ScConst 
+        n = ScConst.SCFIND_WHOLEWORD
     See documentation for a list of supported constants.
     '''
     def __init__(self):
@@ -85,7 +93,7 @@ class ScConst(object):
         
     def __getattr__(self, s):
         if s.startswith('_'):
-            raise exceptions.AttributeError
+            raise AttributeError()
         else:
             return SciTEModule.app_GetConstant(s)
             
@@ -119,18 +127,19 @@ class ScConst(object):
     def StopEventPropagation(self):
         return 'StopEventPropagation'
 
-class ScPane(object):
+class ScPaneClass(object):
     '''
-    ScPane represents a Scintilla window: either the main code editor or the output pane.
+    represents a Scintilla window, either the main code editor or the output pane.
     Methods beginning with 'Get' are property queries sent to Scintilla.
     Methods beginning with 'Set' are property changes sent to Scintilla.
     Methods beginning with 'Cmd' are commands sent to Scintilla.
     See documentation for a list of supported methods.
-    
-    example: print('language is ' + ScEditor.GetLexerLanguage())
-    example: print('using tabs is ' + ScEditor.GetUseTabs())
-    example: ScEditor.SetUseTabs(False)
-    example: ScEditor.CmdLineDuplicate()
+    example:
+        from scite_extend_ui import ScEditor
+        print('language is ' + ScEditor.GetLexerLanguage())
+        print('using tabs is ' + ScEditor.GetUseTabs())
+        ScEditor.SetUseTabs(False)
+        ScEditor.CmdLineDuplicate()
     '''
     
     paneNumber = -1
@@ -166,11 +175,11 @@ class ScPane(object):
     
     def FindText(self, s, pos1=0, pos2=-1, wholeWord=False, matchCase=False, regExp=False, flags=0): 
         if wholeWord:
-            flags |= SciTEModule.ScConst.SCFIND_WHOLEWORD
+            flags |= ScConst.SCFIND_WHOLEWORD
         if matchCase:
-            flags |= SciTEModule.ScConst.SCFIND_MATCHCASE
+            flags |= ScConst.SCFIND_MATCHCASE
         if regExp:
-            flags |= SciTEModule.ScConst.SCFIND_REGEXP
+            flags |= ScConst.SCFIND_REGEXP
             
         return SciTEModule.pane_FindText(self.paneNumber, s, flags, pos1, pos2)
         
@@ -227,20 +236,21 @@ class ScPane(object):
             sprop = sprop[3:]
             return (lambda *args: SciTEModule.pane_ScintillaFn(self.paneNumber, sprop, args))
         else:
-            raise exceptions.AttributeError
+            raise AttributeError()
     
 def OnEvent(eventName, args):
     # user strip events are handled differently
     if eventName == 'OnUserStrip':
-        return SciTEModule.ScToolUIManager.OnUserStrip(*args)
+        import scite_extend_ui
+        return scite_extend_ui.ScToolUIManager.OnUserStrip(*args)
         
-    callbacks = SciTEModule.registeredCallbacks.get(eventName, None)
+    callbacks = ScApp.registeredCallbacks.get(eventName, None)
     if callbacks:
         for command, path in callbacks:
             try:
                 module = findCallbackModuleFromPath(command, path)
                 val = callCallbackModule(module, command, eventName, args)
-                if val == SciTEModule.ScConst.StopEventPropagation():
+                if val == ScConst.StopEventPropagation():
                     # the user has asked that we not process any other callbacks
                     return val
             except Exception:
@@ -250,12 +260,12 @@ def OnEvent(eventName, args):
 
 def findCallbackModuleFromPath(command, path):
     # it's more intuitive for each module's state to persist.
-    cached = SciTEModule.cacheCallbackModule.get(path, None)
+    cached = ScApp.cachedCallbackModules.get(path, None)
     if cached:
         return cached
     
     import sys, os, importlib
-    expectedPythonModdir = os.path.join(SciTEModule.ScApp.GetSciteDirectory(), path)
+    expectedPythonModdir = os.path.join(ScApp.GetSciteDirectory(), path)
     expectedPythonInit = os.path.join(expectedPythonModdir, '__init__.py')
     if not os.path.isfile(expectedPythonInit):
         raise RuntimeError, 'command %s could not find a file at %s' % (command, expectedPythonInit)
@@ -268,11 +278,11 @@ def findCallbackModuleFromPath(command, path):
     finally:
         sys.path = pathsaved
     
-    SciTEModule.cacheCallbackModule[path] = module
+    ScApp.cachedCallbackModules[path] = module
     return module
 
 def findCallbackModule(command):
-    path = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.path')
+    path = ScApp.GetProperty('customcommand.' + command + '.path')
     assert path, 'in command %s, path must be defined to use ThisModule.' % command
     return findCallbackModuleFromPath(command, path)
 
@@ -291,18 +301,18 @@ def registerCallbacks(command, path, callbacks):
         eventName = eventName.strip()
         if eventName:
             assert eventName.startswith('On')
-            SciTEModule.ScApp.EnableNotification(eventName)
+            ScApp.EnableNotification(eventName)
             
-            if eventName not in SciTEModule.registeredCallbacks:
-                SciTEModule.registeredCallbacks[eventName] = []
+            if eventName not in ScApp.registeredCallbacks:
+                ScApp.registeredCallbacks[eventName] = []
                 
-            SciTEModule.registeredCallbacks[eventName].append((command, path))
+            ScApp.registeredCallbacks[eventName].append((command, path))
     
 def findChosenProperty(command, suffixes):
     suffixChosen = None
     valChosen = None
     for suffix in suffixes:
-        val = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.action.' + suffix)
+        val = ScApp.GetProperty('customcommand.' + command + '.action.' + suffix)
         if val != None:
             if valChosen != None:
                 assert False, 'command %s shouldn\'t have an action for both %s and %s'%(command, suffixChosen, suffix)
@@ -312,8 +322,8 @@ def findChosenProperty(command, suffixes):
     return valChosen, suffixChosen
 
 def lookForRegistration():
-    SciTEModule.ScApp.SetProperty('ScitePythonExtension.Temp', '$(star *customcommandsregister.)')
-    commands = SciTEModule.ScApp.GetProperty('ScitePythonExtension.Temp')
+    ScApp.SetProperty('ScitePythonExtension.Temp', '$(star *customcommandsregister.)')
+    commands = ScApp.GetProperty('ScitePythonExtension.Temp')
     commands = (commands or '').split('|')
     number = 10 # assign this command number, 0 to 9 are given shortcuts Ctrl+0 to Ctrl+9
     heuristicDuplicateShortcut = dict()
@@ -328,13 +338,13 @@ def lookForRegistration():
 def registerCustomCommand(heuristicDuplicateShortcut, command, number):
     # some of the following are 'temporary' because we shouldn't use the value in the future, it's already expanded
     # e.g. if the action contains a reference to '$(FilePath)' then actionTemporary contains the expanded form, frozen
-    filetypes = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.filetypes')
-    callbacks = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.callbacks')
-    path = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.path')
-    nameTemporary = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.name')
-    shortcutTemporary = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.shortcut')
-    modeTemporary = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.mode')
-    stdinTemporary = SciTEModule.ScApp.GetProperty('customcommand.' + command + '.stdin')
+    filetypes = ScApp.GetProperty('customcommand.' + command + '.filetypes')
+    callbacks = ScApp.GetProperty('customcommand.' + command + '.callbacks')
+    path = ScApp.GetProperty('customcommand.' + command + '.path')
+    nameTemporary = ScApp.GetProperty('customcommand.' + command + '.name')
+    shortcutTemporary = ScApp.GetProperty('customcommand.' + command + '.shortcut')
+    modeTemporary = ScApp.GetProperty('customcommand.' + command + '.mode')
+    stdinTemporary = ScApp.GetProperty('customcommand.' + command + '.stdin')
     actionTemporary, subsystem = findChosenProperty(command, ['waitforcomplete_console', 'waitforcomplete', 'start', 'py'])
     
     if not filetypes:
@@ -375,7 +385,7 @@ def registerCustomCommand(heuristicDuplicateShortcut, command, number):
     
     actionPrefix = ''
     if subsystem == 'py':
-        actionPrefix = 'py:from SciTEModule import findCallbackModule, ScEditor, ScOutput, ScApp, ScConst; '
+        actionPrefix = 'py:from scite_extend_ui import *; '
         if 'ThisModule()' in actionTemporary:
             assert path, 'in command %s, use of ThisModule requires setting .path'
             actionPrefix += 'ThisModule = lambda: findCallbackModule("%s"); ' % command
@@ -383,23 +393,16 @@ def registerCustomCommand(heuristicDuplicateShortcut, command, number):
     if callbacks:
         registerCallbacks(command, path, callbacks)
                 
-    SciTEModule.ScApp.SetProperty('command.name.%d.%s' % (number, filetypes), '$(customcommand.' + command + '.name)')
-    SciTEModule.ScApp.SetProperty('command.shortcut.%d.%s' % (number, filetypes), '$(customcommand.' + command + '.shortcut)')
-    SciTEModule.ScApp.SetProperty('command.mode.%d.%s' % (number, filetypes), modePrefix + '$(customcommand.' + command + '.mode)')
-    SciTEModule.ScApp.SetProperty('command.input.%d.%s' % (number, filetypes), '$(customcommand.' + command + '.stdin)')
-    SciTEModule.ScApp.SetProperty('command.%d.%s' % (number, filetypes), actionPrefix + '$(customcommand.' + command + '.action.' + subsystem + ')')
+    ScApp.SetProperty('command.name.%d.%s' % (number, filetypes), '$(customcommand.' + command + '.name)')
+    ScApp.SetProperty('command.shortcut.%d.%s' % (number, filetypes), '$(customcommand.' + command + '.shortcut)')
+    ScApp.SetProperty('command.mode.%d.%s' % (number, filetypes), modePrefix + '$(customcommand.' + command + '.mode)')
+    ScApp.SetProperty('command.input.%d.%s' % (number, filetypes), '$(customcommand.' + command + '.stdin)')
+    ScApp.SetProperty('command.%d.%s' % (number, filetypes), actionPrefix + '$(customcommand.' + command + '.action.' + subsystem + ')')
         
-
-from scite_extend_ui import ScToolUIManager, ScToolUIBase
-SciTEModule.ScEditor = ScPane(0)
-SciTEModule.ScOutput = ScPane(1)
-SciTEModule.ScApp = ScApp()
-SciTEModule.ScConst = ScConst()
-SciTEModule.ScToolUIManager = ScToolUIManager()
-SciTEModule.ScToolUIBase = ScToolUIBase
-SciTEModule.registeredCallbacks = dict()
-SciTEModule.cacheCallbackModule = dict()
-SciTEModule.findCallbackModule = findCallbackModule
-
+# create singleton instances
+ScEditor = ScPaneClass(0)
+ScOutput = ScPaneClass(1)
+ScApp = ScAppClass()
+ScConst = ScConstClass()
 lookForRegistration()
 

@@ -12,8 +12,8 @@
 #include <windows.h>
 #endif
 
-// on startup, import the python module scite_extend.py
-static const char* c_PythonModuleName = "scite_extend";
+// on startup, import the python module scite_extend_ui.py
+static const char* c_PythonModuleName = "scite_extend_ui";
 int FindFriendlyNamedIDMConstant(const char* name);
 bool GetPaneFromInt(int nPane, ExtensionAPI::Pane* outPane);
 bool PullPythonArgument(IFaceType type, PyObject* pyObjNext, intptr_t* param);

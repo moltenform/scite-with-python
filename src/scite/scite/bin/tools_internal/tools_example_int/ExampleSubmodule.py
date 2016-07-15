@@ -1,6 +1,5 @@
 
-from SciTEModule import ScConst, ScApp, ScToolUIBase
-import SciTEModule
+from scite_extend_ui import *
 
 class ExampleUI(ScToolUIBase):
     def AddControls(self):
