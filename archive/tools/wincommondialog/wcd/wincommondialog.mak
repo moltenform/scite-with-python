@@ -1,5 +1,5 @@
 
-# use with nmake, nmake -f wincommondialog.mak
+# use with nmake, nmake -f wincommondialog.mak all
 
 # set variables
 EXECUTABLE_NAME = wincommondialog.exe
@@ -14,14 +14,17 @@ SRC_FILES= \
   $(DIR_SRC)\main.cpp \
   $(DIR_SRC)\printx.cpp
 
-# description block
+# $< apparently gets expanded to .\*.cpp
 # /EHsc for exception handling
 # /Fe - to define binary output destination directory
 # /I - to provide path to header file(s)
-$(EXECUTABLE_NAME) : $(SRC_FILES)
-  cl /EHsc /Fe$(DIR_BIN_X86)\$(EXECUTABLE_NAME) /I$(DIR_INCLUDE) $(SRC_FILES)
-  copy *.obj $(DIR_INTERMEDIATE_X86)
-  del *.obj
+{$(DIR_SRC)}.cpp{$(DIR_INTERMEDIATE_X86)}.obj ::
+        @echo Compiling...
+ cl /c /EHsc /Fo$(DIR_INTERMEDIATE_X86)\ /I$(DIR_INCLUDE) $<
+
+$(EXECUTABLE_NAME) : $(DIR_INTERMEDIATE_X86)\*.obj
+   @echo Linking $(EXECUTABLE_NAME)...
+   link /out:$(DIR_BIN_X86)\$(EXECUTABLE_NAME) $(DIR_INTERMEDIATE_X86)\*.obj
 
 # build application
 wincommondialog: $(EXECUTABLE_NAME)
@@ -38,4 +41,5 @@ clean:
 
 # create directories and build application
 all: clean create_dirs wincommondialog
+
 
