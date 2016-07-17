@@ -27,3 +27,4 @@ A specific compiler should be used, because of python's conventions for the msvc
 - unzip libs
 	Unzip src/scite/scite/python/libs.zip into src/scite/scite/python/libs
 	Unzip src/scite/scite/bin/pythonbinaries.zip into src/scite/scite/bin
+	Unzip src/scite/scite/bin/tools_internal/wincommondialog/wincommondialog.zip into tools_internal/wincommondialog/
