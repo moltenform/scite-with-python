@@ -1,79 +1,61 @@
-// WinCommonDialog.cpp : Defines the entry point for the console application
-// See http://msdn.microsoft.com/en-us/library/ms645505(VS.85).aspx
 
+// WinCommonDialog  Copyright (C) 2008  Ben Fisher
+// This program comes with ABSOLUTELY NO WARRANTY; for details type `show w'.
+// This is free software, and you are welcome to redistribute it
+// under certain conditions.
+    
+// uses Unicode Character Set, see makefile
+// requires "winmm.lib", see linker flags in makefile
 
-// "Winmm.lib" added to External dependencies under Project settings/linker
-// "Use Unicode Character Set" turned on in Project settings
-// Pre-compiled headers turned off in Project settings
-
-#include "WinCommonDialog.h"
-#include "dialog_simple.h"
-#include "dialog_file.h"
-#include "dialog_color.h"
-#include "dialog_sound.h"
-#include "dialog_textinput.h"
+#include "utils.h"
 
 const char * documentation = 
-"WinCommonDialog.exe, Ben Fisher 2008, GPL\n"
-"A wrapper over simple Windows dialogs, using return code to pass result.\n"
-"Part of Launchorz, http://github.com/downpoured/lnzscript/\n"
-"\n"
-"This is divided into 3 different functions. For more specific help, type:\n"
-"WinCommonDialog simple /?\n"
-"WinCommonDialog color /?\n"
-"WinCommonDialog file /?\n"
-"WinCommonDialog sound /?\n"
-"WinCommonDialog text /?\n"
-"\n";
+	"WinCommonDialog.exe, Ben Fisher 2008\n"
+	"A wrapper over simple Windows dialogs, using return code to pass result.\n"
+	"\n"
+	"This is divided into different functions. For more specific help, type:\n"
+	"WinCommonDialog simple /?\n"
+	"WinCommonDialog color /?\n"
+	"WinCommonDialog file /?\n"
+	"WinCommonDialog sound /?\n"
+	"WinCommonDialog text /?\n\n";
 
+int dialog_simple(int argc, _TCHAR* argv[]);
+int dialog_color(int argc, _TCHAR* argv[]);
+int dialog_file(int argc, _TCHAR* argv[]);
+int dialog_sound(int argc, _TCHAR* argv[]);
+int dialog_textinput(int argc, _TCHAR* argv[]);
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	if (argc<2) { puts(documentation); puts("\nNot enough arguments"); return ErrorResult; }
-
-	_TCHAR* mode = get_argument(1, argc, argv);
-	if (stringequal(mode,_T("simple")))
+	// in general, return code 0 means success,
+	// return code 1 means missing or invalid parameter,
+	// other return codes have specific meaning to a module.
+	
+	_TCHAR* mode = getArgument(1, argc, argv);
+	if (mode && stringsEqual(mode, _T("simple")))
 	{
-		return dialog_simple(argc - 1, &argv[1]); // Pass arguments except name of program
+		return dialog_simple(argc - 1, &argv[1]);
 	}
-	else if (stringequal(mode,_T("color")))
+	else if (mode && stringsEqual(mode, _T("color")))
 	{
 		return dialog_color(argc - 1, &argv[1]);
 	}
-	else if (stringequal(mode,_T("file")))
+	else if (mode && stringsEqual(mode, _T("file")))
 	{
 		return dialog_file(argc - 1, &argv[1]);
 	}
-	else if (stringequal(mode,_T("sound")))
+	else if (mode && stringsEqual(mode, _T("sound")))
 	{
 		return dialog_sound(argc - 1, &argv[1]);
 	}
-	else if (stringequal(mode,_T("text")))
+	else if (mode && stringsEqual(mode, _T("text")))
 	{
 		return dialog_textinput(argc - 1, &argv[1]);
 	}
 	else
 	{
-		puts("Dialog type was not recognized. Run with no arguments to see doc.");
-		return ErrorResult;
+		puts(documentation);
+		return 1;
 	}
-
-	return 0;
-}
-
-bool stringequal(const _TCHAR* s1, const _TCHAR* s2)
-{
-	return (wcscmp(s1, s2) == 0);
-}
-
-// Bounds-checking when retrieving argument. Checks if argument exists. If it doesn't quit program.
-_TCHAR* get_argument(int index, int argc, _TCHAR** argv)
-{
-	if (index >= argc)
-	{
-		puts("Not enough arguments. Run without any arguments to see doc.");
-		exit(ErrorResult);
-		return 0;
-	}
-	return argv[index];
 }

@@ -7,7 +7,7 @@ DIR_SRC = .
 DIR_INCLUDE = ..\include
 DIR_BIN = .\bin
 DIR_BIN_X86 = $(DIR_BIN)\x86
-DIR_INTERMEDIATE = .\intermediate
+DIR_INTERMEDIATE = .\obj
 DIR_INTERMEDIATE_X86 = $(DIR_INTERMEDIATE)\x86
 
 
@@ -43,8 +43,8 @@ DIR_INTERMEDIATE_X86 = $(DIR_INTERMEDIATE)\x86
 COMPILERFLAGS=/GS  /Zc:wchar_t    /Zc:forScope  /Gm- /O2  /fp:precise /Gd /Oy- /MT
 
 # warning level 3
-# don't yet treat warnings as errors
-WARNINGS= /W3 /WX-
+# treat warnings as errors
+WARNINGS= /W3 /WX
 ADD_PREPROCESSOR_DEFINES=/D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_UNICODE" /D "UNICODE"
 
 # /EHsc for exception handling
@@ -61,17 +61,16 @@ LINKERLIBS="Winmm.lib" "kernel32.lib" "user32.lib" "gdi32.lib" "winspool.lib" "c
 
 # specify console app
 # include compiled resources
-ALLLINKERFLAGS=/SUBSYSTEM:CONSOLE wcdresources.res $(LINKERLIBS) $(LINKERFLAGS)
+ALLLINKERFLAGS=/SUBSYSTEM:CONSOLE $(DIR_INTERMEDIATE)\wcdresources.res $(LINKERLIBS) $(LINKERFLAGS)
 
 
 #  /l 409 means LANG_ENGLISH,SUBLANG_ENGLISH_US
 #  /fo$@  creates a .RES file named resname using script-file.
-# $@ expands to wcdresources.res
 RESCOMPILERFLAGS=/D "_UNICODE" /D "UNICODE" /l 0x0409 
 
 wcdresources.res: wcdresources.rc
-	$(RC) $(RESCOMPILERFLAGS) /fo$@ wcdresources.rc
-	
+	$(RC) $(RESCOMPILERFLAGS) /fo$(DIR_INTERMEDIATE)\wcdresources.res wcdresources.rc
+
 # $< apparently gets expanded to .\*.cpp
 {$(DIR_SRC)}.cpp{$(DIR_INTERMEDIATE_X86)}.obj ::
 	@echo Compiling...
@@ -94,6 +93,7 @@ clean:
  @if exist $(DIR_BIN_X86)\*.exe del $(DIR_BIN_X86)\*.exe 
  @if exist $(DIR_BIN_X86)\*.pdb del $(DIR_BIN_X86)\*.pdb 
  @if exist $(DIR_BIN_X86)\*.manifest del $(DIR_BIN_X86)\*.manifest 
+ @if exist $(DIR_INTERMEDIATE)\*.res del $(DIR_INTERMEDIATE)\*.res
  @if exist $(DIR_INTERMEDIATE_X86)\*.obj del $(DIR_INTERMEDIATE_X86)\*.obj
 
 # create directories and build application
