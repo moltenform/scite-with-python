@@ -511,6 +511,12 @@ bool SciTEBase::Open(FilePath file, OpenFlags of) {
 		if (!(of & ofForceLoad)) // Just rotate into view
 			return true;
 	}
+	
+	// Warn if the limit has been reached
+	if (!IsBufferAvailable() && (props.GetInt("buffers.warn.limitreached"))) {
+		Trace("Note: no additional buffers can be opened, the limit has been reached.\n");
+	}
+	
 	// See if we can have a buffer for the file to open
 	if (!CanMakeRoom(!(of & ofNoSaveIfDirty))) {
 		return false;

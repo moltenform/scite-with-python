@@ -2973,6 +2973,11 @@ void SciTEBase::SetLineNumberWidth() {
 void SciTEBase::MenuCommand(int cmdID, int source) {
 	switch (cmdID) {
 	case IDM_NEW:
+		// Warn if the limit has been reached
+		if (!IsBufferAvailable() && (props.GetInt("buffers.warn.limitreached"))) {
+			Trace("Note: no additional buffers can be opened, the limit has been reached.\n");
+		}
+		
 		// For the New command, the "are you sure" question is always asked as this gives
 		// an opportunity to abandon the edits made to a file when are.you.sure is turned off.
 		if (CanMakeRoom()) {
