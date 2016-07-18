@@ -1,19 +1,21 @@
 
-from scite_extend_ui import *
-
 class ChangeOrder(object):
     def go(self):
+        from scite_extend_ui import ScAskUserChoiceByPressingKey
         self.choices = ['A|sortaz|Sort A-Z', 'Z|sortza|Sort Z-A', 'R|reverse|Reverse', 
             'S|shuffle|Quick shuffle', 'N|sortnum|Sort numbers naturally', 
             '2|sortcol2|Sort by 2nd col', '3|sortcol3|Sort by 3rd col', '4|sortcol4|Sort by 4th col',
             'X|splitxml|Split xml by >', 'T|trimempty|trim empty lines',
             'I|splitwithindent|Split to lines, with indentation', 'J|joinwithoutindent|Join from trimmed lines',
-            'D|joinwithoutindentadddelim|Join from trimmed lines and add ;']
+            'D|joinwithoutindentadddelim|Join from trimmed lines and add ;',
+            'Q|insertsequencehelp|How to use insert numbered sequence',
+            '0|insertsequence|Insert numbered sequence']
         label = 'Please choose from this list how to change the selected lines:'
         ScAskUserChoiceByPressingKey(choices=self.choices, label=label, callback=self.onChoiceMade)
      
     def onChoiceMade(self, choice):
         from __init__ import modifyTextInScite
+        from scite_extend_ui import ScEditor
         ScEditor.expandSelectionToIncludeEntireLines()
         return modifyTextInScite(lambda text: self.runSort(text, choice))
 
@@ -51,6 +53,7 @@ class ChangeOrder(object):
                 print(silent or 'Please select at least two lines.')
                 return None
             else:
+                from scite_extend_ui import ScEditor
                 return ScEditor.GetEolCharacter()
         elif countTypes == 1:
             if hasWindows:
@@ -138,6 +141,14 @@ class ChangeOrder(object):
         
     def joinwithoutindentadddelim(self, lines):
         self.joinwithoutindent(lines, '; ')
+    
+    def insertsequencehelp(self, lines):
+        import insertsequentialnumbers
+        insertsequentialnumbers.insertsequentialnumbershelp()
+    
+    def insertsequence(self, lines):
+        import insertsequentialnumbers
+        insertsequentialnumbers.insertsequentialnumbers(lines)
 
 def DoChangeOrder():
     ChangeOrder().go()
