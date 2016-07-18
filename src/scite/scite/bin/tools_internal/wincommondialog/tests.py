@@ -1,6 +1,16 @@
 
 from __init__ import *
 
+def testDisallowCastToBool(obj):
+    didThrow = False
+    try:
+        # we want to stop this pattern
+        if obj:
+            print('Yes')
+    except RuntimeError:
+        didThrow = True
+    assertTrue(didThrow, 'we expected this to throw because we\'ve disallowed cast to bool.')
+
 def tests():
     import os
     def announce(s):
@@ -37,7 +47,6 @@ def tests():
     
     # don't test starting directory because it changes based on user's previous file selections, see
     # https://msdn.microsoft.com/en-us/library/windows/desktop/ms646839(v=vs.85).aspx
-    
     announce('The next dialog should accept any one file, please click cancel.')
     assertEq(None, askOpenFile())
 
@@ -50,8 +59,7 @@ def tests():
     announce('The next dialog should accept many files of type .py, please click cancel.')
     assertEq(None, askOpenFile(types='py', mult=True))
     
-    announce('The next dialog should accept any one file, please select a file ' + \
-        '\r\n\r\n(Unicode not yet supported because of a limitation in Python 2\'s subprocess module).')
+    announce('The next dialog should accept any one file, please select a file')
     chosen = askOpenFile()
     print('File chosen was %s' % chosen)
     assertTrue(os.path.isabs(chosen) and files.isfile(chosen))

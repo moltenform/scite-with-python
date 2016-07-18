@@ -1,82 +1,94 @@
 
 from ben_python_common import *
 
-
 def showMsg(text, title=''):
+    '''show a simple message box'''
     callProc(['simple', 'info', title, text])
 
 def showError(text, title=''):
+    '''show a simple message box with error icon'''
     callProc(['simple', 'error', title, text])
 
 def showWarning(text, title=''):
+    '''show a simple message box with warning icon'''
     callProc(['simple', 'warning', title, text])
     
 def askYesNo(text, title=''):
+    '''ask user to choose Yes or No'''
     retcode, stdout = callProc(['simple', 'yesno', title, text])
     return True if retcode == 8 else False
 
 def askOKCancel(text, title=''):
+    '''ask user to choose OK or Cancel'''
     retcode, stdout = callProc(['simple', 'okcancel', title, text])
     return True if retcode == 8 else False
 
 def askYesNoCancel(text, title=''):
-    # be helpful and throw an error if the caller mistakenly has the pattern "if result:"
-    # instead of "if result == 'cancel'"
-    class WrapResult(object):
-        def __init__(self, value):
-            self.val = value
-        def __nonzero__(self):
-            raise RuntimeError('you must use .value() to check the value.')
-        def __bool__(self):
-            raise RuntimeError('you must use .value() to check the value.')
-        def value(self):
-            return self.val
-            
+    '''ask user to choose Yes, No, or Cancel. 
+    call .value() on the object that is returned to see the result'''
     retcode, stdout = callProc(['simple', 'yesnocancel', title, text])
     if retcode == 8:
-        return WrapResult('yes')
+        return DisallowCastToBool('yes')
     elif retcode == 4:
-        return WrapResult('no')
+        return DisallowCastToBool('no')
     else:
-        return WrapResult('cancel')
+        return DisallowCastToBool('cancel')
 
 def askColor():
+    '''shows system color picker, returns results as tuple of red, green, blue'''
     retcode, stdout = callProc(['color'])
-    parts = stdout.split('|')
-    if (parts[1] == 'color_cancel'):
-        return None
-    else:
-        return (int(parts[2]), int(parts[3]), int(parts[4]))
+    try:
+        parts = stdout.split('|')
+        if (parts[1] == 'color_cancel'):
+            return None
+        else:
+            return (int(parts[2]), int(parts[3]), int(parts[4]))
+    except:
+        print('retcode=%d; stdout=%s' % (retcode, stdout))
+        raise
 
 def askFileBase(action, types=None, startdir=None, mult=False):
-    # note: in Python 3 this will support unicode, but in Python 2 it will not, 
-    # see files.runWithoutWaitUnicode for my workaround for a similar case.
+    '''open file dialog.
+    note: in Python 3 this will support unicode, but in Python 2 it will not, 
+    see files.runWithoutWaitUnicode for my workaround for a similar case.'''
     if types and ('*' in types or '.' in types):
         raise ValueError('types should be just the extension, e.g. "png" not "*.png"')
     args = ['file', action, types or '*' ]
     if startdir:
         args.append(startdir)
     retcode, stdout = callProc(args)
-    parts = stdout.split('|')
-    if (parts[1] == 'file_cancel'):
-        return None
-    elif mult:
-        if len(parts) == 4:
-            return [parts[2]]
+    try:
+        parts = stdout.split('|')
+        if (parts[1] == 'file_cancel'):
+            return None
+        elif mult:
+            if len(parts) == 4:
+                return [parts[2]]
+            else:
+                dir = parts[2]
+                filenames = parts[3:]
+                filenames.pop() # remove the trailng | character
+                return [files.join(dir, filename) for filename in filenames]
         else:
-            dir = parts[2]
-            filenames = parts[3:]
-            filenames.pop() # remove the trailng | character
-            return [files.join(dir, filename) for filename in filenames]
-    else:
-        assertTrue(len(parts) == 4, 'expected length of 4')
-        return parts[2]
+            assertTrue(len(parts) == 4, 'expected length of 4')
+            return parts[2]
+    except:
+        print('retcode=%d; stdout=%s' % (retcode, stdout))
+        raise
         
 def askOpenFile(types=None, startdir=None, mult=False):
+    '''shows system file picker.'''
     action = 'openmult' if mult else 'open'
-    return askFileBase(action, types=types, startdir=startdir, mult=mult)
-        
+    results = askFileBase(action, types=types, startdir=startdir, mult=mult)
+    
+    # confirm files exist.
+    if results:
+        assertTrue(all(files.isfile(filename) for filename in (results if mult else [results])), 
+            'Unicode not supported due to limitation in the Python 2 subprocess module.')
+    return results
+
 def askSaveFile(types=None, startdir=None, autoFixExtension=True):
+    '''shows file picker, by default will automatically append specified file extension.'''
     result = askFileBase(action='save', types=types, startdir=startdir)
     
     # add the extension if the user didn't add it...
@@ -90,21 +102,26 @@ def askSaveFile(types=None, startdir=None, autoFixExtension=True):
     return result
 
 def playSound(path='Asterisk'):
-    # special sounds are 'Asterisk' 'Default' 'Exclamation' 'Question'
+    '''play a sound. provide path to wav file or one of 'Asterisk' 'Default' 'Exclamation' 'Question' '''
     retcode, stdout = callProc(['sound', path])
     return retcode == 0
 
 def askInput(prompt='Please provide input:', title='', default=''):
+    '''ask user to provide text'''
     retcode, stdout = callProc(['text', title, prompt, default])
-    maxSplits = 2
-    parts = stdout.split('|')
-    if parts[1] == 'text_cancel':
-        return None
-    else:
-        # it's possible that the user typed in some | characters
-        result = parts[2:]
-        result.pop() # remove the trailng | character
-        return '|' .join(result)
+    try:
+        maxSplits = 2
+        parts = stdout.split('|')
+        if parts[1] == 'text_cancel':
+            return None
+        else:
+            # it's possible that the user typed in some | characters
+            result = parts[2:]
+            result.pop() # remove the trailng | character
+            return '|' .join(result)
+    except:
+        print('retcode=%d; stdout=%s' % (retcode, stdout))
+        raise
         
 def callProc(args):
     import os
@@ -117,15 +134,16 @@ def callProc(args):
     retcode, stdout, stderr = files.run(args, throwOnFailure=False, stripText=False, captureoutput=True)
     return retcode, stdout
 
-def testDisallowCastToBool(obj):
-    didThrow = False
-    try:
-        # we want to stop this pattern
-        if obj:
-            print('Yes')
-    except RuntimeError:
-        didThrow = True
-    assertTrue(didThrow, 'we expected this to throw because we\'ve disallowed cast to bool.')
+class DisallowCastToBool(object):
+    ''' for results that are more than just true or false,
+    prevent the caller from writing the code if result: ... else ...
+    the caller should instead say if result.value() == 'yes': ...'''
+    def __init__(self, value):
+        self.val = value
+    def __nonzero__(self):
+        raise RuntimeError('you must use .value() to check the value.')
+    def __bool__(self):
+        raise RuntimeError('you must use .value() to check the value.')
+    def value(self):
+        return self.val
 
-
-    

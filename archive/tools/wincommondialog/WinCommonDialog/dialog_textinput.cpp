@@ -60,6 +60,7 @@ class MyInputDialog
 	std::wstring _defaultText;
 	std::wstring _inputContents;
 	bool _canceled;
+	bool _success;
 	static BOOL CALLBACK TextInputDlg(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 	
 public:
@@ -69,6 +70,7 @@ public:
 		_prompt = prompt;
 		_defaultText = defaultText ? defaultText : L"";
 		_canceled = false;
+		_success = false;
 	}
 	
 	void Show(std::wstring& outResult, bool& canceled, bool& error)
@@ -82,7 +84,7 @@ public:
 			NULL, reinterpret_cast<DLGPROC>(TextInputDlg), 
 			reinterpret_cast<LPARAM>(this));
 		
-		if (result == -1)
+		if (result == -1 || !_success)
 		{
 			printf("DialogBoxParam failed with error %d\n", GetLastError());
 			error = true;
@@ -122,7 +124,14 @@ BOOL CALLBACK MyInputDialog::TextInputDlg(HWND hDlg, UINT msg, WPARAM wParam, LP
 				SetDlgItemText(hDlg, IDC_EDIT1, pthis->_defaultText.c_str());
 				SetDlgItemText(hDlg, IDC_THESTATIC1, pthis->_prompt.c_str());
 				SetWindowText(hDlg, pthis->_title.c_str());
-				SetProp(hDlg, L"stored_this_pointer", (HANDLE)lParam);
+				if (!SetProp(hDlg, L"stored_this_pointer", (HANDLE)lParam))
+				{
+					printf("SetProp failed, %d\n", GetLastError());
+				}
+			}
+			else
+			{
+				printf("Pointer from lParam was null.\n");
 			}
 			
 			// to give the edit control focus when the form is started, instead of SendDlgItemMessage
@@ -140,28 +149,43 @@ BOOL CALLBACK MyInputDialog::TextInputDlg(HWND hDlg, UINT msg, WPARAM wParam, LP
 			if (ControlIDOfCommand(wParam) == IDCANCEL)
 			{
 				EndDialog(hDlg, IDCANCEL);
-				
 				MyInputDialog* pthis = reinterpret_cast<MyInputDialog*>(
 					GetProp(hDlg, L"stored_this_pointer"));
+				
 				if (pthis)
 				{
+					pthis->_success = true;
 					pthis->_canceled = true;
+				}
+				else
+				{
+					printf("GetProp returned null, %d\n", GetLastError());
 				}
 				
 				return FALSE;
 			}
 			else if (ControlIDOfCommand(wParam) == IDOK) 
 			{
-				// if more than 16k chars are given, it will just truncate.
-				const int bufferSize = 16384;
-				WCHAR bufResults[bufferSize] = {0};
-				GetDlgItemText(hDlg, IDC_EDIT1, bufResults, bufferSize);
-				
-				MyInputDialog* pthis = reinterpret_cast<MyInputDialog*>(
-					GetProp(hDlg, L"stored_this_pointer"));
-				if (pthis)
+				DWORD lastError = 0;
+				std::wstring bufResults = GetDlgItemText(hDlg, IDC_EDIT1, lastError);
+				if (lastError)
 				{
-					pthis->_inputContents = bufResults;
+					printf("GetDlgItemText not successful, %d\n", GetLastError());
+				}
+				else
+				{
+					MyInputDialog* pthis = reinterpret_cast<MyInputDialog*>(
+						GetProp(hDlg, L"stored_this_pointer"));
+					
+					if (pthis)
+					{
+						pthis->_success = true;
+						pthis->_inputContents = bufResults;
+					}
+					else
+					{
+						printf("GetProp returned null, %d\n", GetLastError());
+					}
 				}
 				
 				EndDialog(hDlg, ControlIDOfCommand(wParam));

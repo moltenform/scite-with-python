@@ -53,3 +53,23 @@ void traceString(const _TCHAR* s1, bool newline)
 		wprintf(L"%s", s1);
 	}
 }
+
+std::wstring GetDlgItemText(HWND dlg, int itemId, DWORD& lastError)
+{
+	// if more than 16k chars are given, it will safely truncate.
+	const int bufferSize = 16384;
+	WCHAR bufResults[bufferSize] = {0};
+	
+	SetLastError(0);
+	UINT characters = GetDlgItemText(dlg, itemId, bufResults, bufferSize);
+	DWORD err = GetLastError();
+	if (characters == 0 && err != 0)
+	{
+		lastError = err;
+		return L"";
+	}
+	else
+	{
+		return bufResults;
+	}
+}

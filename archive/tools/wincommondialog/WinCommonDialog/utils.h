@@ -15,3 +15,4 @@ size_t stringLength(const _TCHAR* s1);
 
 void traceString(const _TCHAR* s1, bool newline = false);
 
+std::wstring GetDlgItemText(HWND dlg, int itemId, DWORD& lastError);

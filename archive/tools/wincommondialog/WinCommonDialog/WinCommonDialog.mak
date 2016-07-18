@@ -1,5 +1,7 @@
 
-# use with nmake, nmake -f wincommondialog.mak all
+# to build, 
+# open a prompt with msvc environment variables set
+# and run nmake -f wincommondialog.mak all
 
 # set variables
 EXECUTABLE_NAME = wincommondialog.exe
@@ -9,27 +11,6 @@ DIR_BIN = .\bin
 DIR_BIN_X86 = $(DIR_BIN)\x86
 DIR_INTERMEDIATE = .\obj
 DIR_INTERMEDIATE_X86 = $(DIR_INTERMEDIATE)\x86
-
-
-# prob not needed
-# /analyze-
-# /Fd"Release\vc140.pdb"
-# /errorReport:prompt
-# /Fp"Release\WinCommonDialog.pch" 
-# /Fo"Release\" 
-# /Fa"Release\"
-# /Zi makes a pdb
-# /Zc:inline removes certain unused data 
-# /Zc:inline
-  
-# linker try without
-# /MANIFEST
-# /PDB:"Release\WinCommonDialog.pdb"
-# /DEBUG
-# /PGD:"Release\WinCommonDialog.pgd"
-# /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /ManifestFile:"Release\WinCommonDialog.exe.intermediate.manifest"
-# /ERRORREPORT:PROMPT
-  
 
 # /GS Buffer Security Check
 # /Zc:wchar_t means to add wchar_t as a built-in type 
