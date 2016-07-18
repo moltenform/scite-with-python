@@ -196,7 +196,27 @@ class ScPaneClass(object):
     def GetCurLine(self):
         nLine = self.CmdLineFromPosition(self.GetCurrentPos())
         return self.GetLine(nLine)
+    
+    def GetEolCharacter(self):
+        n = self.GetEOLMode()
+        if n == 0:
+            return '\r\n'
+        elif n == 1:
+            return '\r'
+        else:
+            return '\n'
+            
+    def expandSelectionToIncludeEntireLines(self):
+        startline = self.CmdLineFromPosition(self.GetSelectionStart())
+        endline = self.CmdLineFromPosition(self.GetSelectionEnd()) + 1
+        startpos = self.CmdPositionFromLine(startline)
+        endpos = self.CmdPositionFromLine(endline)
         
+        # endpos might be at a newline character, though, so subtract from the selection until it is not.
+        while self.GetCharAt(endpos - 1) in (ord('\r'), ord('\n')):
+            endpos -= 1
+        self.SetSelection(startpos, endpos)
+    
     def CopyText(self, s):
         return SciTEModule.pane_ScintillaFn(self.paneNumber, 'CopyText', (len(s),s))
         

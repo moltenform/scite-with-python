@@ -210,19 +210,24 @@ class ScMultiKeyChoiceClass(object):
 
         self.callback = callback
         self.label = label
-        self.ValidateKeys(choices)
-        self.choiceKeys = [ord(s.split('|')[0]) for s in choices]
-        self.choiceIDs = [s.split('|')[1] for s in choices]
-        self.choiceShown = [s.split('|')[2] for s in choices]
+        self.choiceKeys = []
+        self.choiceIDs = []
+        self.choiceShown = []
+        self.ValidateAndSetKeys(choices)
 
-    def ValidateKeys(self, choices):
+    def ValidateAndSetKeys(self, choices):
         assert len(choices) > 0
+        seen = dict()
         for choice in choices:
-            ch = choice.split('|')[0]
+            ch, id, shown = choice.split('|')
             assert len(ch) == 1, 'key must be one character'
             isAlpha = ord('A') <= ord(ch) <= ord('Z')
             isNumeral = ord('0') <= ord(ch) <= ord('9')
             assert isAlpha or isNumeral, 'key must be 0-9 or A-Z'
+            assert ch not in seen, 'duplicate character ' + ch
+            self.choiceKeys.append(ord(ch))
+            self.choiceIDs.append(id)
+            self.choiceShown.append(shown)
             
     def Show(self):
         self.linesCountInOutput = ScOutput.GetLineCount()

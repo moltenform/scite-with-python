@@ -8,10 +8,6 @@ def ChangeCasing():
 def ChangeOrder():
     import changeorder
     return changeorder.DoChangeOrder()
-
-def SplitJoin():
-    import splitjoin
-    return splitjoin.DoSplitJoin()
     
 def InsertSequentialNumbers():
     import insertsequentialnumbers

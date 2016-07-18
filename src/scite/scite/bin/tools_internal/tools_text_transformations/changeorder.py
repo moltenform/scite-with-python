@@ -5,12 +5,16 @@ class ChangeOrder(object):
     def go(self):
         self.choices = ['A|sortaz|Sort A-Z', 'Z|sortza|Sort Z-A', 'R|reverse|Reverse', 
             'S|shuffle|Quick shuffle', 'N|sortnum|Sort numbers naturally', 
-            '2|sortcol2|Sort by 2nd col', '3|sortcol3|Sort by 3rd col']
-        label = 'Please choose from this list how to change the order of selected lines:'
+            '2|sortcol2|Sort by 2nd col', '3|sortcol3|Sort by 3rd col', '4|sortcol4|Sort by 4th col',
+            'X|splitxml|Split xml by >', 'T|trimempty|trim empty lines',
+            'I|splitwithindent|Split to lines, with indentation', 'J|joinwithoutindent|Join from trimmed lines',
+            'D|joinwithoutindentadddelim|Join from trimmed lines and add ;']
+        label = 'Please choose from this list how to change the selected lines:'
         ScAskUserChoiceByPressingKey(choices=self.choices, label=label, callback=self.onChoiceMade)
      
     def onChoiceMade(self, choice):
         from __init__ import modifyTextInScite
+        ScEditor.expandSelectionToIncludeEntireLines()
         return modifyTextInScite(lambda text: self.runSort(text, choice))
 
     def runSort(self, text, choice):
@@ -19,32 +23,46 @@ class ChangeOrder(object):
         method = self.__getattribute__(choice)
         
         # validate lines and get newline character
-        newlineChar = self.getLineCharacter(text)
-        if not newlineChar:
+        self.newlineChar = self.getLineCharacter(text, choice=choice)
+        if not self.newlineChar:
             return None
         
         # split text into lines
-        lines = text.split(newlineChar)
+        lines = text.split(self.newlineChar)
         method(lines)
-        return newlineChar.join(lines)
+        return self.newlineChar.join(lines)
         
-    def getLineCharacter(self, text, silent=None):
+    def getLineCharacter(self, text, silent=None, choice=None):
+        import re
         text = text or ''
-        if '\n' not in text:
-            print(silent or 'Please select at least two lines.')
-            return False
         
-        if '\r\n' in text:
-            # make sure it doesn't have both \r\n and \n.
-            textNoWindows = text.replace('\r\n', '')
-            if '\n' in textNoWindows:
-                print(silent or 'Contains both unix and windows newlines, ' +
-                    'please address this first.')
-                return False
-            
-            return '\r\n'
+        # we don't expect to end with a newline because of the logic in expandSelectionToIncludeEntireLines.
+        assert not text or text[-1] not in ('\r', '\n')
+        
+        reWindows = re.compile('\r\n', re.M)
+        reMacClassic = re.compile('\r[^\n]', re.M)
+        reUnix = re.compile('[^\r]\n', re.M)
+        hasWindows = re.search(reWindows, text)
+        hasMacClassic = re.search(reMacClassic, text)
+        hasUnix = re.search(reUnix, text)
+        countTypes = sum(bool(found) for found in (hasWindows, hasMacClassic, hasUnix))
+        if countTypes == 0:
+            if choice not in ('splitxml', 'splitwithindent'):
+                print(silent or 'Please select at least two lines.')
+                return None
+            else:
+                return ScEditor.GetEolCharacter()
+        elif countTypes == 1:
+            if hasWindows:
+                return '\r\n'
+            elif hasMacClassic:
+                return '\r'
+            else:
+                return '\n'
         else:
-            return '\n'
+            print(silent or 'Contains both unix and windows newlines, ' +
+                    'please address this first.')
+            return None
 
     def sortaz(self, lines):
         lines.sort()
@@ -70,6 +88,9 @@ class ChangeOrder(object):
 
     def sortcol3(self, lines):
         return self.sortcoln(lines, 2)
+        
+    def sortcol4(self, lines):
+        return self.sortcoln(lines, 3)
     
     def sortcoln(self, lines, whichColToSort):
         def key(text):
@@ -84,6 +105,39 @@ class ChangeOrder(object):
             return parts
             
         lines.sort(key=key)
+    
+    def splitxml(self, lines):
+        # put a nl after every > that wasn't already next to a nl
+        for i in range(len(lines)):
+            allButLastChar = lines[i][0:-1]
+            lastChar = lines[i][-1]
+            lines[i] = allButLastChar.replace('>', '>' + self.newlineChar) + lastChar
+    
+    def trimempty(self, lines):
+        # deletes empty lines
+        result = [line for line in lines if line.strip()]
+        lines[:] = result
+    
+    def splitwithindent(self, lines, delimiter=';'):
+        # splits the lines, but adds an appropriate amount of whitespace before each line
+        result = []
+        for line in lines:
+            countLeftWhitespace = len(line) - len(line.lstrip())
+            leftWhitespace = line[0:countLeftWhitespace]
+            parts = line.split(delimiter)
+            result.extend(((leftWhitespace + part.strip()) for part in parts))
+            
+        lines[:] = result
+        
+    def joinwithoutindent(self, lines, delimiter=' '):
+        # join and strip unneeded whitespace.
+        countLeftWhitespace = len(lines[0]) - len(lines[0].lstrip())
+        keepInitialWhitespace = lines[0][0:countLeftWhitespace]
+        result = delimiter.join((line.strip() for line in lines))
+        lines[:] = [keepInitialWhitespace + result]
+        
+    def joinwithoutindentadddelim(self, lines):
+        self.joinwithoutindent(lines, '; ')
 
 def DoChangeOrder():
     ChangeOrder().go()
@@ -94,19 +148,35 @@ if __name__ == '__main__':
     # unit tests
     obj = ChangeOrder()
     silent = ' ' # print empty lines instead of warnings
-    assertEq(False, obj.getLineCharacter(None, silent))
-    assertEq(False, obj.getLineCharacter('', silent))
-    assertEq(False, obj.getLineCharacter('abc', silent))
-    assertEq('\n', obj.getLineCharacter('\n', silent))
-    assertEq('\n', obj.getLineCharacter('\n\n\n', silent))
-    assertEq('\n', obj.getLineCharacter('abc\nabc', silent))
-    assertEq('\n', obj.getLineCharacter('\nabc\nabc\n', silent))
-    assertEq('\r\n', obj.getLineCharacter('abc\r\nabc', silent))
-    assertEq('\r\n', obj.getLineCharacter('\r\nabc\r\nabc\r\n', silent))
-    assertEq(False, obj.getLineCharacter('\r\n\n', silent))
-    assertEq(False, obj.getLineCharacter('\n\r\n', silent))
-    assertEq(False, obj.getLineCharacter('a\na\r\na', silent))
-    assertEq(False, obj.getLineCharacter('a\r\na\na', silent))
+    assertEq(None, obj.getLineCharacter(None, silent))
+    assertEq(None, obj.getLineCharacter('', silent))
+    assertEq(None, obj.getLineCharacter('abc', silent))
+    assertEq('\n', obj.getLineCharacter('\n\na', silent))
+    assertEq('\n', obj.getLineCharacter('a \n b', silent))
+    assertEq('\n', obj.getLineCharacter('a \n\n\n b', silent))
+    assertEq('\r', obj.getLineCharacter('\r\ra', silent))
+    assertEq('\r', obj.getLineCharacter('a \r b', silent))
+    assertEq('\r', obj.getLineCharacter('a \r\r\r b', silent))
+    assertEq('\r\n', obj.getLineCharacter('\r\n\r\na', silent))
+    assertEq('\r\n', obj.getLineCharacter('a \r\n b', silent))
+    assertEq('\r\n', obj.getLineCharacter('a \r\n\r\n\r\n b', silent))
+    assertEq(None, obj.getLineCharacter('a \n\r b', silent))
+    assertEq(None, obj.getLineCharacter('a \r\n\n b', silent))
+    assertEq(None, obj.getLineCharacter('a \n\r\n b', silent))
+    assertEq(None, obj.getLineCharacter('a \n\n\r b', silent))
+    assertEq(None, obj.getLineCharacter('a \n\r\r b', silent))
+    assertEq(None, obj.getLineCharacter('a \r\n\r b', silent))
+    assertEq(None, obj.getLineCharacter('a \r\r\n b', silent))
+    assertEq(None, obj.getLineCharacter('a \r   \n\n b', silent))
+    assertEq(None, obj.getLineCharacter('a \n   \r\n b', silent))
+    assertEq(None, obj.getLineCharacter('a \n   \n\r b', silent))
+    assertEq(None, obj.getLineCharacter('a \n\n   \r b', silent))
+    assertEq(None, obj.getLineCharacter('a \n   \r\r b', silent))
+    assertEq(None, obj.getLineCharacter('a \r   \n   \r b', silent))
+    assertEq(None, obj.getLineCharacter('a \r\r   \n b', silent))
+    
+    # counter-intuitive, but not a common user scenario
+    assertEq(None, obj.getLineCharacter('\na', silent))
     
     # first col alternates between a and b
     # second col counts upwards
@@ -126,10 +196,39 @@ if __name__ == '__main__':
     assertEq(expectedSort2nd, sort2nd)
     assertEq(expectedSort3rd, sort3rd)
     
+    def testLines(expected, input, fn):
+        arr = input.split('|')
+        fn(arr)
+        assertEq(expected, '|'.join(arr))
+    
     # cases where the line has only one col, exactly two cols, or more than two cols
     # if it only has one col it should be sorted to the beginning
-    testEmptyCases = 'a  z  1|b y|c  x|d  |e|f  a'.split('|')
-    expectedEmptyCases = ['d  ', 'e', 'f  a', 'c  x', 'b y', 'a  z  1']
-    obj.sortcol2(testEmptyCases)
-    assertEq(testEmptyCases, expectedEmptyCases)
+    testEmptyCases = 'a  z  1|b y|c  x|d  |e|f  a'
+    expectedEmptyCases = 'd  |e|f  a|c  x|b y|a  z  1'
+    testLines(expectedEmptyCases, testEmptyCases, obj.sortcol2)
+    
+    obj.newlineChar = '\n'
+    testLines('a b c', 'a b c', obj.splitxml)
+    testLines('<a>\n <b>\n <c>', '<a> <b> <c>', obj.splitxml) # final does not need a \n
+    testLines('<a>|<b>|<c>', '<a>|<b>|<c>', obj.splitxml) # it already has a \n
+    testLines('<a>\n |<b>| <c>', '<a> |<b>| <c>', obj.splitxml)
+    testLines('a|b|c', 'a||b||c', obj.trimempty)
+    testLines('a|b|c|d', 'a|  |b|\t\t|c|  \t|d', obj.trimempty)
+    testLines('a|b|c', 'a||||||b||c', obj.trimempty)
+    
+    testLines('a', 'a', obj.splitwithindent)
+    testLines('  a', '  a', obj.splitwithindent)
+    testLines('a|b|c', 'a;b;c', obj.splitwithindent)
+    testLines('a|b|c', 'a  ;  b  ;  c  ', obj.splitwithindent)
+    testLines('\ta|\tb|\tc', '\ta;b;c', obj.splitwithindent)
+    testLines('\ta|\tb|\tc', '\ta  ;  b  ;  c  ', obj.splitwithindent)
+    testLines('\ta|\tb|\tc|a|b|c|', '\ta;b;c|a;b;c|', obj.splitwithindent)
+    
+    testLines('a', 'a', obj.joinwithoutindentadddelim)
+    testLines('  a', '  a', obj.joinwithoutindentadddelim)
+    testLines('a; b; c', 'a|b|c', obj.joinwithoutindentadddelim)
+    testLines('  a; b; c', '  a|b|c', obj.joinwithoutindentadddelim)
+    testLines('  a; b; c', '  a|  b|  c', obj.joinwithoutindentadddelim)
+    testLines('  a; b; c', '  a  |  b  |  c  ', obj.joinwithoutindentadddelim)
+    
     
