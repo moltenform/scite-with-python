@@ -1223,9 +1223,18 @@ void SciTEBase::SetFileStackMenu() {
 				GUI::gui_string sEntry;
 
 #if defined(_WIN32) || defined(GTK)
-				GUI::gui_string sPos = GUI::StringFromInteger((stackPos + 1) % 10);
-				GUI::gui_string sHotKey = GUI_TEXT("&") + sPos + GUI_TEXT(" ");
-				sEntry = sHotKey;
+				// there are 10 items that can have an alt shortcut (the digits 0-9)
+				const int maxItemsWithAltShortcuts = 10;
+				if (stackPos < maxItemsWithAltShortcuts) {
+					GUI::gui_string sPos = GUI::StringFromInteger(
+						(stackPos + 1) % maxItemsWithAltShortcuts);
+					GUI::gui_string sHotKey = GUI_TEXT("&") + sPos + GUI_TEXT(" ");
+					sEntry = sHotKey;
+				} else {
+					// any entries past 10 won't be given an alt shortcut.
+					// add space before the entry, though, for visual alignment.
+					sEntry = GUI_TEXT("   ");
+				}
 #endif
 
 				GUI::gui_string path = recentFileStack[stackPos].AsInternal();

@@ -345,7 +345,12 @@ protected:
 	FilePath dirNameAtExecute;
 	FilePath dirNameForExecute;
 
+#if defined(_WIN32)
+	enum { fileStackMax = 20 };
+#else
 	enum { fileStackMax = 10 };
+#endif
+
 	RecentFile recentFileStack[fileStackMax];
 	enum { fileStackCmdID = IDM_MRUFILE, bufferCmdID = IDM_BUFFER };
 
