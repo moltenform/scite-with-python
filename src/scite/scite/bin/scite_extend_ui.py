@@ -27,7 +27,8 @@ class ScToolUIManagerClass(object):
             
     def Show(self, toolUI):
         # ensure that OnUserStrip events are passed to us
-        ScApp.EnableNotification('OnUserStrip')
+        if toolUI:
+            ScApp.EnableNotification('OnUserStrip')
         
         # show the ui
         SciTEModule.app_UserStripShow(toolUI.spec if toolUI else '')
@@ -119,22 +120,16 @@ class ScToolUIBase(object):
     def OnEvent(self, control, eventType):
         pass
 
-class ScAskUserChoiceClass(ScToolUIBase):
+class ScAskUserInputBase(ScToolUIBase):
     '''
-    Asks the user to choose between some options, using a combo box.
-    Provide a list in the form 'choiceID|Shown In UI', and a callback which will be sent choiceID.
+    Asks the user to enter some text.
     '''
-    def __init__(self, choices, callback, label='Please choose:', leaveOpen=False):
+    def __init__(self, callback, label, default='', leaveOpen=False):
         self.callback = callback
         self.label = label
+        self.default = default
         self.leaveOpen = leaveOpen
-        
-        if len(choices) == 0 or not '|' in choices[0]:
-            raise ValueError('choices must be a non-empty list of strings')
-
-        self.choiceIDs = [s.split('|')[0] for s in choices]
-        self.choiceShown = [s.split('|')[1] for s in choices]
-        super(ScAskUserChoiceClass, self).__init__()
+        super(ScAskUserInputBase, self).__init__()
     
     def AddControls(self):
         self.AddLabel(self.label)
@@ -147,11 +142,37 @@ class ScAskUserChoiceClass(ScToolUIBase):
             self.AddButton('Cancel', closes=True)
 
     def OnOpen(self):
+        self.Set(self.cmb, self.default)
+    
+    def OnRun(self):
+        textEntered = self.Get(self.cmb)
+        self.callback(textEntered)
+
+class ScAskUserInput(ScAskUserInputBase):
+    '''Currently has identical behavior as ScAskUserInputBase'''
+    pass
+
+class ScAskUserChoiceClass(ScAskUserInputBase):
+    '''
+    Asks the user to choose between some options, using a combo box.
+    Provide a list in the form 'choiceID|Shown In UI', and a callback which will be sent choiceID.
+    '''
+    def __init__(self, choices, callback, label='Please choose:', leaveOpen=False):
+        if len(choices) == 0 or not '|' in choices[0]:
+            raise ValueError('choices must be a non-empty list of strings')
+
+        self.choiceIDs = [s.split('|')[0] for s in choices]
+        self.choiceShown = [s.split('|')[1] for s in choices]
+        super(ScAskUserChoiceClass, self).__init__(callback=callback, label=label, leaveOpen=leaveOpen)
+
+    def OnOpen(self):
+        # overrides ScAskUserInputBase.OnOpen
         textToSet = '\n'.join(self.choiceShown)
         self.SetList(self.cmb, textToSet)
         self.Set(self.cmb, self.choiceShown[0])
     
     def OnRun(self):
+        # overrides ScAskUserInputBase.OnRun
         chosen = self.Get(self.cmb)
         
         try:
@@ -162,10 +183,114 @@ class ScAskUserChoiceClass(ScToolUIBase):
         else:
             self.callback(self.choiceIDs[index])
 
+class ScMultiKeyManagerClass(object):
+    activeKeyListener = None
+    
+    def SetActiveKeyListener(self, listener):
+        # ensure that OnKey events are passed to us
+        if listener:
+            ScApp.EnableNotification('OnKey')
+        
+        self.activeKeyListener = listener
+        
+    def OnKey(self, args):
+        if self.activeKeyListener:
+            return self.activeKeyListener.OnKey(*args)
+    
+class ScMultiKeyChoiceClass(object):
+    '''
+    Asks the user to choose between some options, by pressing a key
+    (part of a multi-key keyboard shortcut).
+    Provide a list in the form 'C|choiceID|Shown In UI', where C is a capitol alphanumeric char,
+    and a callback which will be sent choiceID.
+    '''
+    def __init__(self, choices, callback, label='Please choose:'):
+        if len(choices) == 0 or not '|' in choices[0]:
+            raise ValueError('choices must be a non-empty list of strings')
+
+        self.callback = callback
+        self.label = label
+        self.ValidateKeys(choices)
+        self.choiceKeys = [ord(s.split('|')[0]) for s in choices]
+        self.choiceIDs = [s.split('|')[1] for s in choices]
+        self.choiceShown = [s.split('|')[2] for s in choices]
+
+    def ValidateKeys(self, choices):
+        assert len(choices) > 0
+        for choice in choices:
+            ch = choice.split('|')[0]
+            assert len(ch) == 1, 'key must be one character'
+            isAlpha = ord('A') <= ord(ch) <= ord('Z')
+            isNumeral = ord('0') <= ord(ch) <= ord('9')
+            assert isAlpha or isNumeral, 'key must be 0-9 or A-Z'
+            
+    def Show(self):
+        self.linesCountInOutput = ScOutput.GetLineCount()
+        self.PrintInstructions()
+        ScMultiKeyManager.SetActiveKeyListener(self)
+        ScToolUIManager.Show(None) # close any toolui as well
+    
+    def PrintInstructions(self):
+        print('\n\nThis is part of a multi-key combination')
+        print(self.label)
+        print('Press Esc to cancel')
+        print('Press q to cancel')
+        for key, text in zip(self.choiceKeys, self.choiceShown):
+            print('Press %s to %s' % (chr(key).lower(), text))
+    
+    def EraseInstructions(self):
+        start = ScOutput.CmdPositionFromLine(self.linesCountInOutput)
+        end = ScOutput.CmdPositionFromLine(ScOutput.GetLineCount())
+        ScOutput.SetSel(start - 1, end)
+        ScOutput.ReplaceSel('')
+        
+    def GetChoiceIDFromKey(self, key):
+        try:
+            index = self.choiceKeys.index(key)
+        except ValueError:
+            return None
+        return index
+    
+    def OnKey(self, key, shift, ctrl, alt):
+        escapeKeyCode = 27
+        if not shift and not ctrl and not alt:
+            # exit the key-swallowing mode, even if an exception is thrown later
+            ScMultiKeyManager.SetActiveKeyListener(None)
+            
+            try:
+                self.EraseInstructions()
+                index = self.GetChoiceIDFromKey(key)
+                if index is not None:
+                    print('Performing ' + self.choiceShown[index] + '...')
+                    self.callback(self.choiceIDs[index])
+                    print('Done')
+                elif key == ord('Q') or key == escapeKeyCode:
+                    print('Canceled.')
+                else:
+                    print('Not a choice, canceled.')
+                    
+            except:
+                import traceback
+                print('Exception thrown in OnKey, %s' % traceback.format_exc())
+        
+        return ScConst.StopEventPropagation()
+
+
+def ScAskUserInput(*args, **kwargs):
+    toolUI = ScAskUserInput(*args, **kwargs)
+    toolUI.Show()
+    
 def ScAskUserChoice(*args, **kwargs):
     toolUI = ScAskUserChoiceClass(*args, **kwargs)
     toolUI.Show()
 
+def ScAskUserChoiceByPressingKey(*args, **kwargs):
+    multikey = ScMultiKeyChoiceClass(*args, **kwargs)
+    multikey.Show()
+    
+
+
 # create singleton instances
 ScToolUIManager = ScToolUIManagerClass()
+ScMultiKeyManager = ScMultiKeyManagerClass()
 

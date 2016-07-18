@@ -243,7 +243,15 @@ def OnEvent(eventName, args):
     if eventName == 'OnUserStrip':
         import scite_extend_ui
         return scite_extend_ui.ScToolUIManager.OnUserStrip(*args)
-        
+    
+    # on key events might be part of a multi key shortcut
+    if eventName == 'OnKey':
+        import scite_extend_ui
+        val = scite_extend_ui.ScMultiKeyManager.OnKey(args)
+        if val == ScConst.StopEventPropagation():
+            return val
+    
+    # call into each plugin that registered for this event 
     callbacks = ScApp.registeredCallbacks.get(eventName, None)
     if callbacks:
         for command, path in callbacks:
@@ -253,7 +261,7 @@ def OnEvent(eventName, args):
                 if val == ScConst.StopEventPropagation():
                     # the user has asked that we not process any other callbacks
                     return val
-            except Exception:
+            except:
                 # print the Exception, but let other event handlers run
                 import traceback
                 print('Exception thrown when calling event %s for %s; %s' % (eventName, command, traceback.format_exc()))

@@ -3,11 +3,11 @@ from scite_extend_ui import *
 
 class ChangeOrder(object):
     def go(self):
-        self.choices = ['sortaz|Sort A-Z', 'sortza|Sort Z-A', 'reverse|Reverse', 
-            'shuffle|Quick shuffle', 'sortnum|Sort numbers naturally', 
-            'sortcol2|Sort by 2nd col', 'sortcol3|Sort by 3rd col']
+        self.choices = ['A|sortaz|Sort A-Z', 'Z|sortza|Sort Z-A', 'R|reverse|Reverse', 
+            'S|shuffle|Quick shuffle', 'N|sortnum|Sort numbers naturally', 
+            '2|sortcol2|Sort by 2nd col', '3|sortcol3|Sort by 3rd col']
         label = 'Please choose from this list how to change the order of selected lines:'
-        ScAskUserChoice(choices=self.choices, label=label, callback=self.onChoiceMade)
+        ScAskUserChoiceByPressingKey(choices=self.choices, label=label, callback=self.onChoiceMade)
      
     def onChoiceMade(self, choice):
         from __init__ import modifyTextInScite
@@ -15,7 +15,7 @@ class ChangeOrder(object):
 
     def runSort(self, text, choice):
         # look for a method named choice
-        assert choice in [s.split('|')[0] for s in self.choices]
+        assert choice in [s.split('|')[1] for s in self.choices]
         method = self.__getattribute__(choice)
         
         # validate lines and get newline character
