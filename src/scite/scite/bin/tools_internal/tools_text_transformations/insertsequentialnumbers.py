@@ -33,10 +33,10 @@ def insertsequentialnumbers(lines):
             
 def atreplacenumbers(lines):
     import sys
-    print sys.platform
     if sys.platform.startswith('win'):
         import wincommondialog
-        firstNumber = wincommondialog.askInput('What should the first number in the sequence be?', default='1')
+        firstNumber = wincommondialog.askInput(
+            'What should the first number in the sequence be?', default='1')
         if not firstNumber:
             return
             
@@ -120,8 +120,8 @@ if __name__ == '__main__':
     testLines(expected, input, lambda s: atreplacenumbers_impl(s, 8, True))
     
     # basic usage
-    input = 'data@Red@ = getData@@();|data@Green@ = getData@@();|data@Blue@ = getData@@();|nosubs'
-    expected = 'dataRed = getDataRed();|dataGreen = getDataGreen();|dataBlue = getDataBlue();|nosubs'
+    input = 'data@Red@ = getData@@();|data@G@ = getData@@();|data@Blue@ = getData@@();|n'
+    expected = 'dataRed = getDataRed();|dataG = getDataG();|dataBlue = getDataBlue();|n'
     testLines(expected, input, lambda s: atreplacewords(s))
     
     # not enough @ symbols
