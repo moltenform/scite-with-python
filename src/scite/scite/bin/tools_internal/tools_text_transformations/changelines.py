@@ -1,17 +1,25 @@
 
-class ChangeOrder(object):
+class ChangeLines(object):
     def go(self):
         from scite_extend_ui import ScAskUserChoiceByPressingKey
-        self.choices = ['A|sortaz|Sort A-Z', 'Z|sortza|Sort Z-A', 'R|reverse|Reverse', 
-            'S|shuffle|Quick shuffle', 'N|sortnum|Sort numbers naturally', 
-            '2|sortcol2|Sort by 2nd col', '3|sortcol3|Sort by 3rd col', '4|sortcol4|Sort by 4th col',
-            'X|splitxml|Split xml by >', 'T|trimempty|trim empty lines',
-            'I|splitwithindent|Split to lines, with indentation', 'J|joinwithoutindent|Join from trimmed lines',
+        self.choices = ['A|sortaz|Sort A-Z',
+            'Z|sortza|Sort Z-A',
+            'R|reverse|Reverse', 
+            'S|shuffle|Quick shuffle',
+            'N|sortnum|Sort numbers naturally', 
+            '2|sortcol2|Sort by 2nd col',
+            '3|sortcol3|Sort by 3rd col',
+            '4|sortcol4|Sort by 4th col',
+            'X|splitxml|Split xml by >',
+            'T|trimempty|trim empty lines',
+            'I|splitwithindent|Split to lines, with indentation',
+            'J|joinwithoutindent|Join from trimmed lines',
             'D|joinwithoutindentadddelim|Join from trimmed lines and add ;',
             'Q|insertsequencehelp|How to use insert numbered sequence',
             '0|insertsequence|Insert numbered sequence']
         label = 'Please choose from this list how to change the selected lines:'
-        ScAskUserChoiceByPressingKey(choices=self.choices, label=label, callback=self.onChoiceMade)
+        ScAskUserChoiceByPressingKey(
+            choices=self.choices, label=label, callback=self.onChoiceMade)
      
     def onChoiceMade(self, choice):
         from __init__ import modifyTextInScite
@@ -38,7 +46,8 @@ class ChangeOrder(object):
         import re
         text = text or ''
         
-        # we don't expect to end with a newline because of the logic in expandSelectionToIncludeEntireLines.
+        # we don't expect to end with a newline
+        # because of the logic in expandSelectionToIncludeEntireLines.
         assert not text or text[-1] not in ('\r', '\n')
         
         reWindows = re.compile('\r\n', re.M)
@@ -150,14 +159,14 @@ class ChangeOrder(object):
         import insertsequentialnumbers
         insertsequentialnumbers.insertsequentialnumbers(lines)
 
-def DoChangeOrder():
-    ChangeOrder().go()
+def DoChangeLines():
+    ChangeLines().go()
 
 if __name__ == '__main__':
     from ben_python_common import assertEq
     
     # unit tests
-    obj = ChangeOrder()
+    obj = ChangeLines()
     silent = ' ' # print empty lines instead of warnings
     assertEq(None, obj.getLineCharacter(None, silent))
     assertEq(None, obj.getLineCharacter('', silent))

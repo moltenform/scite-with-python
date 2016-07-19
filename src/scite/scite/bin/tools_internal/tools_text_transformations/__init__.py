@@ -5,9 +5,9 @@ def ChangeCasing():
     import changecasing
     return changecasing.DoChangeCasing()
 
-def ChangeOrder():
-    import changeorder
-    return changeorder.DoChangeOrder()
+def ChangeLines():
+    import changelines
+    return changelines.DoChangeLines()
     
 def InsertSequentialNumbers():
     import insertsequentialnumbers
