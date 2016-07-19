@@ -212,7 +212,8 @@ def openUrl(s):
 
 # returns tuple (returncode, stdout, stderr)
 def run(listArgs, _ind=_enforceExplicitlyNamedParameters, shell=False, createNoWindow=True,
-        throwOnFailure=RuntimeError, stripText=True, captureoutput=True, silenceoutput=False):
+        throwOnFailure=RuntimeError, stripText=True, captureoutput=True, silenceoutput=False,
+        wait=True):
     import subprocess
     _checkNamedParameters(_ind)
     kwargs = {}
@@ -220,16 +221,20 @@ def run(listArgs, _ind=_enforceExplicitlyNamedParameters, shell=False, createNoW
     if sys.platform == 'win32' and createNoWindow:
         kwargs['creationflags'] = 0x08000000
     
-    if not captureoutput:
-        retcode = subprocess.call(listArgs, shell=shell, **kwargs)
-        if silenceoutput:
-            stdout = open(_os.devnull, 'wb')
-            stderr = open(_os.devnull, 'wb')
-        else:
-            stdout = None
-            stderr = None
-    else:
-        sp = subprocess.Popen(listArgs, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kwargs)
+    if captureoutput and not wait:
+        raise ValueError('captureoutput implies wait')
+    
+    if throwOnFailure and not wait:
+        raise ValueError('throwing on failure implies wait')
+    
+    retcode = -1
+    stdout = None
+    stderr = None
+    
+    if captureoutput:
+        sp = subprocess.Popen(listArgs, shell=shell,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kwargs)
+        
         comm = sp.communicate()
         stdout = comm[0]
         stderr = comm[1]
@@ -237,11 +242,27 @@ def run(listArgs, _ind=_enforceExplicitlyNamedParameters, shell=False, createNoW
         if stripText:
             stdout = stdout.rstrip()
             stderr = stderr.rstrip()
+
+    else:
+        if silenceoutput:
+            stdoutArg = open(_os.devnull, 'wb')
+            stderrArg = open(_os.devnull, 'wb')
+        else:
+            stdoutArg = None
+            stderrArg = None
+        
+        if wait:
+            retcode = subprocess.call(listArgs, stdout=stdoutArg, stderr=stderrArg, shell=shell, **kwargs)
+        else:
+            subprocess.Popen(listArgs, stdout=stdoutArg, stderr=stderrArg, shell=shell, **kwargs)
         
     if throwOnFailure and retcode != 0:
         if throwOnFailure is True:
             throwOnFailure = RuntimeError
-        exceptionText = 'retcode is not 0 for process ' + str(listArgs) + '\nstdout was ' + str(stdout) + '\nstderr was ' + str(stderr)
+
+        exceptionText = 'retcode is not 0 for process ' + \
+            str(listArgs) + '\nstdout was ' + str(stdout) + \
+            '\nstderr was ' + str(stderr)
         raise throwOnFailure(getPrintable(exceptionText))
     
     return retcode, stdout, stderr

@@ -227,7 +227,17 @@ def assertEq(expected, received, *messageArgs):
         msg += '\nbut got:\n'
         msg += getPrintable(pprint.pformat(received))
         raise AssertionError(msg)
-        
+
+def assertFloatEq(expected, received, *messageArgs):
+    import math
+    precision = 0.000001
+    difference = math.fabs(expected - received)
+    if difference > precision:
+        messageArgs = list(messageArgs) or []
+        messageArgs.append('expected %f, got %f, difference of %f' % (
+            expected, received, difference))
+        assertTrue(False, *messageArgs)
+
 def assertException(fn, excType, excTypeExpectedString=None, msg='', regexp=False):
     import pprint
     import sys

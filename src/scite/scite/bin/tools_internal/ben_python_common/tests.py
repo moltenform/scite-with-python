@@ -22,6 +22,14 @@ def common_util_tests():
     assertEq(1, 1)
     assertException(lambda: assertEq(1, 2, 'msg here'), AssertionError, 'msg here')
     
+    # test assertFloatEq
+    assertFloatEq(0.1234, 0.1234)
+    assertFloatEq(0.123456788, 0.123456789)
+    assertException(lambda: assertFloatEq(0.4, 0.1234), AssertionError)
+    assertException(lambda: assertFloatEq(0.1234, 0.4), AssertionError)
+    assertException(lambda: assertFloatEq(-0.123457, -0.123456), AssertionError)
+    assertException(lambda: assertFloatEq(-0.123456, -0.123457), AssertionError)
+    
     # test Bucket
     b = Bucket()
     b.elem1 = '1'
