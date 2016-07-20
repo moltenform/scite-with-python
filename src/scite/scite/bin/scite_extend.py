@@ -45,6 +45,12 @@ class ScAppClass(object):
     def EnableNotification(self, eventName, enabled=True):
         return SciTEModule.app_EnableNotification(eventName, 1 if enabled else 0)
     
+    def PrintSupportedCalls(self, whatToPrint=2):
+        # 1=constants, 2=app methods, 3=pane methods (as called), 4=pane methods (as defined internally)
+        ScOutput.BeginUndoAction()
+        SciTEModule.app_PrintSupportedCalls(whatToPrint)
+        ScOutput.EndUndoAction()
+    
     def GetFilePath(self):
         return self.GetProperty('FilePath')
         
@@ -72,7 +78,8 @@ class ScAppClass(object):
     def __getattr__(self, s):
         if s.startswith('Cmd'):
             # return a callable object; it looks like a method to the caller.
-            return (lambda: SciTEModule.app_SciteCommand(s))
+            commandName =  s[len('Cmd'):]
+            return (lambda: SciTEModule.app_SciteCommand(commandName))
         else:
             raise AttributeError()
 
@@ -127,6 +134,44 @@ class ScConstClass(object):
     def StopEventPropagation(self):
         return 'StopEventPropagation'
 
+class ScPaneClassUtils(object):
+    '''
+    Helpers for ScPaneClass
+    example:
+        from scite_extend_ui import ScEditor
+        print(ScEditor.Utils.GetEolCharacter())
+    '''
+    pane = None
+    def __init__(self, pane):
+        self.pane = pane
+        
+    def GetAllText(self):
+        return self.pane.Textrange(0, self.pane.GetLength())
+        
+    def GetCurLine(self):
+        nLine = self.pane.LineFromPosition(self.pane.GetCurrentPos())
+        return self.pane.GetLine(nLine)
+    
+    def GetEolCharacter(self):
+        n = self.pane.GetEOLMode()
+        if n == 0:
+            return '\r\n'
+        elif n == 1:
+            return '\r'
+        else:
+            return '\n'
+            
+    def ExpandSelectionToIncludeEntireLines(self):
+        startline = self.pane.LineFromPosition(self.pane.GetSelectionStart())
+        endline = self.pane.LineFromPosition(self.pane.GetSelectionEnd()) + 1
+        startpos = self.pane.PositionFromLine(startline)
+        endpos = self.pane.PositionFromLine(endline)
+        
+        # endpos might be at a newline character, though, so subtract from the selection until it is not.
+        while self.pane.GetCharAt(endpos - 1) in (ord('\r'), ord('\n')):
+            endpos -= 1
+        self.pane.SetSelection(startpos, endpos)
+        
 class ScPaneClass(object):
     '''
     represents a Scintilla window, either the main code editor or the output pane.
@@ -139,41 +184,28 @@ class ScPaneClass(object):
         print('language is ' + ScEditor.GetLexerLanguage())
         print('using tabs is ' + ScEditor.GetUseTabs())
         ScEditor.SetUseTabs(False)
-        ScEditor.CmdLineDuplicate()
+        ScEditor.LineDuplicate()
     '''
     
     paneNumber = -1
     def __init__(self, paneNumber):
         self.paneNumber = paneNumber
-        
-        # some scintilla functions start with the word "get", and aren't property gets.
-        self._dictIsScintillaFnNotGetter = dict(GetCurLine=1, GetHotspotActiveBack=1,
-            GetHotspotActiveFore=1, GetLastChild=1, GetLexerLanguage=1, GetLine=1,
-            GetLineSelEndPosition=1, GetLineSelStartPosition=1, GetProperty=1, GetPropertyExpanded=1,
-            GetSelText=1, GetStyledText=1, GetTag=1, GetText=1, GetTextRange=1)
-        
-        # some scintilla functions start with the word "set", and aren't property sets.
-        self._dictIsScintillaFnNotSetter = dict(SetCharsDefault=1, SetFoldFlags=1,
-            SetFoldMarginColour=1, SetFoldMarginHiColour=1, SetHotspotActiveBack=1,
-            SetHotspotActiveFore=1, SetLengthForEncode=1, SetLexerLanguage=1, SetSavePoint=1,
-            SetSel=1, SetSelBack=1, SetSelFore=1, SetSelection=1, SetStyling=1, SetStylingEx=1,
-            SetText=1, SetVisiblePolicy=1, SetWhitespaceBack=1, SetWhitespaceFore=1,
-            SetXCaretPolicy=1, SetYCaretPolicy=1)
+        self.Utils = ScPaneClassUtils(self)
     
     # pane methods
-    def Append(self, txt):
+    def PaneAppend(self, txt):
         return SciTEModule.pane_Append(self.paneNumber, txt)
 
-    def InsertText(self, txt, pos):
+    def PaneInsertText(self, txt, pos):
         return SciTEModule.pane_Insert(self.paneNumber, pos, txt)
         
-    def Remove(self, npos1, npos2):
+    def PaneRemoveText(self, npos1, npos2):
         return SciTEModule.pane_Remove(self.paneNumber, npos1, npos2)
         
-    def GetText(self, n1, n2):
+    def PaneGetText(self, n1, n2):
         return SciTEModule.pane_Textrange(self.paneNumber, n1, n2)
     
-    def FindText(self, s, pos1=0, pos2=-1, wholeWord=False, matchCase=False, regExp=False, flags=0): 
+    def PaneFindText(self, s, pos1=0, pos2=-1, wholeWord=False, matchCase=False, regExp=False, flags=0): 
         if wholeWord:
             flags |= ScConst.SCFIND_WHOLEWORD
         if matchCase:
@@ -183,81 +215,29 @@ class ScPaneClass(object):
             
         return SciTEModule.pane_FindText(self.paneNumber, s, flags, pos1, pos2)
         
-    # helpers
-    def Write(self, txt, pos=-1):
-        if pos == -1:
+    def PaneWrite(self, txt, pos=None):
+        if pos is None:
             pos = self.GetCurrentPos()
         SciTEModule.pane_Insert(self.paneNumber, pos, txt)
-        self.CmdGotoPos(pos + len(txt))
-        
-    def GetAllText(self):
-        return self.CmdTextrange(0, self.GetLength())
-        
-    def GetCurLine(self):
-        nLine = self.CmdLineFromPosition(self.GetCurrentPos())
-        return self.GetLine(nLine)
+        self.GotoPos(pos + len(txt))
     
-    def GetEolCharacter(self):
-        n = self.GetEOLMode()
-        if n == 0:
-            return '\r\n'
-        elif n == 1:
-            return '\r'
-        else:
-            return '\n'
-            
-    def expandSelectionToIncludeEntireLines(self):
-        startline = self.CmdLineFromPosition(self.GetSelectionStart())
-        endline = self.CmdLineFromPosition(self.GetSelectionEnd()) + 1
-        startpos = self.CmdPositionFromLine(startline)
-        endpos = self.CmdPositionFromLine(endline)
-        
-        # endpos might be at a newline character, though, so subtract from the selection until it is not.
-        while self.GetCharAt(endpos - 1) in (ord('\r'), ord('\n')):
-            endpos -= 1
-        self.SetSelection(startpos, endpos)
+    # helpers where the Scintilla version is less convenient to use
+    def GetLineText(self, line):
+        return self.GetLine(line)[0]
     
-    def CopyText(self, s):
-        return SciTEModule.pane_ScintillaFn(self.paneNumber, 'CopyText', (len(s),s))
+    def GetSelectedText(self):
+        return self.GetSelText()[0]
         
-    def SetText(self, s):
-        return SciTEModule.pane_ScintillaFn(self.paneNumber, 'SetText', (None, s))
-        
-    def AutoCStops(self, s):
-        return SciTEModule.pane_ScintillaFn(self.paneNumber, 'AutoCStops', (None, s))
-        
-    def AutoCSelect(self, s):
-        return SciTEModule.pane_ScintillaFn(self.paneNumber, 'AutoCSelect', (None, s))
-        
-    def ReplaceSel(self, s):
-        return SciTEModule.pane_ScintillaFn(self.paneNumber, 'ReplaceSel', (None, s))
-        
-    def SetLexerLanguage(self, s):
-        return SciTEModule.pane_ScintillaFn(self.paneNumber, 'SetLexerLanguage', (None, s))
-        
-    def LoadLexerLibrary(self, s):
-        return SciTEModule.pane_ScintillaFn(self.paneNumber, 'LoadLexerLibrary', (None, s))
+    def GetCurrentLineText(self):
+        return self.GetCurLine()[0]
 
-    # getters and setters
+    # redirect most methods on this object to call into Scintilla.
     def __getattr__(self, sprop):
-        if sprop.startswith('Get'):
-            if sprop in self._dictIsScintillaFnNotGetter:
-                return (lambda *args: SciTEModule.pane_ScintillaFn(self.paneNumber, sprop, args))
-            else:
-                sprop = sprop[3:]
-                return (lambda param=None: SciTEModule.pane_ScintillaGet(self.paneNumber, sprop, param))
-        elif sprop.startswith('Set'):
-            if sprop in self._dictIsScintillaFnNotSetter:
-                return (lambda *args: SciTEModule.pane_ScintillaFn(self.paneNumber, sprop, args))
-            else:
-                sprop = sprop[3:]
-                return (lambda a1, a2=None: SciTEModule.pane_ScintillaSet(self.paneNumber, sprop, a1, a2))
-        elif sprop.startswith('Cmd'):
-            sprop = sprop[3:]
-            return (lambda *args: SciTEModule.pane_ScintillaFn(self.paneNumber, sprop, args))
-        else:
+        if sprop.startswith('_'):
             raise AttributeError()
-    
+        else:
+            return (lambda *args: SciTEModule.pane_SendScintilla(self.paneNumber, sprop, *args))
+
 def OnEvent(eventName, args):
     # user strip events are handled differently
     if eventName == 'OnUserStrip':
@@ -343,8 +323,8 @@ def findChosenProperty(command, suffixes):
     valChosen = None
     for suffix in suffixes:
         val = ScApp.GetProperty('customcommand.' + command + '.action.' + suffix)
-        if val != None:
-            if valChosen != None:
+        if val:
+            if valChosen:
                 assert False, 'command %s shouldn\'t have an action for both %s and %s'%(command, suffixChosen, suffix)
             else:
                 suffixChosen = suffix
@@ -393,7 +373,7 @@ def registerCustomCommand(heuristicDuplicateShortcut, command, number):
     if not nameTemporary:
         assert False, 'in command %s, must define a name' % command
         
-    if path and subsystem != 'py':
+    if not callbacks and (path and subsystem != 'py'):
         assert False, 'in command %s, currently path is only needed for python modules' % command
     
     if shortcutTemporary and shortcutTemporary.lower() in heuristicDuplicateShortcut:
@@ -404,7 +384,7 @@ def registerCustomCommand(heuristicDuplicateShortcut, command, number):
     if stdinTemporary and subsystem != 'waitforcomplete_console':
         assert False, 'in command %s, providing stdin only supported for waitforcomplete_console' % command
     
-    if not actionTemporary or not subsystem:
+    if not callbacks and (not actionTemporary or not subsystem):
         assert False, 'in command %s, must define exactly one action' % command
     
     # map subsystem names to SciTE's subsystem names
@@ -429,12 +409,13 @@ def registerCustomCommand(heuristicDuplicateShortcut, command, number):
     
     if callbacks:
         registerCallbacks(command, path, callbacks)
-                
-    ScApp.SetProperty('command.name.%d.%s' % (number, filetypes), '$(customcommand.' + command + '.name)')
-    ScApp.SetProperty('command.shortcut.%d.%s' % (number, filetypes), '$(customcommand.' + command + '.shortcut)')
-    ScApp.SetProperty('command.mode.%d.%s' % (number, filetypes), modePrefix + '$(customcommand.' + command + '.mode)')
-    ScApp.SetProperty('command.input.%d.%s' % (number, filetypes), '$(customcommand.' + command + '.stdin)')
-    ScApp.SetProperty('command.%d.%s' % (number, filetypes), actionPrefix + '$(customcommand.' + command + '.action.' + subsystem + ')')
+    
+    if actionTemporary:
+        ScApp.SetProperty('command.name.%d.%s' % (number, filetypes), '$(customcommand.' + command + '.name)')
+        ScApp.SetProperty('command.shortcut.%d.%s' % (number, filetypes), '$(customcommand.' + command + '.shortcut)')
+        ScApp.SetProperty('command.mode.%d.%s' % (number, filetypes), modePrefix + '$(customcommand.' + command + '.mode)')
+        ScApp.SetProperty('command.input.%d.%s' % (number, filetypes), '$(customcommand.' + command + '.stdin)')
+        ScApp.SetProperty('command.%d.%s' % (number, filetypes), actionPrefix + '$(customcommand.' + command + '.action.' + subsystem + ')')
         
 # create singleton instances
 ScEditor = ScPaneClass(0)
