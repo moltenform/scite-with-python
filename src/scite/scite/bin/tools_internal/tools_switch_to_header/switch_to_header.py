@@ -43,7 +43,7 @@ def getTargetFile(currentFile):
 def SwitchToHeader():
     from scite_extend_ui import ScApp
     currentFile = ScApp.GetFilePath()
-    if not currentFile or not files.isfile(currentFile):
+    if not currentFile:
         print('It doesn\'t appear that a file is open.')
     else:
         target = getTargetFile(currentFile)

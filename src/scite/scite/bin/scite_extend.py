@@ -51,8 +51,12 @@ class ScAppClass(object):
         SciTEModule.app_PrintSupportedCalls(whatToPrint)
         ScOutput.EndUndoAction()
     
-    def GetFilePath(self):
-        return self.GetProperty('FilePath')
+    def GetFilePath(self, cannotBeUntitled=True):
+        if cannotBeUntitled:
+            # we usually don't want untitled documents to look like they have a path
+            return self.GetProperty('FilePath') if len(self.GetFileName()) > 0 else ''
+        else:
+            return self.GetProperty('FilePath')
         
     def GetFileName(self):
         return self.GetProperty('FileNameExt')
