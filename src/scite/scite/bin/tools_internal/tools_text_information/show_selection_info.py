@@ -13,7 +13,7 @@ class ShowSelectionInfo(object):
 
     def onChoiceMade(self, choice):
         from scite_extend_ui import ScEditor
-        selected = ScEditor.GetSelText()
+        selected = ScEditor.GetSelectedText()
         
         if selected:
              # look for a method named choice
@@ -74,7 +74,7 @@ class ShowSelectionInfo(object):
         print('Ascii values:')
         for c in s:
             show = c if c.isalnum() else ' '
-            print('%s \t \\x%02x \t %02d' % (show, ord(c), ord(c)))
+            print('%s \t 0x%02x \t %02d' % (show, ord(c), ord(c)))
     
     def counting(self, s):
         from scite_extend_ui import ScEditor

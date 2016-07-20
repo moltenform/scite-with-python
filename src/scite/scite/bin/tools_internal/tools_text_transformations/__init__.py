@@ -14,7 +14,7 @@ def InsertSequentialNumbers():
     return insertsequentialnumbers.DoInsertSequentialNumbers()
 
 def modifyTextInScite(fn):
-    selected = ScEditor.GetSelText()
+    selected = ScEditor.GetSelectedText()
     if not selected:
         print('Nothing is selected.')
         return
@@ -23,13 +23,13 @@ def modifyTextInScite(fn):
     if replaced is None:
         return
         
-    ScEditor.CmdBeginUndoAction()
+    ScEditor.BeginUndoAction()
     try:
         # Using Write() would work, but it would lose the selection
         # Using InsertText() on the other hand, selects the text afterwards, which looks nice
-        ScEditor.CmdClear()
-        ScEditor.InsertText(replaced, ScEditor.GetCurrentPos())
+        ScEditor.Clear()
+        ScEditor.InsertText(ScEditor.GetCurrentPos(), replaced)
         ScEditor.SetAnchor(ScEditor.GetCurrentPos() + len(replaced))
     finally:
-        ScEditor.CmdEndUndoAction()
+        ScEditor.EndUndoAction()
 

@@ -244,8 +244,8 @@ class ScMultiKeyChoiceClass(object):
             print('Press %s to %s' % (chr(key).lower(), text))
     
     def EraseInstructions(self):
-        start = ScOutput.CmdPositionFromLine(self.linesCountInOutput)
-        end = ScOutput.CmdPositionFromLine(ScOutput.GetLineCount())
+        start = ScOutput.PositionFromLine(self.linesCountInOutput)
+        end = ScOutput.PositionFromLine(ScOutput.GetLineCount())
         ScOutput.SetSel(start - 1, end)
         ScOutput.ReplaceSel('')
         

@@ -24,7 +24,7 @@ class ChangeLines(object):
     def onChoiceMade(self, choice):
         from __init__ import modifyTextInScite
         from scite_extend_ui import ScEditor
-        ScEditor.expandSelectionToIncludeEntireLines()
+        ScEditor.Utils.ExpandSelectionToIncludeEntireLines()
         return modifyTextInScite(lambda text: self.runSort(text, choice))
 
     def runSort(self, text, choice):

@@ -1,5 +1,4 @@
 
-from scite_extend_ui import *
 from ben_python_common import files, assertEq
 
 def getCandidates(currentFile):
@@ -42,6 +41,7 @@ def getTargetFile(currentFile):
     print('No header file found.')
 
 def SwitchToHeader():
+    from scite_extend_ui import ScApp
     currentFile = ScApp.GetFilePath()
     if not currentFile or not files.isfile(currentFile):
         print('It doesn\'t appear that a file is open.')
