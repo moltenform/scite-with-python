@@ -5,6 +5,10 @@
 #include <string.h>
 #include <ctype.h>
 
+#include <sstream>
+#include <vector>
+#include <algorithm>
+
 #include "PythonExtension.h"
 #include "..\python\include\python.h"
 
@@ -16,16 +20,118 @@
 static const char* c_PythonModuleName = "scite_extend_ui";
 int FindFriendlyNamedIDMConstant(const char* name);
 bool GetPaneFromInt(int nPane, ExtensionAPI::Pane* outPane);
-bool PullPythonArgument(IFaceType type, PyObject* pyObjNext, intptr_t* param);
-bool PushPythonArgument(IFaceType type, intptr_t param, PyObject** pyValueOut);
+bool RunCallback(const char* eventName, int nArgs = 0, const char* arg = 0);
+bool RunCallbackArgs(const char* eventName, PyObject* pArgsBorrowed);
+void VerifyConstantsTableOrder();
 
 void trace(const char* text1, const char* text2 = NULL);
 void trace(const char* text1, const char* text2, int n);
 
-bool RunCallback(
-	const char* eventName, int nArgs = 0, const char* arg1 = 0);
-bool RunCallbackArgs(
-	const char* eventName, PyObject* pArgsBorrowed);
+inline bool IFaceTypeIsScriptable(IFaceType t, int index) {
+	return t < iface_stringresult || (index==1 && t == iface_stringresult);
+}
+
+inline bool IFaceTypeIsNumeric(IFaceType t) {
+	return (t > iface_void && t < iface_bool);
+}
+
+inline bool IFaceFunctionIsScriptable(const IFaceFunction &f) {
+	return IFaceTypeIsScriptable(f.paramType[0], 0) && IFaceTypeIsScriptable(f.paramType[1], 1);
+}
+
+inline bool IFacePropertyIsScriptable(const IFaceProperty &p) {
+	return (((p.valueType > iface_void) && (p.valueType <= iface_stringresult) && (p.valueType != iface_keymod)) &&
+	        ((p.paramType < iface_colour) || (p.paramType == iface_string) ||
+	                (p.paramType == iface_bool)) && (p.getter || p.setter));
+}
+
+inline sptr_t CastPtrToSptr(void *p) {
+	return SptrFromPointer(p);
+}
+
+inline sptr_t CastSzToSptr(const char *cp) {
+	return SptrFromString(cp);
+}
+
+// reuse a stringstream, to reduce the number of allocations
+class ReusableStringStream
+{
+	std::ostringstream _strm;
+	
+public:
+	void Write(const char* sz)
+	{
+		_strm << sz;
+	}
+	void Write(int n)
+	{
+		_strm << n;
+	}
+	void Write(unsigned int n)
+	{
+		_strm << n;
+	}
+	void Reset()
+	{
+		_strm.clear(); // clear flags
+		_strm.seekp(0); // seek the "put ptr" to start
+	}
+	std::string Get()
+	{
+		_strm << std::ends; // write a nul character, effectively ending the string
+		return _strm.str();
+	}
+};
+
+// a simple string buffer
+class SimpleStringBuffer
+{
+	std::vector<char> _buffer;
+	bool _allocated;
+	
+public:
+	SimpleStringBuffer() : _allocated(false) {}
+	void Allocate(size_t n)
+	{
+		// the caller is responsible for providing n big enough to contain nul term.
+		_buffer.resize(n);
+		std::fill(_buffer.begin(), _buffer.end(), 0);
+		_allocated = true;
+	}
+	char* Get()
+	{
+		return _allocated ? ((char*) &_buffer[0]) : NULL;
+	}
+	const char* GetConst()
+	{
+		return _allocated ? ((const char*) &_buffer[0]) : NULL;
+	}
+};
+
+inline bool strEqual(const char* s1, const char* s2)
+{
+	return strcmp(s1, s2) == 0;
+}
+
+inline bool strStartsWith(const char* s1, const char* s2)
+{
+	size_t len1 = strlen(s1);
+	size_t len2 = strlen(s2);
+	if (len1 < len2)
+		return false;
+	else
+		return memcmp(s1, s2, len2) == 0;
+}
+
+inline bool strEndsWith(const char* s1, const char*s2)
+{
+	size_t len1 = strlen(s1);
+	size_t len2 = strlen(s2);
+	if (len1 < len2)
+		return false;
+	else
+		return memcmp(s1 + (len1 - len2), s2, len2) == 0;
+}
 
 PythonExtension::PythonExtension()
 {
@@ -88,6 +194,7 @@ PythonExtension& PythonExtension::Instance()
 	return singleton;
 }
 
+
 // returning true can swallow a message so that it isn't sent to the default SciTE handler,
 // so be careful about returning true.
 
@@ -101,20 +208,9 @@ bool PythonExtension::Initialise(ExtensionAPI* host)
 
 	if (!delayLoad)
 	{
+		VerifyConstantsTableOrder();
 		InitializePython();
 		RunCallback("OnStart");
-
-		// binary search requires items to be sorted, so verify sort order
-		for (unsigned int i = 0; i < PythonExtension::constantsTableLen - 1; i++)
-		{
-			const char* first = PythonExtension::constantsTable[i].name;
-			const char* second = PythonExtension::constantsTable[i + 1].name;
-			if (strcmp(first, second) != -1)
-			{
-				trace("Warning, unsorted.");
-				trace(first, second);
-			}
-		}
 	}
 	
 	return false;
@@ -136,8 +232,7 @@ bool PythonExtension::Clear()
 bool PythonExtension::Load(const char *filename)
 {
 	// only run files with a .py extension
-	unsigned int len = strlen(filename);
-	if (len > 3 && filename[len - 3] == '.' && filename[len - 2] == 'p' && filename[len - 1] == 'y')
+	if (strEndsWith(filename, ".py"))
 	{
 		FILE* f = fopen(filename, "r");
 		if (f)
@@ -202,7 +297,7 @@ bool PythonExtension::OnSave(const char *filename)
 
 bool PythonExtension::OnExecute(const char* cmd)
 {
-	if (cmd[0] == 'p' && cmd[1] == 'y' && cmd[2] == ':')
+	if (strStartsWith(cmd, "py:"))
 	{
 		cmd += strlen("py:");
 		InitializePython();
@@ -319,25 +414,13 @@ bool PythonExtension::NeedsOnClose()
 
 void trace(const char* text1, const char* text2 /*=NULL*/)
 {
-	if (Host() && text1)
+	if (Host())
 	{
-		Host()->Trace(text1);
-	}
-
-	if (Host() && text2)
-	{
-		Host()->Trace(text2);
-	}
-}
-
-void trace(const char* text1, const char* text2, int n)
-{
-	trace(text1, text2);
-	char buf[256] = { 0 };
-	int count = snprintf(buf, sizeof(buf), "%d", n);
-	if (!(count > sizeof(buf) || count < 0))
-	{
-		Host()->Trace(buf);
+		if (text1)
+			Host()->Trace(text1);
+		
+		if (text2)
+			Host()->Trace(text2);
 	}
 }
 
@@ -529,17 +612,13 @@ PyObject* pyfun_GetProperty(PyObject*, PyObject* args)
 	if (PyArg_ParseTuple(args, "s", &propName))
 	{
 		std::string value = Host()->Property(propName);
-		if (value.length() > 0)
-		{
-			// give the caller ownership of this object.
-			CPyObjectPtr pythonStr = PyString_FromString(value.c_str());
-			return pythonStr;
-		}
-		else
-		{
-			Py_INCREF(Py_None);
-			return Py_None;
-		}
+		
+		// follow properties file behavior: a missing property returns empty string, not null
+		const char* sz = value.length() > 0 ? value.c_str() : "";
+		
+		// give the caller ownership of this object.
+		CPyObjectPtr pythonStr = PyString_FromString(sz);
+		return pythonStr;
 	}
 	else
 	{
@@ -695,243 +774,292 @@ PyObject* pyfun_pane_FindText(PyObject*, PyObject* args) // returns a tuple
 	return NULL;
 }
 
-PyObject* pyfun_pane_SendScintillaFn(PyObject*, PyObject* args)
+int GetPythonInt(PyObject *arg, bool optional=false)
 {
-	// parse arguments
-	PyObject* tuplePassedIn; // we don't own this.
-	const char* commandName = NULL; // we don't own this.
-	int nPane = -1;
-	ExtensionAPI::Pane pane;
-	if (!PyArg_ParseTuple(args, "isO", &nPane, &commandName, &tuplePassedIn) ||
-		!GetPaneFromInt(nPane, &pane) ||
-		!PyTuple_Check(tuplePassedIn))
+	if (!arg || !PyInt_Check(arg))
 	{
-		PyErr_SetString(PyExc_RuntimeError, "Third arg must be a tuple.");
-		return NULL;
-	}
-
-	int nFnIndex = IFaceTable::FindFunction(commandName);
-	if (nFnIndex == -1)
-	{
-		PyErr_SetString(PyExc_RuntimeError, "Could not find fn.");
-		return NULL;
-	}
-
-	intptr_t wParam = 0; // args to be passed to Scite
-	intptr_t lParam = 0; // args to be passed to Scite
-	IFaceFunction func = IFaceTable::functions[nFnIndex];
-	bool isStringResult = func.returnType == iface_int && func.paramType[1] == iface_stringresult;
-	size_t nArgCount = PyTuple_GET_SIZE((PyObject*)tuplePassedIn);
-	size_t nArgsExpected = isStringResult ? ((func.paramType[0] != iface_void) ? 1 : 0) :
-		((func.paramType[1] != iface_void) ? 2 : ((func.paramType[0] != iface_void) ? 1 : 0));
-
-	if (strcmp(commandName, "GetCurLine") == 0)
-	{
-		nArgsExpected = 0;
-		func.paramType[0] = iface_void;
-		func.paramType[1] = iface_void;
-	}
-
-	if (nArgCount != nArgsExpected)
-	{
-		PyErr_SetString(PyExc_RuntimeError, "Wrong # of args");
-		return NULL;
-	}
-
-	if (func.paramType[0] != iface_void)
-	{
-		if (!PullPythonArgument(func.paramType[0], PyTuple_GetItem(tuplePassedIn, 0), &wParam))
+		if (!arg && optional)
 		{
-			return NULL;
-		}
-	}
-	if (func.paramType[1] != iface_void && !isStringResult)
-	{
-		if (!PullPythonArgument(func.paramType[1], PyTuple_GetItem(tuplePassedIn, 1), &lParam))
-		{
-			return NULL;
-		}
-	}
-	else if (isStringResult)
-	{
-		// allocate space for the result
-		size_t spaceNeeded = Host()->Send(pane, func.value, wParam, NULL);
-		if (strcmp(commandName, "GetCurLine") == 0) // the first param of getCurLine is useless
-		{
-			wParam = spaceNeeded + 1;
-		}
-
-		lParam = (intptr_t) new char[spaceNeeded + 1];
-		for (unsigned i = 0; i < spaceNeeded + 1; i++)
-		{
-			((char*)lParam)[i] = 0;
-		}
-	}
-
-	intptr_t result = Host()->Send(pane, func.value, wParam, lParam);
-	PyObject* pyObjReturn = NULL;
-	if (isStringResult)
-	{
-		if (!lParam)
-		{
-			// it apparently returned null instead of string
-			Py_INCREF(Py_None);
-			return Py_None;
+			return 0;
 		}
 		else
 		{
-			// don't use PyString_FromString because it might not be null-terminated
-			if (result == 0)
-			{
-				pyObjReturn = PyString_FromString("");
-			}
-			else
-			{
-				pyObjReturn = PyString_FromStringAndSize((char *)lParam, (size_t)result - 1);
-			}
-
-			delete[](char*) lParam;
+			PyErr_SetString(PyExc_RuntimeError, "expected int param.");
+			return 0;
 		}
 	}
 	else
 	{
-		// this translates void into None, which makes sense
-		if (!PushPythonArgument(func.returnType, result, &pyObjReturn))
+		return PyInt_AsLong(arg);
+	}
+}
+
+bool GetPythonBool(PyObject *arg, bool optional=false)
+{
+	if (!arg || !PyBool_Check(arg))
+	{
+		if (!arg && optional)
+		{
+			return false;
+		}
+		else
+		{
+			PyErr_SetString(PyExc_RuntimeError, "expected boolean param.");
+			return false;
+		}
+	}
+	else
+	{
+		return !!PyObject_IsTrue(arg);
+	}
+}
+
+void GetPythonString(PyObject* arg, const char** str, size_t* len, bool optional=false)
+{
+	if (!arg || !PyString_Check(arg))
+	{
+		if (!arg && optional)
+		{
+			*str = "";
+			*len = 0;
+		}
+		else
+		{
+			*str = NULL;
+			*len = 0;
+			PyErr_SetString(PyExc_RuntimeError, "expected string param.");
+		}
+	}
+	else
+	{
+		*str = PyString_AsString(arg);
+		*len = PyString_Size(arg);
+	}
+}
+
+IFaceFunction SearchForFunction(const char* name, std::string& nameFound)
+{
+	// first, look for a function. Some functions begin with the string "Get", but aren't a property.
+	IFaceFunction empty = {0};
+	int index = IFaceTable::FindFunction(name);
+	if (index >= 0)
+	{
+		if (!IFaceFunctionIsScriptable(IFaceTable::functions[index])) {
+			PyErr_SetString(PyExc_RuntimeError, "function is not scriptable");
+			return empty;
+		} else if (!strEqual(name, IFaceTable::functions[index].name)) {
+			PyErr_SetString(PyExc_RuntimeError, "IFaceTable::FindFunction returned incorrect name");
+			return empty;
+		} else {
+			nameFound = IFaceTable::functions[index].name;
+			return IFaceTable::functions[index];
+		}
+	}
+	
+	// then, if the name begins with "Get" or "Set", look for a property.
+	bool isGet = strStartsWith(name, "Get");
+	bool isSet = strStartsWith(name, "Set");
+	if (isGet || isSet)
+	{
+		const char* potentialPropertyName = name + 
+			(isGet ? strlen("Get") : strlen("Set"));
+		
+		index = IFaceTable::FindProperty(potentialPropertyName);
+		if (index > 0)
+		{
+			if (!IFacePropertyIsScriptable(IFaceTable::properties[index])) {
+				PyErr_SetString(PyExc_RuntimeError, "property is not scriptable");
+				return empty;
+			} else if (!strEqual(potentialPropertyName, IFaceTable::properties[index].name)) {
+				PyErr_SetString(PyExc_RuntimeError, "IFaceTable::FindProperty returned incorrect name");
+				return empty;
+			} else if (isGet && !IFaceTable::properties[index].getter) {
+				PyErr_SetString(PyExc_RuntimeError, "Cannot read from a write-only property");
+				return empty;
+			} else if (isSet && !IFaceTable::properties[index].setter) {
+				PyErr_SetString(PyExc_RuntimeError, "Cannot write to a read-only property");
+				return empty;
+			} else if (isGet) {
+				nameFound = IFaceTable::properties[index].name;
+				nameFound += " (getter)";
+				return IFaceTable::properties[index].GetterFunction();
+			} else if (isSet) {
+				nameFound = IFaceTable::properties[index].name;
+				nameFound += " (setter)";
+				return IFaceTable::properties[index].SetterFunction();
+			}
+		}
+	}
+	
+	return empty;
+}
+
+PyObject* CallPaneFunction(ExtensionAPI::Pane pane, const IFaceFunction& functionInfo,
+	const char* name, PyObject* arg1, PyObject* arg2)
+{
+	// the logic here follows iface_function_helper
+	sptr_t paramsToSend[2] = {0,0};
+	int arg = 0;
+	PyObject* args[] = {arg1, arg2};
+	SimpleStringBuffer stringResult;
+	bool needStringResult = false;
+	int loopParamCount = 2;
+	
+	if (functionInfo.paramType[0] == iface_length && functionInfo.paramType[1] == iface_string)
+	{
+		// for caller's convenience, we shouldn't ask for both string and length, we can just get the string's length here.
+		// we require a valid string here, which is more strict than the Lua extension
+		const char* str;
+		size_t len;
+		GetPythonString(args[arg], &str, &len);
+		if (PyErr_Occurred())
 		{
 			return NULL;
 		}
+		
+		paramsToSend[0] = len;
+		paramsToSend[1] = CastSzToSptr(str);
+		loopParamCount = 0;
 	}
+	else if ((functionInfo.paramType[1] == iface_stringresult) || (functionInfo.returnType == iface_stringresult))
+	{
+		// get ready for a string result. the buffer will be allocated later.
+		needStringResult = true;
+		if (functionInfo.paramType[0] == iface_length)
+		{
+			// Python shouldn't provide this parameter, it's used as part of the stringresult.
+			loopParamCount = 0;
+		}
+		else
+		{
+			loopParamCount = 1;
+		}
+	}
+	
+	// loop through and pick up remaining parameters
+	for (int i = 0; i < loopParamCount; ++i)
+	{
+		if (functionInfo.paramType[i] == iface_string)
+		{
+			const char* str;
+			size_t len;
+			GetPythonString(args[arg++], &str, &len);
+			paramsToSend[i] = CastSzToSptr(str);
+		}
+		else if (functionInfo.paramType[i] == iface_bool)
+		{
+			bool b = GetPythonBool(args[arg++]);
+			paramsToSend[i] = b ? 1 : 0;
+		}
+		else if (IFaceTypeIsNumeric(functionInfo.paramType[i]) || functionInfo.paramType[i] == iface_keymod)
+		{
+			// lua extension has special logic for iface_keymod, there's no real need,
+			// we can build a keymod ourselves via my ScConst.MakeKeymod helper
+			int n = GetPythonInt(args[arg++]);
+			paramsToSend[i] = static_cast<long>(n);
+		}
+		else if (functionInfo.paramType[i] != iface_void)
+		{
+			trace("Warning: parameter expected, but unhandled type, in function ", name);
+		}
+		
+		if (PyErr_Occurred())
+		{
+			// user passed the wrong type in one of the conversions above.
+			return NULL; 
+		}
+	}
+	
+	// nitpick, there were too many params.
+	for (int i = arg; i < loopParamCount; i++)
+	{
+		if (args[i] != NULL)
+			trace("Warning: too many parameter(s) passed to function ", name);
+	}
+	
+	if (needStringResult)
+	{
+		// sending with 0 means we are asking for the length of buffer.
+		sptr_t stringResultLen = Host()->Send(pane, functionInfo.value, paramsToSend[0], 0);
+		
+		if (stringResultLen == 0)
+		{
+			// LuaExtension.cxx iface_function_helper says this is an error, but it can be reached with GetProperty('nonexistant')
+			// let's cause an empty string to be returned
+			stringResultLen = 1;
+		}
+		
+		// not all string result methods are guaranteed to add a null terminator
+		stringResult.Allocate(stringResultLen + 1);
+		paramsToSend[1] = CastPtrToSptr(stringResult.Get());
+		
+		if (functionInfo.paramType[0] == iface_length)
+		{
+			paramsToSend[0] = stringResultLen;
+		}
+	}
+	
+	sptr_t result = Host()->Send(pane, functionInfo.value, paramsToSend[0], paramsToSend[1]);
 
-	Py_INCREF(pyObjReturn);
-	return pyObjReturn;
+	// we'll give ownership of this object to the caller.
+	CPyObjectPtr returnedString = stringResult.Get() ? PyString_FromString(stringResult.Get()) : NULL;
+	if (functionInfo.returnType == iface_bool)
+	{
+		// return either (string, bool) or bool.
+		if (returnedString)
+			return Py_BuildValue("NO", (PyObject*)returnedString, (result ? Py_True : Py_False));
+		else
+			return Py_BuildValue("O", (result ? Py_True : Py_False));
+	}
+	else if (IFaceTypeIsNumeric(functionInfo.returnType) || functionInfo.returnType == iface_keymod)
+	{
+		// return either (string, int) or int.
+		if (returnedString)
+			return Py_BuildValue("Ni", (PyObject*)returnedString, (int)result);
+		else
+			return Py_BuildValue("i", (int)result);
+	}
+	else 
+	{
+		// return either string or None.
+		if (returnedString)
+			return returnedString;
+		else
+			return Py_BuildValue("");
+	}
 }
 
-PyObject* pyfun_pane_SendScintillaGet(PyObject*, PyObject* args)
+
+
+PyObject* pyfun_pane_SendScintilla(PyObject*, PyObject* args)
 {
-	const char* propName = NULL; // we don't own this.
+	const char* functionName = NULL; // we don't own this.
 	int nPane = -1;
 	ExtensionAPI::Pane pane;
-	PyObject* pyObjParam = NULL;
-	if (!PyArg_ParseTuple(args, "is|O", &nPane, &propName, &pyObjParam) ||
+	PyObject *arg1=NULL, *arg2=NULL;
+	if (!PyArg_ParseTuple(args, "is|OO", &nPane, &functionName, &arg1, &arg2) ||
 		!GetPaneFromInt(nPane, &pane))
 	{
 		return NULL;
 	}
-
-	int nFnIndex = IFaceTable::FindProperty(propName);
-	if (nFnIndex == -1)
+	
+	std::string nameFound;
+	IFaceFunction functionInfo = SearchForFunction(functionName, nameFound);
+	if (PyErr_Occurred())
 	{
-		PyErr_SetString(PyExc_RuntimeError, "Could not find prop.");
 		return NULL;
 	}
-
-	IFaceProperty prop = IFaceTable::properties[nFnIndex];
-	if (prop.getter == 0 || strcmp(propName, "Property") == 0 || strcmp(propName, "PropertyInt") == 0)
+	else if (!functionInfo.name)
 	{
-		PyErr_SetString(PyExc_RuntimeError, "prop can't be get.");
+		PyErr_SetString(PyExc_RuntimeError, "Function or property not found");
 		return NULL;
-	}
-
-	intptr_t wParam = 0; // args to be passed to Scite
-	intptr_t lParam = 0; // args to be passed to Scite
-
-	if (prop.paramType != iface_void)
-	{
-		if (pyObjParam == NULL || pyObjParam == Py_None)
-		{
-			PyErr_SetString(PyExc_RuntimeError, "prop needs param.");
-			return NULL;
-		}
-
-		if (!PullPythonArgument(prop.paramType, pyObjParam, &wParam))
-		{
-			return NULL;
-		}
-	}
-	else if (!(pyObjParam == NULL || pyObjParam == Py_None))
-	{
-		PyErr_SetString(PyExc_RuntimeError, "property does not take params.");
-		return NULL;
-	}
-
-	intptr_t result = Host()->Send(pane, prop.getter, wParam, lParam);
-
-	// this translates void into None, which makes sense
-	PyObject* pyObjReturn = NULL;
-	if (PushPythonArgument(prop.valueType, result, &pyObjReturn))
-	{
-		Py_INCREF(pyObjReturn);
-		return pyObjReturn;
 	}
 	else
 	{
-		return NULL;
+		return CallPaneFunction(pane, functionInfo, nameFound.c_str(), arg1, arg2);
 	}
 }
 
-PyObject* pyfun_pane_SendScintillaSet(PyObject*, PyObject* args)
-{
-	const char* propName = NULL; // we don't own this.
-	int nPane = -1;
-	ExtensionAPI::Pane pane;
-	PyObject* pyObjArg1 = NULL;
-	PyObject* pyObjArg2 = NULL;
-	if (!PyArg_ParseTuple(args, "isO|O", &nPane, &propName, &pyObjArg1, &pyObjArg2) ||
-		!GetPaneFromInt(nPane, &pane))
-	{
-		return NULL;
-	}
-
-	int nFnIndex = IFaceTable::FindProperty(propName);
-	if (nFnIndex == -1)
-	{
-		PyErr_SetString(PyExc_RuntimeError, "Could not find prop.");
-		return NULL;
-	}
-
-	IFaceProperty prop = IFaceTable::properties[nFnIndex];
-	if (prop.setter == 0)
-	{
-		PyErr_SetString(PyExc_RuntimeError, "prop can't be set.");
-		return NULL;
-	}
-
-	intptr_t wParam = 0; // args to be passed to Scite
-	intptr_t lParam = 0; // args to be passed to Scite
-
-	if (prop.paramType == iface_void)
-	{
-		if (!(pyObjArg2 == NULL || pyObjArg2 == Py_None))
-		{
-			PyErr_SetString(PyExc_RuntimeError, "property does not take params.");
-			return NULL;
-		}
-
-		if (!PullPythonArgument(prop.valueType, pyObjArg1, &wParam))
-		{
-			return NULL;
-		}
-	}
-	else
-	{
-		// a bit different than expected, but in the docs it says "set void StyleSetBold=2053(int style, bool bold)
-		if (pyObjArg2 == NULL || pyObjArg2 == Py_None)
-		{
-			PyErr_SetString(PyExc_RuntimeError, "prop needs param.");
-			return NULL;
-		}
-
-		if (!PullPythonArgument(prop.paramType, pyObjArg1, &wParam) ||
-			!PullPythonArgument(prop.valueType, pyObjArg2, &lParam))
-		{
-			return NULL;
-		}
-	}
-
-	(void)Host()->Send(pane, prop.setter, wParam, lParam);
-	Py_INCREF(Py_None);
-	return Py_None;
-}
 
 PyObject* pyfun_app_GetConstant(PyObject*, PyObject* args)
 {
@@ -1066,10 +1194,172 @@ PyObject* pyfun_app_UserStripGetValue(PyObject*, PyObject* args)
 	}
 }
 
+const char* IFaceTypeToString(IFaceType type)
+{
+	switch(type)
+	{
+		case iface_void: return "void";
+		case iface_int: return "int";
+		case iface_length: return "length";
+		case iface_position: return "position";
+		case iface_colour: return "colour";
+		case iface_bool: return "bool";
+		case iface_keymod: return "keymod";
+		case iface_string: return "string";
+		case iface_stringresult: return "stringresult";
+		case iface_cells: return "cells";
+		case iface_textrange: return "textrange";
+		case iface_findtext: return "findtext";
+		case iface_formatrange: return "findtext";
+		default: return "????";
+	}
+}
+
+void PrintSupportedCallsAppMethods()
+{
+	trace("SupportedCallsAppMethods\n");
+	ReusableStringStream strm;
+	for (size_t i = 0; i < PythonExtension::constantsTableLen; i++)
+	{
+		strm.Write(PythonExtension::constantsTable[i].name);
+		strm.Write("|");
+		strm.Write(PythonExtension::constantsTable[i].value);
+		strm.Write("\n");
+		trace(strm.Get().c_str());
+		strm.Reset();
+	}
+}
+
+void PrintSupportedCallsConstants()
+{
+	trace("SupportedCallsConstants\n");
+	ReusableStringStream strm;
+	for (int i = 0; i < IFaceTable::constantCount; i++)
+	{
+		strm.Write(IFaceTable::constants[i].name);
+		strm.Write("|");
+		strm.Write(IFaceTable::constants[i].value);
+		strm.Write("\n");
+		trace(strm.Get().c_str());
+		strm.Reset();
+	}
+}
+
+void PrintIFaceFunction(const IFaceFunction& fn, ReusableStringStream& strm, 
+	const char* prefix, const char* nameOverride, bool showActualParamsVsCallingUsage)
+{
+	if (showActualParamsVsCallingUsage)
+	{
+		strm.Write(IFaceTypeToString(fn.returnType));
+		strm.Write("|");
+		strm.Write(IFaceTypeToString(fn.paramType[0]));
+		strm.Write("|");
+		strm.Write(IFaceTypeToString(fn.paramType[1]));
+		strm.Write("|");
+		strm.Write(prefix);
+		strm.Write(nameOverride);
+		strm.Write("\n");
+	}
+	else
+	{
+		strm.Write(IFaceTypeToString(fn.returnType));
+		strm.Write(" ");
+		strm.Write(prefix);
+		strm.Write(nameOverride);
+		strm.Write("(");
+		if (fn.paramType[0] == iface_length && fn.paramType[1] == iface_string)
+		{
+			// logic in sendpanefunction adds length automatically
+			strm.Write("string");
+		}
+		else 
+		{
+			if (fn.paramType[0] && fn.paramType[0] != iface_void)
+			{
+				strm.Write(IFaceTypeToString(fn.paramType[0]));
+			}
+			if (fn.paramType[1] && fn.paramType[1] != iface_void)
+			{
+				strm.Write(", ");
+				strm.Write(IFaceTypeToString(fn.paramType[1]));
+			}
+		}
+		strm.Write(")\n");
+	}
+	
+	trace(strm.Get().c_str());
+	strm.Reset();
+}
+
+void PrintSupportedCallsPaneMethods_IFaceFunction(bool wantEnabled, bool showActualParamsVsCallingUsage)
+{
+	trace("---PrintSupportedCallsPaneMethods_IFaceFunction---\n",
+		wantEnabled ? "---Enabled---\n" : "---Disabled---\n");
+	
+	ReusableStringStream strm;
+	for (int i = 0; i < IFaceTable::functionCount; i++)
+	{
+		if (wantEnabled == IFaceFunctionIsScriptable(IFaceTable::functions[i]))
+		{
+			PrintIFaceFunction(IFaceTable::functions[i], strm,
+				"", IFaceTable::functions[i].name, showActualParamsVsCallingUsage);
+		}
+	}
+}
+void PrintSupportedCallsPaneMethods_IFaceProperties(bool wantEnabled, bool showActualParamsVsCallingUsage)
+{
+	trace("---PrintSupportedCallsPaneMethods_IFaceProperties---\n",
+		wantEnabled ? "---Enabled---\n" : "---Disabled---\n");
+	
+	ReusableStringStream strm;
+	for (int i = 0; i < IFaceTable::propertyCount; i++)
+	{
+		if (wantEnabled == IFacePropertyIsScriptable(IFaceTable::properties[i]))
+		{
+			if (IFaceTable::properties[i].getter)
+				PrintIFaceFunction(IFaceTable::properties[i].GetterFunction(), strm,
+					"Get", IFaceTable::properties[i].name, showActualParamsVsCallingUsage);
+			if (IFaceTable::properties[i].setter)
+				PrintIFaceFunction(IFaceTable::properties[i].SetterFunction(), strm,
+					"Set", IFaceTable::properties[i].name, showActualParamsVsCallingUsage);
+		}
+	}
+}
+
+void PrintSupportedCallsPaneMethods(bool showActualParamsVsCallingUsage)
+{
+	PrintSupportedCallsPaneMethods_IFaceFunction(true, showActualParamsVsCallingUsage);
+	PrintSupportedCallsPaneMethods_IFaceProperties(true, showActualParamsVsCallingUsage);
+	PrintSupportedCallsPaneMethods_IFaceFunction(false, showActualParamsVsCallingUsage);
+	PrintSupportedCallsPaneMethods_IFaceProperties(false, showActualParamsVsCallingUsage);
+}
+
+PyObject* pyfun_app_PrintSupportedCalls(PyObject*, PyObject* args)
+{
+	int whatToPrint = 0;
+	if (!PyArg_ParseTuple(args, "i", &whatToPrint))
+	{
+		return NULL;
+	}
+	
+	if (whatToPrint == 1)
+		PrintSupportedCallsConstants();
+	else if (whatToPrint == 2)
+		PrintSupportedCallsAppMethods();
+	else if (whatToPrint == 3)
+		PrintSupportedCallsPaneMethods(false);
+	else if (whatToPrint == 4)
+		PrintSupportedCallsPaneMethods(true);
+	
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+
 static PyMethodDef methodsExportedToPython[] =
 {
-	{"LogStdout", pyfun_LogStdout, METH_VARARGS, "Logs stdout"},
-	{"app_Trace", pyfun_LogStdout, METH_VARARGS, "(for compat with scite-lua scripts)"},
+	{"LogStdout", pyfun_LogStdout, METH_VARARGS, "Redirects stdout to output pane"},
+	{"app_Trace", pyfun_LogStdout, METH_VARARGS, ""},
 	{"app_MsgBox", pyfun_MessageBox, METH_VARARGS, ""},
 	{"app_OpenFile", pyfun_SciteOpenFile, METH_VARARGS, ""},
 	{"app_GetProperty", pyfun_GetProperty, METH_VARARGS, "Get SciTE Property"},
@@ -1082,14 +1372,14 @@ static PyMethodDef methodsExportedToPython[] =
 	{"app_UserStripSet", pyfun_app_UserStripSet, METH_VARARGS, ""},
 	{"app_UserStripSetList", pyfun_app_UserStripSetList, METH_VARARGS, ""},
 	{"app_UserStripGetValue", pyfun_app_UserStripGetValue, METH_VARARGS, ""},
+	{"app_PrintSupportedCalls", pyfun_app_PrintSupportedCalls, METH_VARARGS, ""},
+	{"app_SciteCommand", pyfun_app_SciteCommand, METH_VARARGS, ""},
 	{"pane_Append", pyfun_pane_Append, METH_VARARGS, ""},
 	{"pane_Insert", pyfun_pane_Insert, METH_VARARGS, ""},
 	{"pane_Remove", pyfun_pane_Remove, METH_VARARGS, ""},
 	{"pane_Textrange", pyfun_pane_TextRange, METH_VARARGS, ""},
 	{"pane_FindText", pyfun_pane_FindText, METH_VARARGS, ""},
-	{"pane_ScintillaFn", pyfun_pane_SendScintillaFn, METH_VARARGS, ""},
-	{"pane_ScintillaGet", pyfun_pane_SendScintillaGet, METH_VARARGS, ""},
-	{"pane_ScintillaSet", pyfun_pane_SendScintillaSet, METH_VARARGS, ""},
+	{"pane_SendScintilla", pyfun_pane_SendScintilla, METH_VARARGS, ""},
 	{NULL, NULL, 0, NULL}
 };
 
@@ -1118,84 +1408,6 @@ void PythonExtension::SetupPythonNamespace()
 		MessageBoxA(0, "Unexpected: error capturing stdout from Python. make sure python27.zip is present?", "", 0);
 		PyErr_Print(); // if printing isn't set up, will not help, but at least will clear python's error bit
 	}
-}
-
-bool PullPythonArgument(IFaceType type, PyObject* pyObjNext, intptr_t* param)
-{
-	if (!pyObjNext)
-	{
-		PyErr_SetString(PyExc_RuntimeError, "Unexpected: could not get next item.");
-		return false;
-	}
-
-	switch (type) {
-	case iface_void:
-		break;
-	case iface_int:
-	case iface_length:
-	case iface_position:
-	case iface_colour:
-	case iface_keymod:
-		// no urgent need to make keymods in c++, because AssignCmdKey / ClearCmdKey
-		// are only ones using this... see py's makeKeyMod
-		if (!PyInt_Check((PyObject*)pyObjNext))
-		{
-			PyErr_SetString(PyExc_RuntimeError, "Int expected.");
-			return false;
-		}
-
-		*param = (intptr_t)PyInt_AsLong(pyObjNext);
-		break;
-	case iface_bool:
-		if (!PyBool_Check((PyObject*)pyObjNext))
-		{
-			PyErr_SetString(PyExc_RuntimeError, "Bool expected.");
-			return false;
-		}
-		*param = (pyObjNext == Py_True) ? 1 : 0;
-		break;
-	case iface_string:
-	case iface_cells:
-		if (!PyString_Check((PyObject*)pyObjNext))
-		{
-			PyErr_SetString(PyExc_RuntimeError, "String expected.");
-			return false;
-		}
-		*param = (intptr_t)PyString_AsString(pyObjNext);
-		break;
-	case iface_textrange:
-		PyErr_SetString(PyExc_RuntimeError,
-			"raw textrange unsupported, but you can use SciTEModule.Editor.Textrange(s,e)");
-		return false;
-		break;
-	default:
-		PyErr_SetString(PyExc_RuntimeError, "Unexpected: receiving unknown scintilla type.");
-		return false;
-	}
-	return true;
-}
-
-// note: caller must incref pyValueOut.
-bool PushPythonArgument(IFaceType type, intptr_t param, PyObject** pyValueOut)
-{
-	switch (type) {
-	case iface_void:
-		*pyValueOut = Py_None;
-		break;
-	case iface_int:
-	case iface_length:
-	case iface_position:
-	case iface_colour:
-		*pyValueOut = PyInt_FromLong((long)param);
-		break;
-	case iface_bool:
-		*pyValueOut = param ? Py_True : Py_False;
-		break;
-	default:
-		PyErr_SetString(PyExc_RuntimeError, "Unexpected: returning unknown scintilla type.");
-		return false;
-	}
-	return true;
 }
 
 bool GetPaneFromInt(int nPane, ExtensionAPI::Pane* outPane)
@@ -1345,9 +1557,27 @@ int FindFriendlyNamedIDMConstant(const char* name)
 	return -1;
 }
 
+void VerifyConstantsTableOrder()
+{
+#if _DEBUG
+	// binary search requires items to be sorted, so verify sort order
+	for (unsigned int i = 0; i < PythonExtension::constantsTableLen - 1; i++)
+	{
+		const char* first = PythonExtension::constantsTable[i].name;
+		const char* second = PythonExtension::constantsTable[i + 1].name;
+		if (!(strcmp(first, second) < 0))
+		{
+			trace("Warning, unsorted.");
+			trace(first, second);
+		}
+	}
+#endif
+}
+
 static IFaceConstant rgFriendlyNamedIDMConstants[] =
 {
-	//++Autogenerated -- when new SciTE version is released, run archive/generate/constantsTable.py and paste the results here
+	// after modifying, enable VerifyConstantsTableOrder() to verify order.
+	//++Autogenerated -- run archive/generate/constantsTable.py and paste the results here
 	{"Abbrev", IDM_ABBREV},
 	{"About", IDM_ABOUT},
 	{"Activate", IDM_ACTIVATE},
