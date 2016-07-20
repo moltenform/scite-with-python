@@ -4,11 +4,58 @@
 # when SciTE edits any files in these directories the background will be RED,
 # a good reminder to think twice :)
 
-def OnOpen(filename):
-    onBufferShown()
+class ShowWarnings(object):
+    currentFilename = None
+    mapFilenameToWarningStatus = None
+    directoriesToWarn = None
+    
+    def __init__(self):
+        from scite_extend_ui import ScApp
+        self.mapFilenameToWarningStatus = dict()
+        propKey = 'customcommand.disable_directory.disabled_directories'
+        propMappings = ScApp.GetProperty(propKey)
+        self.directoriesToWarn = getListFromPropertiesString(propMappings)
+        
+    def updateCurrentFilename(self):
+        from scite_extend_ui import ScApp
+        self.currentFileName = ScApp.GetFilePath()
+    
+    def showWarningIfNeeded(self):
+        # first check the cache, for better performance
+        needWarning = self.mapFilenameToWarningStatus.get(self.currentFileName, None)
+        if needWarning is None:
+            needWarning = shouldWarn(self.currentFileName, self.directoriesToWarn)
+            self.mapFilenameToWarningStatus[self.currentFileName] = needWarning
+            
+        if needWarning:
+            makeEverythingRed()
+    
+    def onClose(self):
+        # remove from the cache, just to prevent the cache from growing indefinitely
+        from scite_extend_ui import ScApp
+        name = ScApp.GetFilePath()
+        if name in self.mapFilenameToWarningStatus:
+            del self.mapFilenameToWarningStatus[name]
 
-def OnSwitchFile(filename):
-    onBufferShown()
+# why do we need to track OnKey?
+# we could do everything in OnOpen and OnSwitchFile, but the issue is that
+# the OnOpen callback occurs too early, any coloring changes we make are
+# reset immediately afterwards. So switching to a file would correctly set the colors,
+# but the first time opening a file, the colors would not be seen.
+# we'll use OnKey instead, even though it's not ideal.
+
+def OnKey(*args):
+    showWarnings.showWarningIfNeeded()
+    
+def OnOpen(*args):
+    showWarnings.updateCurrentFilename()
+
+def OnSwitchFile(*args):
+    showWarnings.updateCurrentFilename()
+    showWarnings.showWarningIfNeeded()
+
+def OnClose(*args):
+    showWarnings.onClose()
 
 def getListFromPropertiesString(s):
     result = []
@@ -26,26 +73,14 @@ def shouldWarn(currentFile, listDirs):
     return False
 
 def makeEverythingRed():
-    # fortunately, it wears off as soon as the buffer is switched :)
     from scite_extend_ui import ScEditor, ScConst
+    # fortunately, it wears off as soon as the buffer is switched :)
     red = ScConst.MakeColor(255, 100, 100)
     for styleNumber in range(16):
         ScEditor.SetStyleBack(styleNumber, red)
 
-def onBufferShown():
-    from scite_extend_ui import ScApp
-    currentFile = ScApp.GetFilePath()
-    propKey = 'customcommand.disable_directory.disabled_directories'
-    propMappings = ScApp.GetProperty(propKey)
-    if not currentFile:
-        return
-    elif not propMappings:
-        return
-    else:
-        listDirs = getListFromPropertiesString(propMappings)
-        if shouldWarn(currentFile, listDirs):
-            makeEverythingRed()
-    
+showWarnings = ShowWarnings()
+
 if __name__ == '__main__':
     from ben_python_common import assertEq
     input = r'c:\example\warn1'
