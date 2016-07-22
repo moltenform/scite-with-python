@@ -16,41 +16,69 @@
 #include <windows.h>
 #endif
 
-// on startup, import the python module scite_extend_ui.py
+// name of the python module to run on startup
 static const char* c_PythonModuleName = "scite_extend_ui";
-int FindFriendlyNamedIDMConstant(const char* name);
-bool GetPaneFromInt(int nPane, ExtensionAPI::Pane* outPane);
-bool RunCallback(const char* eventName, int nArgs = 0, const char* arg = 0);
-bool RunCallbackArgs(const char* eventName, PyObject* pArgsBorrowed);
-void VerifyConstantsTableOrder();
 
-void trace(const char* text1, const char* text2 = NULL);
-void trace(const char* text1, const char* text2, int n);
-
+// from LuaExtension.cxx
 inline bool IFaceTypeIsScriptable(IFaceType t, int index) {
 	return t < iface_stringresult || (index==1 && t == iface_stringresult);
 }
 
+// from LuaExtension.cxx
 inline bool IFaceTypeIsNumeric(IFaceType t) {
 	return (t > iface_void && t < iface_bool);
 }
 
+// from LuaExtension.cxx
 inline bool IFaceFunctionIsScriptable(const IFaceFunction &f) {
 	return IFaceTypeIsScriptable(f.paramType[0], 0) && IFaceTypeIsScriptable(f.paramType[1], 1);
 }
 
+// from LuaExtension.cxx
 inline bool IFacePropertyIsScriptable(const IFaceProperty &p) {
 	return (((p.valueType > iface_void) && (p.valueType <= iface_stringresult) && (p.valueType != iface_keymod)) &&
 	        ((p.paramType < iface_colour) || (p.paramType == iface_string) ||
 	                (p.paramType == iface_bool)) && (p.getter || p.setter));
 }
 
+// simply a more intuitive name for SptrFromPointer
 inline sptr_t CastPtrToSptr(void *p) {
 	return SptrFromPointer(p);
 }
 
+// simply a more intuitive name for SptrFromString
 inline sptr_t CastSzToSptr(const char *cp) {
 	return SptrFromString(cp);
+}
+
+// forward declarations
+void VerifyConstantsTableOrder();
+int FindFriendlyNamedIDMConstant(const char* name);
+bool GetPaneFromInt(int nPane, ExtensionAPI::Pane* outPane);
+bool RunCallback(const char* eventName, int nArgs = 0, const char* arg = 0);
+bool RunCallbackArgs(const char* eventName, PyObject* pArgsBorrowed);
+void trace(const char* text1, const char* text2 = NULL);
+void trace(const char* text1, const char* text2, int n);
+
+const char* IFaceTypeToString(IFaceType type)
+{
+	switch(type)
+	{
+		case iface_void: return "void";
+		case iface_int: return "int";
+		case iface_length: return "length";
+		case iface_position: return "position";
+		case iface_colour: return "colour";
+		case iface_bool: return "bool";
+		case iface_keymod: return "keymod";
+		case iface_string: return "string";
+		case iface_stringresult: return "stringresult";
+		case iface_cells: return "cells";
+		case iface_textrange: return "textrange";
+		case iface_findtext: return "findtext";
+		case iface_formatrange: return "findtext";
+		default: return "unknown";
+	}
 }
 
 // reuse a stringstream, to reduce the number of allocations
@@ -542,6 +570,14 @@ bool PythonExtension::OnUserStrip(int control, int eventType)
 	}
 }
 
+inline PyObject* IncrefAndReturnNone()
+{
+	// None is a reference-counted object like any other object,
+	// it should be incref'd when returned. 
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
 PyObject* pyfun_LogStdout(PyObject*, PyObject* args)
 {
 	const char* msg = NULL; // we don't own this.
@@ -552,8 +588,7 @@ PyObject* pyfun_LogStdout(PyObject*, PyObject* args)
 			trace(msg);
 		}
 
-		Py_INCREF(Py_None);
-		return Py_None;
+		return IncrefAndReturnNone();
 	}
 	else
 	{
@@ -569,8 +604,7 @@ PyObject* pyfun_MessageBox(PyObject*, PyObject* args)
 #ifdef _WIN32
 		MessageBoxA(NULL, msg, "SciTEPython", 0);
 #endif
-		Py_INCREF(Py_None);
-		return Py_None;
+		return IncrefAndReturnNone();
 	}
 	else
 	{
@@ -597,8 +631,7 @@ PyObject* pyfun_SciteOpenFile(PyObject*, PyObject* args)
 		}
 
 		Host()->Perform(cmd.c_str());
-		Py_INCREF(Py_None);
-		return Py_None;
+		return IncrefAndReturnNone();
 	}
 	else
 	{
@@ -634,8 +667,7 @@ PyObject* pyfun_SetProperty(PyObject*, PyObject* args)
 	{
 		// it looks like SetProperty allocates, it's ok if key and val go out of scope.
 		Host()->SetProperty(propName, propValue);
-		Py_INCREF(Py_None);
-		return Py_None;
+		return IncrefAndReturnNone();
 	}
 	else
 	{
@@ -649,8 +681,7 @@ PyObject* pyfun_UnsetProperty(PyObject*, PyObject* args)
 	if (PyArg_ParseTuple(args, "s", &propName))
 	{
 		Host()->UnsetProperty(propName);
-		Py_INCREF(Py_None);
-		return Py_None;
+		return IncrefAndReturnNone();
 	}
 	else
 	{
@@ -667,8 +698,7 @@ PyObject* pyfun_pane_Append(PyObject*, PyObject* args)
 		GetPaneFromInt(nPane, &pane))
 	{
 		Host()->Insert(pane, Host()->Send(pane, SCI_GETLENGTH, 0, 0), text);
-		Py_INCREF(Py_None);
-		return Py_None;
+		return IncrefAndReturnNone();
 	}
 	else
 	{
@@ -686,8 +716,7 @@ PyObject* pyfun_pane_Insert(PyObject*, PyObject* args)
 		GetPaneFromInt(nPane, &pane))
 	{
 		Host()->Insert(pane, nPos, text);
-		Py_INCREF(Py_None);
-		return Py_None;
+		return IncrefAndReturnNone();
 	}
 	else
 	{
@@ -704,8 +733,7 @@ PyObject* pyfun_pane_Remove(PyObject*, PyObject* args)
 		(GetPaneFromInt(nPane, &pane)))
 	{
 		Host()->Remove(pane, nPosStart, nPosEnd);
-		Py_INCREF(Py_None);
-		return Py_None;
+		return IncrefAndReturnNone();
 	}
 	else
 	{
@@ -729,8 +757,7 @@ PyObject* pyfun_pane_TextRange(PyObject*, PyObject* args)
 	}
 	else
 	{
-		Py_INCREF(Py_None);
-		return Py_None;
+		return IncrefAndReturnNone();
 	}
 }
 
@@ -765,8 +792,7 @@ PyObject* pyfun_pane_FindText(PyObject*, PyObject* args) // returns a tuple
 			}
 			else
 			{
-				Py_INCREF(Py_None);
-				return Py_None;
+				return IncrefAndReturnNone();
 			}
 		}
 	}
@@ -1092,8 +1118,7 @@ PyObject* pyfun_app_EnableNotification(PyObject*, PyObject* args)
 	}
 	
 	PythonExtension::Instance().EnableNotification(eventName, !!value);
-	Py_INCREF(Py_None);
-	return Py_None;
+	return IncrefAndReturnNone();
 }
 
 PyObject* pyfun_app_SciteCommand(PyObject*, PyObject* args)
@@ -1113,8 +1138,7 @@ PyObject* pyfun_app_SciteCommand(PyObject*, PyObject* args)
 
 	IFaceConstant faceConstant = PythonExtension::constantsTable[nFnIndex];
 	Host()->DoMenuCommand(faceConstant.value);
-	Py_INCREF(Py_None);
-	return Py_None;
+	return IncrefAndReturnNone();
 }
 
 PyObject* pyfun_app_UpdateStatusBar(PyObject*, PyObject* args)
@@ -1127,8 +1151,7 @@ PyObject* pyfun_app_UpdateStatusBar(PyObject*, PyObject* args)
 
 	bool bUpdateSlowData = pyObjBoolUpdate == Py_True;
 	Host()->UpdateStatusBar(bUpdateSlowData);
-	Py_INCREF(Py_None);
-	return Py_None;
+	return IncrefAndReturnNone();
 }
 
 PyObject* pyfun_app_UserStripShow(PyObject*, PyObject* args)
@@ -1140,8 +1163,7 @@ PyObject* pyfun_app_UserStripShow(PyObject*, PyObject* args)
 	}
 	
 	Host()->UserStripShow(s);
-	Py_INCREF(Py_None);
-	return Py_None;
+	return IncrefAndReturnNone();
 }
 
 PyObject* pyfun_app_UserStripSet(PyObject*, PyObject* args)
@@ -1154,8 +1176,7 @@ PyObject* pyfun_app_UserStripSet(PyObject*, PyObject* args)
 	}
 	
 	Host()->UserStripSet(control, value);
-	Py_INCREF(Py_None);
-	return Py_None;
+	return IncrefAndReturnNone();
 }
 
 PyObject* pyfun_app_UserStripSetList(PyObject*, PyObject* args)
@@ -1168,8 +1189,7 @@ PyObject* pyfun_app_UserStripSetList(PyObject*, PyObject* args)
 	}
 	
 	Host()->UserStripSetList(control, value);
-	Py_INCREF(Py_None);
-	return Py_None;
+	return IncrefAndReturnNone();
 }
 
 PyObject* pyfun_app_UserStripGetValue(PyObject*, PyObject* args)
@@ -1189,29 +1209,7 @@ PyObject* pyfun_app_UserStripGetValue(PyObject*, PyObject* args)
 	}
 	else
 	{
-		Py_INCREF(Py_None);
-		return Py_None;
-	}
-}
-
-const char* IFaceTypeToString(IFaceType type)
-{
-	switch(type)
-	{
-		case iface_void: return "void";
-		case iface_int: return "int";
-		case iface_length: return "length";
-		case iface_position: return "position";
-		case iface_colour: return "colour";
-		case iface_bool: return "bool";
-		case iface_keymod: return "keymod";
-		case iface_string: return "string";
-		case iface_stringresult: return "stringresult";
-		case iface_cells: return "cells";
-		case iface_textrange: return "textrange";
-		case iface_findtext: return "findtext";
-		case iface_formatrange: return "findtext";
-		default: return "????";
+		return IncrefAndReturnNone();
 	}
 }
 
@@ -1351,8 +1349,7 @@ PyObject* pyfun_app_PrintSupportedCalls(PyObject*, PyObject* args)
 	else if (whatToPrint == 4)
 		PrintSupportedCallsPaneMethods(true);
 	
-	Py_INCREF(Py_None);
-	return Py_None;
+	return IncrefAndReturnNone();
 }
 
 
