@@ -304,19 +304,19 @@ public:
 };
 
 // holder for a PyObject, to ensure Py_DECREF is called.
-class CPyObjectOwned
+class PyObjectOwned
 {
 private:
 	PyObject* _obj;
-	CPyObjectOwned (const CPyObjectOwned& other);
-	CPyObjectOwned& operator= (const CPyObjectOwned& other);
+	PyObjectOwned (const PyObjectOwned& other);
+	PyObjectOwned& operator= (const PyObjectOwned& other);
 
 public:
-	CPyObjectOwned()
+	PyObjectOwned()
 	{
 		_obj = NULL;
 	}
-	CPyObjectOwned(PyObject* obj)
+	PyObjectOwned(PyObject* obj)
 	{
 		_obj = obj;
 	}
@@ -341,7 +341,7 @@ public:
 		
 		_obj = NULL;
 	}
-	~CPyObjectOwned()
+	~PyObjectOwned()
 	{
 		Release();
 	}
@@ -351,44 +351,17 @@ public:
 	}
 };
 
-// holder for a PyObject, when Py_DECREF isn't needed, e.g. a borrowed reference.
-class CPyObjectPtr
-{
-private:
-	PyObject* _obj;
-	CPyObjectPtr (const CPyObjectPtr& other);
-	CPyObjectPtr& operator= (const CPyObjectPtr& other);
-
-public:
-	CPyObjectPtr()
-	{
-		_obj = NULL;
-	}
-	CPyObjectPtr(PyObject* obj)
-	{
-		_obj = obj;
-	}
-	~CPyObjectPtr()
-	{
-		// don't need to decref 
-	}
-	operator PyObject*()
-	{
-		return _obj;
-	}
-};
-
 class CachePythonObjects
 {
-	CPyObjectOwned cachedStrings[EventNumber_LEN];
+	PyObjectOwned cachedStrings[EventNumber_LEN];
 	bool eventEnabled[EventNumber_LEN];
 	bool initCompleted;
 	bool initSucceeded;
 	
-	CPyObjectOwned stringModuleName;
-	CPyObjectOwned module;
-	CPyObjectOwned moduleDict;
-	CPyObjectOwned functionOnEvent;
+	PyObjectOwned stringModuleName;
+	PyObjectOwned module;
+	PyObjectOwned moduleDict;
+	PyObjectOwned functionOnEvent;
 	
 public:
 	CachePythonObjects() : initCompleted(false), initSucceeded(false)
@@ -456,7 +429,7 @@ public:
 		return initCompleted;
 	}
 	
-	void Free()
+	void Release()
 	{
 		for (int i = 0; i < EventNumber_LEN; i++)
 		{
@@ -469,7 +442,7 @@ public:
 		functionOnEvent.Release();
 	}
 	
-	void BuildPythonArgs(CPyObjectOwned& args, EventNumber eventNumber, const char* stringPar,
+	void BuildPythonArgs(PyObjectOwned& args, EventNumber eventNumber, const char* stringPar,
 		bool useNumericPar1, int numericPar1,
 		bool useNumericPar2, int numericPar2)
 	{
@@ -534,7 +507,7 @@ public:
 			return false;
 		}
 		
-		CPyObjectOwned args;
+		PyObjectOwned args;
 		BuildPythonArgs(args, eventNumber, stringPar,
 			useNumericPar1, numericPar1, useNumericPar2, numericPar2);
 		if (!args)
@@ -544,14 +517,14 @@ public:
 		}
 		
 		PyObject* eventName = cachedStrings[eventNumber];
-		CPyObjectOwned fullArgs = Py_BuildValue("OO", eventName, (PyObject*)args);
+		PyObjectOwned fullArgs = Py_BuildValue("OO", eventName, (PyObject*)args);
 		if (!fullArgs)
 		{
 			trace_error("Error building full args.");
 			return false;
 		}
 		
-		CPyObjectOwned result = PyObject_CallObject(functionOnEvent, fullArgs);
+		PyObjectOwned result = PyObject_CallObject(functionOnEvent, fullArgs);
 		if (!result)
 		{
 			trace_error("Error in callback.", EventNumberToString(eventNumber));
@@ -635,7 +608,7 @@ bool PythonExtension::Initialise(ExtensionAPI* host)
 
 bool PythonExtension::Finalise()
 {
-	cachePythonObjects.Free();
+	cachePythonObjects.Release();
 	Py_Finalize();
 	_host = NULL;
 	return false;
@@ -719,7 +692,7 @@ inline PyObject* IncrefAndReturnNone()
 PyObject* pyfun_LogStdout(PyObject*, PyObject* args)
 {
 	const char* msg = NULL; // we don't own this.
-	if (PyArg_ParseTuple(args, "s", &msg))
+	if (PyArg_ParseTuple(args, "s", &msg) && msg)
 	{
 		if (Host())
 		{
@@ -737,10 +710,10 @@ PyObject* pyfun_LogStdout(PyObject*, PyObject* args)
 PyObject* pyfun_MessageBox(PyObject*, PyObject* args)
 {
 	const char* msg = NULL; // we don't own this.
-	if (PyArg_ParseTuple(args, "s", &msg))
+	if (PyArg_ParseTuple(args, "s", &msg) && msg)
 	{
 #ifdef _WIN32
-		MessageBoxA(NULL, msg, "SciTEPython1234", 0);
+		MessageBoxA(NULL, msg, "SciTEPython", 0);
 #endif
 		return IncrefAndReturnNone();
 	}
@@ -780,7 +753,7 @@ PyObject* pyfun_SciteOpenFile(PyObject*, PyObject* args)
 PyObject* pyfun_GetProperty(PyObject*, PyObject* args)
 {
 	const char* propName = NULL; // we don't own this.
-	if (PyArg_ParseTuple(args, "s", &propName))
+	if (PyArg_ParseTuple(args, "s", &propName) && propName)
 	{
 		std::string value = Host()->Property(propName);
 		
@@ -788,8 +761,7 @@ PyObject* pyfun_GetProperty(PyObject*, PyObject* args)
 		const char* sz = value.length() > 0 ? value.c_str() : "";
 		
 		// give the caller ownership of this object.
-		CPyObjectPtr pythonStr = PyString_FromString(sz);
-		return pythonStr;
+		return PyString_FromString(sz);
 	}
 	else
 	{
@@ -801,7 +773,7 @@ PyObject* pyfun_SetProperty(PyObject*, PyObject* args)
 {
 	const char* propName = NULL; // we don't own this.
 	const char* propValue = NULL; // we don't own this.
-	if (PyArg_ParseTuple(args, "ss", &propName, &propValue))
+	if (PyArg_ParseTuple(args, "ss", &propName, &propValue) && propName && propValue)
 	{
 		// it looks like SetProperty allocates, it's ok if key and val go out of scope.
 		Host()->SetProperty(propName, propValue);
@@ -816,7 +788,7 @@ PyObject* pyfun_SetProperty(PyObject*, PyObject* args)
 PyObject* pyfun_UnsetProperty(PyObject*, PyObject* args)
 {
 	const char* propName = NULL; // we don't own this.
-	if (PyArg_ParseTuple(args, "s", &propName))
+	if (PyArg_ParseTuple(args, "s", &propName) && propName)
 	{
 		Host()->UnsetProperty(propName);
 		return IncrefAndReturnNone();
@@ -833,6 +805,7 @@ PyObject* pyfun_pane_Append(PyObject*, PyObject* args)
 	int nPane = -1;
 	ExtensionAPI::Pane pane;
 	if (PyArg_ParseTuple(args, "is", &nPane, &text) &&
+		text &&
 		GetPaneFromInt(nPane, &pane))
 	{
 		Host()->Insert(pane, Host()->Send(pane, SCI_GETLENGTH, 0, 0), text);
@@ -851,6 +824,7 @@ PyObject* pyfun_pane_Insert(PyObject*, PyObject* args)
 	ExtensionAPI::Pane pane;
 	if (PyArg_ParseTuple(args, "iis", &nPane, &nPos, &text) &&
 		nPos >= 0 &&
+		text &&
 		GetPaneFromInt(nPane, &pane))
 	{
 		Host()->Insert(pane, nPos, text);
@@ -866,8 +840,9 @@ PyObject* pyfun_pane_Remove(PyObject*, PyObject* args)
 {
 	int nPane = -1, nPosStart = -1, nPosEnd = -1;
 	ExtensionAPI::Pane pane;
-	if (!PyArg_ParseTuple(args, "iii", &nPane, &nPosStart, &nPosEnd) &&
-		!(nPosStart < 0 || nPosEnd < 0) &&
+	
+	if (PyArg_ParseTuple(args, "iii", &nPane, &nPosStart, &nPosEnd) &&
+		(nPosStart >=0 && nPosEnd >= 0) &&
 		(GetPaneFromInt(nPane, &pane)))
 	{
 		Host()->Remove(pane, nPosStart, nPosEnd);
@@ -881,21 +856,29 @@ PyObject* pyfun_pane_Remove(PyObject*, PyObject* args)
 
 PyObject* pyfun_pane_TextRange(PyObject*, PyObject* args)
 {
-	int nPane = -1, nPosStart = -1, nPosEnd = -1; ExtensionAPI::Pane pane;
-	if (!PyArg_ParseTuple(args, "iii", &nPane, &nPosStart, &nPosEnd)) return NULL;
-	if (nPosStart < 0 || nPosEnd < 0) return NULL;
-	if (!GetPaneFromInt(nPane, &pane)) return NULL;
-	char *value = Host()->Range(pane, nPosStart, nPosEnd);
-	if (value)
+	int nPane = -1, nPosStart = -1, nPosEnd = -1;
+	ExtensionAPI::Pane pane;
+	
+	if (PyArg_ParseTuple(args, "iii", &nPane, &nPosStart, &nPosEnd) &&
+	(nPosStart >=0 && nPosEnd >= 0) &&
+	(GetPaneFromInt(nPane, &pane)))
 	{
-		// give the caller ownership of this object.
-		CPyObjectPtr objRet = PyString_FromString(value);
-		delete[] value;
-		return objRet;
+		char *value = Host()->Range(pane, nPosStart, nPosEnd);
+		if (value)
+		{
+			// give the caller ownership of this object.
+			PyObject* objRet = PyString_FromString(value);
+			delete[] value;
+			return objRet;
+		}
+		else
+		{
+			return IncrefAndReturnNone();
+		}
 	}
 	else
 	{
-		return IncrefAndReturnNone();
+	return NULL;
 	}
 }
 
@@ -904,7 +887,8 @@ PyObject* pyfun_pane_FindText(PyObject*, PyObject* args) // returns a tuple
 	const char* text = NULL; // we don't own this.
 	int nPane = -1, nFlags = 0, nPosStart = 0, nPosEnd = -1;
 	ExtensionAPI::Pane pane;
-	if (!PyArg_ParseTuple(args, "is|iii", &nPane, &text, &nFlags, &nPosStart, &nPosEnd) &&
+	if (PyArg_ParseTuple(args, "is|iii", &nPane, &text, &nFlags, &nPosStart, &nPosEnd) &&
+		text &&
 		GetPaneFromInt(nPane, &pane))
 	{
 		if (nPosEnd == -1)
@@ -924,9 +908,8 @@ PyObject* pyfun_pane_FindText(PyObject*, PyObject* args) // returns a tuple
 			if (result >= 0)
 			{
 				// give the caller ownership of this object.
-				CPyObjectPtr objRet = Py_BuildValue(
+				return Py_BuildValue(
 					"(i,i)", ft.chrgText.cpMin, ft.chrgText.cpMax);
-				return objRet;
 			}
 			else
 			{
@@ -1166,7 +1149,7 @@ PyObject* CallPaneFunction(ExtensionAPI::Pane pane, const IFaceFunction& functio
 	sptr_t result = Host()->Send(pane, functionInfo.value, paramsToSend[0], paramsToSend[1]);
 
 	// we'll give ownership of this object to the caller.
-	CPyObjectPtr returnedString = stringResult.Get() ? PyString_FromString(stringResult.Get()) : NULL;
+	PyObject* returnedString = stringResult.Get() ? PyString_FromString(stringResult.Get()) : NULL;
 	if (functionInfo.returnType == iface_bool)
 	{
 		// return either (string, bool) or bool.
@@ -1200,6 +1183,7 @@ PyObject* pyfun_pane_SendScintilla(PyObject*, PyObject* args)
 	ExtensionAPI::Pane pane;
 	PyObject *arg1=NULL, *arg2=NULL;
 	if (!PyArg_ParseTuple(args, "is|OO", &nPane, &functionName, &arg1, &arg2) ||
+		!functionName ||
 		!GetPaneFromInt(nPane, &pane))
 	{
 		return NULL;
@@ -1225,7 +1209,7 @@ PyObject* pyfun_pane_SendScintilla(PyObject*, PyObject* args)
 PyObject* pyfun_app_GetConstant(PyObject*, PyObject* args)
 {
 	const char* propName = NULL; // we don't own this.
-	if (!PyArg_ParseTuple(args, "s", &propName))
+	if (!PyArg_ParseTuple(args, "s", &propName) || !propName)
 	{
 		return NULL;
 	}
@@ -1239,7 +1223,6 @@ PyObject* pyfun_app_GetConstant(PyObject*, PyObject* args)
 
 	IFaceConstant faceConstant = IFaceTable::constants[nFnIndex];
 	PyObject* pyValueOut = PyInt_FromLong(faceConstant.value);
-	Py_INCREF(pyValueOut);
 	return pyValueOut;
 }
 
@@ -1247,7 +1230,7 @@ PyObject* pyfun_app_EnableNotification(PyObject*, PyObject* args)
 {
 	const char* eventName = NULL; // we don't own this.
 	int value = 0;
-	if (!PyArg_ParseTuple(args, "si", &eventName, &value))
+	if (!PyArg_ParseTuple(args, "si", &eventName, &value) || !eventName)
 	{
 		return NULL;
 	}
@@ -1259,7 +1242,7 @@ PyObject* pyfun_app_EnableNotification(PyObject*, PyObject* args)
 PyObject* pyfun_app_SciteCommand(PyObject*, PyObject* args)
 {
 	const char* propName = NULL; // we don't own this.
-	if (!PyArg_ParseTuple(args, "s", &propName))
+	if (!PyArg_ParseTuple(args, "s", &propName) || !propName)
 	{
 		return NULL;
 	}
@@ -1292,7 +1275,7 @@ PyObject* pyfun_app_UpdateStatusBar(PyObject*, PyObject* args)
 PyObject* pyfun_app_UserStripShow(PyObject*, PyObject* args)
 {
 	const char* s = NULL; // we don't own this.
-	if (!PyArg_ParseTuple(args, "s", &s))
+	if (!PyArg_ParseTuple(args, "s", &s) || !s)
 	{
 		return NULL;
 	}
@@ -1305,7 +1288,7 @@ PyObject* pyfun_app_UserStripSet(PyObject*, PyObject* args)
 {
 	int control = 0;
 	const char* value = NULL; // we don't own this.
-	if (!PyArg_ParseTuple(args, "is", &control, &value))
+	if (!PyArg_ParseTuple(args, "is", &control, &value) || !value)
 	{
 		return NULL;
 	}
@@ -1318,7 +1301,7 @@ PyObject* pyfun_app_UserStripSetList(PyObject*, PyObject* args)
 {
 	int control = 0;
 	const char* value = NULL; // we don't own this.
-	if (!PyArg_ParseTuple(args, "is", &control, &value))
+	if (!PyArg_ParseTuple(args, "is", &control, &value) || !value)
 	{
 		return NULL;
 	}
@@ -1339,8 +1322,7 @@ PyObject* pyfun_app_UserStripGetValue(PyObject*, PyObject* args)
 	if (value)
 	{
 		// give the caller ownership of this object.
-		CPyObjectPtr pythonStr = PyString_FromString(value);
-		return pythonStr;
+		return PyString_FromString(value);
 	}
 	else
 	{
@@ -1520,8 +1502,7 @@ void PythonExtension::SetupPythonNamespace()
 	// tell python to skip running 'import site'
 	Py_NoSiteFlag = 1;
 	Py_Initialize();
-
-	CPyObjectPtr module = Py_InitModule("SciTEModule", methodsExportedToPython);
+	Py_InitModule("SciTEModule", methodsExportedToPython);
 
 	// PyRun_SimpleString does not handle errors well,
 	// be sure to check return value.
@@ -1532,7 +1513,7 @@ void PythonExtension::SetupPythonNamespace()
 		"    def write(self, str):\n"
 		"        SciTEModule.LogStdout(str)\n"
 		"sys.stdout = StdoutCatcher()\n"
-		"sys.stderr = StdoutCatcher(); print 'ok'\n"
+		"sys.stderr = StdoutCatcher()\n"
 	);
 
 	if (ret != 0)
