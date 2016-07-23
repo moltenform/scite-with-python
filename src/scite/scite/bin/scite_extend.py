@@ -305,7 +305,7 @@ def callCallbackModule(module, command, eventName, args):
     if not function:
         raise RuntimeError, 'command %s registered for event %s but we could not find function of this name' % (command, eventName)
     else:
-        return function(*args)
+        return function(*args) if args else function()
 
 def registerCallbacks(command, path, callbacks):
     assert path, 'in command %s, defining a callback requires specifying a path' % command

@@ -55,10 +55,12 @@ inline sptr_t CastSzToSptr(const char *cp) {
 void VerifyConstantsTableOrder();
 int FindFriendlyNamedIDMConstant(const char* name);
 bool GetPaneFromInt(int nPane, ExtensionAPI::Pane* outPane);
-bool RunCallback(const char* eventName, int nArgs = 0, const char* arg = 0);
-bool RunCallbackArgs(const char* eventName, PyObject* pArgsBorrowed);
 void trace(const char* text1, const char* text2 = NULL);
-void trace(const char* text1, const char* text2, int n);
+void trace_error(const char* text1, const char* text2 = NULL);
+bool RunCallback(EventNumber eventNumber,
+	const char* stringPar = NULL,
+	bool useNumericPar1 = false, int numericPar1 = 0,
+	bool useNumericPar2 = false, int numericPar2 = 0);
 
 const char* IFaceTypeToString(IFaceType type)
 {
@@ -79,6 +81,171 @@ const char* IFaceTypeToString(IFaceType type)
 		case iface_formatrange: return "findtext";
 		default: return "unknown";
 	}
+}
+
+const char* EventNumberToString(int i)
+{
+	switch ((EventNumber) i)
+	{
+		case EventNumber_OnStart: return "OnStart";
+		case EventNumber_OnOpen: return "OnOpen";
+		case EventNumber_OnSwitchFile: return "OnSwitchFile";
+		case EventNumber_OnBeforeSave: return "OnBeforeSave";
+		case EventNumber_OnSave: return "OnSave";
+		case EventNumber_OnSavePointReached: return "OnSavePointReached";
+		case EventNumber_OnSavePointLeft: return "OnSavePointLeft";
+		case EventNumber_OnDoubleClick: return "OnDoubleClick";
+		case EventNumber_OnMarginClick: return "OnMarginClick";
+		case EventNumber_OnClose: return "OnClose";
+		case EventNumber_OnChar: return "OnChar";
+		case EventNumber_OnUserListSelection: return "OnUserListSelection";
+		case EventNumber_OnKey: return "OnKey";
+		case EventNumber_OnUserStrip: return "OnUserStrip";
+		default: return NULL;
+	}
+}
+
+bool PythonExtension::OnOpen(const char *filename)
+{
+	return RunCallback(EventNumber_OnOpen, filename);
+}
+
+bool PythonExtension::OnSwitchFile(const char *filename)
+{
+	return RunCallback(EventNumber_OnSwitchFile, filename);
+}
+
+bool PythonExtension::OnBeforeSave(const char *filename)
+{
+	return RunCallback(EventNumber_OnBeforeSave, filename);
+}
+
+bool PythonExtension::OnSave(const char *filename)
+{
+	return RunCallback(EventNumber_OnSave, filename);
+}
+
+bool PythonExtension::OnSavePointReached()
+{
+	return RunCallback(EventNumber_OnSavePointReached);
+}
+
+bool PythonExtension::OnSavePointLeft()
+{
+	return RunCallback(EventNumber_OnSavePointLeft);
+}
+
+bool PythonExtension::OnStyle(unsigned int, int, int, StyleWriter*)
+{
+	return false;
+}
+
+bool PythonExtension::OnDoubleClick()
+{
+	return RunCallback(EventNumber_OnDoubleClick);
+}
+
+bool PythonExtension::OnUpdateUI()
+{
+	return false;
+}
+
+bool PythonExtension::OnMarginClick()
+{
+	return RunCallback(EventNumber_OnMarginClick);
+}
+
+bool PythonExtension::OnMacro(const char *, const char *)
+{
+	return false;
+}
+
+bool PythonExtension::SendProperty(const char *)
+{
+	return false;
+}
+
+bool PythonExtension::OnDwellStart(int, const char *)
+{
+	return false;
+}
+
+bool PythonExtension::OnClose(const char *filename)
+{
+	return RunCallback(EventNumber_OnClose, filename);
+}
+
+bool PythonExtension::OnChar(char ch)
+{
+	return RunCallback(EventNumber_OnChar, NULL, true, ch);
+}
+
+bool PythonExtension::OnUserListSelection(int type, const char *selection)
+{
+	return RunCallback(EventNumber_OnUserListSelection, selection, true, type);
+}
+
+bool PythonExtension::OnKey(int keyval, int modifiers)
+{
+	return RunCallback(EventNumber_OnKey,
+		NULL, true, keyval, true, modifiers);
+}
+
+bool PythonExtension::OnUserStrip(int control, int eventType)
+{
+	return RunCallback(EventNumber_OnUserStrip,
+		NULL, true, control, true, eventType);
+}
+
+bool PythonExtension::InitBuffer(int)
+{
+	return false;
+}
+
+bool PythonExtension::ActivateBuffer(int)
+{
+	return false;
+}
+
+bool PythonExtension::RemoveBuffer(int)
+{
+	return false;
+}
+
+inline bool strEqual(const char* s1, const char* s2)
+{
+	return strcmp(s1, s2) == 0;
+}
+
+inline bool strStartsWith(const char* s1, const char* s2)
+{
+	size_t len1 = strlen(s1);
+	size_t len2 = strlen(s2);
+	if (len1 < len2)
+		return false;
+	else
+		return memcmp(s1, s2, len2) == 0;
+}
+
+inline bool strEndsWith(const char* s1, const char*s2)
+{
+	size_t len1 = strlen(s1);
+	size_t len2 = strlen(s2);
+	if (len1 < len2)
+		return false;
+	else
+		return memcmp(s1 + (len1 - len2), s2, len2) == 0;
+}
+
+EventNumber eventNumberFromString(const char* eventName)
+{
+	for (int i = 0; i < EventNumber_LEN; i++)
+	{
+		if (strEqual(EventNumberToString(i), eventName))
+			return (EventNumber)i;
+	}
+	
+	return EventNumber_LEN;
 }
 
 // reuse a stringstream, to reduce the number of allocations
@@ -136,62 +303,299 @@ public:
 	}
 };
 
-inline bool strEqual(const char* s1, const char* s2)
+// holder for a PyObject, to ensure Py_DECREF is called.
+class CPyObjectOwned
 {
-	return strcmp(s1, s2) == 0;
-}
+private:
+	PyObject* _obj;
+	CPyObjectOwned (const CPyObjectOwned& other);
+	CPyObjectOwned& operator= (const CPyObjectOwned& other);
 
-inline bool strStartsWith(const char* s1, const char* s2)
+public:
+	CPyObjectOwned()
+	{
+		_obj = NULL;
+	}
+	CPyObjectOwned(PyObject* obj)
+	{
+		_obj = obj;
+	}
+	void Attach(PyObject* obj)
+	{
+		_obj = obj;
+	}
+	void Release()
+	{
+		if (_obj)
+		{
+// warning "conditional expression is constant" triggered by Python's code, not our code
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4127)
+#endif
+			Py_DECREF(_obj);
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+		}
+		
+		_obj = NULL;
+	}
+	~CPyObjectOwned()
+	{
+		Release();
+	}
+	operator PyObject*()
+	{
+		return _obj;
+	}
+};
+
+// holder for a PyObject, when Py_DECREF isn't needed, e.g. a borrowed reference.
+class CPyObjectPtr
 {
-	size_t len1 = strlen(s1);
-	size_t len2 = strlen(s2);
-	if (len1 < len2)
+private:
+	PyObject* _obj;
+	CPyObjectPtr (const CPyObjectPtr& other);
+	CPyObjectPtr& operator= (const CPyObjectPtr& other);
+
+public:
+	CPyObjectPtr()
+	{
+		_obj = NULL;
+	}
+	CPyObjectPtr(PyObject* obj)
+	{
+		_obj = obj;
+	}
+	~CPyObjectPtr()
+	{
+		// don't need to decref 
+	}
+	operator PyObject*()
+	{
+		return _obj;
+	}
+};
+
+class CachePythonObjects
+{
+	CPyObjectOwned cachedStrings[EventNumber_LEN];
+	bool eventEnabled[EventNumber_LEN];
+	bool initCompleted;
+	bool initSucceeded;
+	
+	CPyObjectOwned stringModuleName;
+	CPyObjectOwned module;
+	CPyObjectOwned moduleDict;
+	CPyObjectOwned functionOnEvent;
+	
+public:
+	CachePythonObjects() : initCompleted(false), initSucceeded(false)
+	{
+		memset(&eventEnabled[0], 0, sizeof(eventEnabled));
+	}
+	
+	void Initialize()
+	{
+		initSucceeded = DoInitialize();
+		initCompleted = true;
+	}
+	
+	bool DoInitialize()
+	{
+		for (int i = 0; i < EventNumber_LEN; i++)
+		{
+			cachedStrings[i].Attach(PyString_FromString(EventNumberToString(i)));
+			if (!cachedStrings[i] || !EventNumberToString(i))
+			{
+				trace_error("Failure building string", EventNumberToString(i));
+				return false;
+			}
+		}
+		
+		stringModuleName.Attach(PyString_FromString(c_PythonModuleName));
+		if (!stringModuleName)
+		{
+			trace_error("Failure building string", c_PythonModuleName);
+			return false;
+		}
+		
+		module.Attach(PyImport_Import(stringModuleName));
+		if (!module)
+		{
+			trace_error("Failure importing module");
+			return false;
+		}
+		
+		moduleDict.Attach(PyModule_GetDict(module));
+		if (!moduleDict)
+		{
+			trace_error("Could not get module dict.");
+			return false;
+		}
+		
+		functionOnEvent.Attach(PyDict_GetItemString(moduleDict, "OnEvent"));
+		if (!functionOnEvent)
+		{
+			trace_error("Could not get module's OnEvent function.");
+			return false;
+		}
+		
+		if (!PyCallable_Check(functionOnEvent))
+		{
+			trace_error("OnEvent not a function");
+			return false;
+		}
+		
+		return true;
+	}
+	
+	bool IsInitialized()
+	{
+		return initCompleted;
+	}
+	
+	void Free()
+	{
+		for (int i = 0; i < EventNumber_LEN; i++)
+		{
+			cachedStrings[i].Release();
+		}
+		
+		stringModuleName.Release();
+		module.Release();
+		moduleDict.Release();
+		functionOnEvent.Release();
+	}
+	
+	void BuildPythonArgs(CPyObjectOwned& args, EventNumber eventNumber, const char* stringPar,
+		bool useNumericPar1, int numericPar1,
+		bool useNumericPar2, int numericPar2)
+	{
+		if (eventNumber == EventNumber_OnKey)
+		{
+			PyObject* shift = (SCMOD_SHIFT & numericPar2) != 0 ? Py_True : Py_False;
+			PyObject* ctrl = (SCMOD_CTRL & numericPar2) != 0 ? Py_True : Py_False;
+			PyObject* alt = (SCMOD_ALT & numericPar2) != 0 ? Py_True : Py_False;
+			args.Attach(Py_BuildValue("iOOO", numericPar1, shift, ctrl, alt));
+		}
+		else if (stringPar && useNumericPar1 && useNumericPar2)
+		{
+			args.Attach(Py_BuildValue("sii", stringPar, numericPar1, numericPar2));
+		}
+		else if (stringPar && useNumericPar1 && !useNumericPar2)
+		{
+			args.Attach(Py_BuildValue("si", stringPar, numericPar1));
+		}
+		else if (stringPar && !useNumericPar1 && !useNumericPar2)
+		{
+			args.Attach(Py_BuildValue("(s)", stringPar));
+		}
+		else if (!stringPar && useNumericPar1 && !useNumericPar2)
+		{
+			args.Attach(Py_BuildValue("(i)", numericPar1));
+		}
+		else if (!stringPar && useNumericPar1 && useNumericPar2)
+		{
+			args.Attach(Py_BuildValue("ii", numericPar1, numericPar2));
+		}
+		else
+		{
+			Py_INCREF(Py_None);
+			args.Attach(Py_None);
+		}
+	}
+	
+	bool NeedsNotification(EventNumber eventNumber)
+	{
+		if (eventNumber < 0 || eventNumber >= EventNumber_LEN)
+		{
+			trace_error("Unrecognized event number");
+			return false;
+		}
+		
+		return eventEnabled[eventNumber];
+	}
+	
+	bool RunCallback(EventNumber eventNumber,
+		const char* stringPar = NULL,
+		bool useNumericPar1 = false, int numericPar1 = 0,
+		bool useNumericPar2 = false, int numericPar2 = 0)
+	{
+		// returning true can prevent the event from being propagated, so be careful about return value here.
+		if (!initCompleted || !initSucceeded)
+		{
+			return false;
+		}
+		
+		if (!NeedsNotification(eventNumber))
+		{
+			return false;
+		}
+		
+		CPyObjectOwned args;
+		BuildPythonArgs(args, eventNumber, stringPar,
+			useNumericPar1, numericPar1, useNumericPar2, numericPar2);
+		if (!args)
+		{
+			trace_error("Error building args.");
+			return false;
+		}
+		
+		PyObject* eventName = cachedStrings[eventNumber];
+		CPyObjectOwned fullArgs = Py_BuildValue("OO", eventName, (PyObject*)args);
+		if (!fullArgs)
+		{
+			trace_error("Error building full args.");
+			return false;
+		}
+		
+		CPyObjectOwned result = PyObject_CallObject(functionOnEvent, fullArgs);
+		if (!result)
+		{
+			trace_error("Error in callback.", EventNumberToString(eventNumber));
+			PyErr_Print();
+			return false;
+		}
+		
+		// only prevent propagation if the special string StopEventPropagation is returned.
+		if (PyString_Check(result))
+		{
+			const char* string = PyString_AsString(result); // we don't own this
+			if (strEqual("StopEventPropagation", string))
+			{
+				return true;
+			}
+		}
+		
 		return false;
-	else
-		return memcmp(s1, s2, len2) == 0;
+	}
+	
+	void EnableNotification(const char* eventName, bool enabled)
+	{
+		EventNumber number = eventNumberFromString(eventName);
+		if (number >= 0 && number < EventNumber_LEN)
+		{
+			eventEnabled[number] = enabled;
+		}
+	}
+	
+} cachePythonObjects;
+
+PythonExtension& PythonExtension::Instance()
+{
+	static PythonExtension singleton;
+	return singleton;
 }
 
-inline bool strEndsWith(const char* s1, const char*s2)
+PythonExtension::PythonExtension() : 
+	_host(NULL)
 {
-	size_t len1 = strlen(s1);
-	size_t len2 = strlen(s2);
-	if (len1 < len2)
-		return false;
-	else
-		return memcmp(s1 + (len1 - len2), s2, len2) == 0;
-}
-
-PythonExtension::PythonExtension()
-{
-	_host = NULL;
-	_pythonInitialized = false;
 }
 
 PythonExtension::~PythonExtension()
 {
-}
-
-void PythonExtension::EnableNotification(const char* eventName, bool enabled)
-{
-	if (enabled)
-	{
-		_enabledNotifications[eventName] = true;
-	}
-	else
-	{
-		_enabledNotifications.erase(eventName);
-	}
-}
-
-bool PythonExtension::NeedsNotification(const char* eventName)
-{
-	std::map<std::string, bool>::iterator found = _enabledNotifications.find(eventName);
-	return found != _enabledNotifications.end();
-}
-
-bool PythonExtension::FInitialized()
-{
-	return _pythonInitialized;
 }
 
 ExtensionAPI* PythonExtension::GetHost()
@@ -206,31 +610,16 @@ ExtensionAPI* Host()
 
 void PythonExtension::InitializePython()
 {
-	if (!_pythonInitialized)
+	if (!cachePythonObjects.IsInitialized())
 	{
-		// tell python to skip running 'import site'
-		Py_NoSiteFlag = 1;
-		Py_Initialize();
 		SetupPythonNamespace();
-		_pythonInitialized = true;
+		cachePythonObjects.Initialize();
 	}
 }
 
-PythonExtension& PythonExtension::Instance()
-{
-	static PythonExtension singleton;
-	return singleton;
-}
-
-
-// returning true can swallow a message so that it isn't sent to the default SciTE handler,
-// so be careful about returning true.
-
 bool PythonExtension::Initialise(ExtensionAPI* host)
 {
-	WriteLog("log:PythonExtension::Initialise");
 	_host = host;
-
 	std::string delayLoadProp = _host->Property("ext.python.delayload");
 	bool delayLoad = delayLoadProp.length() > 0 && delayLoadProp[0] != '0';
 
@@ -238,7 +627,7 @@ bool PythonExtension::Initialise(ExtensionAPI* host)
 	{
 		VerifyConstantsTableOrder();
 		InitializePython();
-		RunCallback("OnStart");
+		RunCallback(EventNumber_OnStart);
 	}
 	
 	return false;
@@ -246,6 +635,7 @@ bool PythonExtension::Initialise(ExtensionAPI* host)
 
 bool PythonExtension::Finalise()
 {
+	cachePythonObjects.Free();
 	Py_Finalize();
 	_host = NULL;
 	return false;
@@ -253,7 +643,6 @@ bool PythonExtension::Finalise()
 
 bool PythonExtension::Clear()
 {
-	WriteLog("log:PythonExtension::Clear");
 	return false;
 }
 
@@ -281,48 +670,6 @@ bool PythonExtension::Load(const char *filename)
 	return false;
 }
 
-bool PythonExtension::InitBuffer(int)
-{
-	WriteLog("log:PythonExtension::InitBuffer");
-	return false;
-}
-
-bool PythonExtension::ActivateBuffer(int)
-{
-	WriteLog("log:PythonExtension::ActivateBuffer");
-	return false;
-}
-
-bool PythonExtension::RemoveBuffer(int)
-{
-	WriteLog("log:PythonExtension::RemoveBuffer");
-	return false;
-}
-
-bool PythonExtension::OnOpen(const char *filename)
-{
-	return FInitialized() && NeedsNotification("OnOpen") ?
-		RunCallback("OnOpen", 1, filename) : false;
-}
-
-bool PythonExtension::OnSwitchFile(const char *filename)
-{
-	return FInitialized() && NeedsNotification("OnSwitchFile") ?
-		RunCallback("OnSwitchFile", 1, filename) : false;
-}
-
-bool PythonExtension::OnBeforeSave(const char *filename)
-{
-	return FInitialized() && NeedsNotification("OnBeforeSave") ?
-		RunCallback("OnBeforeSave", 1, filename) : false;
-}
-
-bool PythonExtension::OnSave(const char *filename)
-{
-	return FInitialized() && NeedsNotification("OnSave") ?
-		RunCallback("OnSave", 1, filename) : false;
-}
-
 bool PythonExtension::OnExecute(const char* cmd)
 {
 	if (strStartsWith(cmd, "py:"))
@@ -347,227 +694,18 @@ bool PythonExtension::OnExecute(const char* cmd)
 	}
 }
 
-bool PythonExtension::OnSavePointReached()
-{
-	return FInitialized() && NeedsNotification("OnSavePointReached") ?
-		RunCallback("OnSavePointReached") : false;
-}
-
-bool PythonExtension::OnSavePointLeft()
-{
-	return FInitialized() && NeedsNotification("OnSavePointLeft") ?
-		RunCallback("OnSavePointLeft") : false;
-}
-
-bool PythonExtension::OnStyle(unsigned int, int, int, StyleWriter*)
-{
-	WriteLog("log:PythonExtension::OnStyle");
-	return false;
-}
-
-bool PythonExtension::OnDoubleClick()
-{
-	return FInitialized() && NeedsNotification("OnDoubleClick") ?
-		RunCallback("OnDoubleClick") : false;
-}
-
-bool PythonExtension::OnUpdateUI()
-{
-	return false;
-}
-
-bool PythonExtension::OnMarginClick()
-{
-	return FInitialized() && NeedsNotification("OnMarginClick") ?
-		RunCallback("OnMarginClick") : false;
-}
-
-bool PythonExtension::OnMacro(const char *, const char *)
-{
-	WriteLog("log:PythonExtension::OnMacro");
-	return false;
-}
-
-bool PythonExtension::SendProperty(const char *)
-{
-	WriteLog("log:PythonExtension::SendProperty");
-	return false;
-}
-
-bool PythonExtension::OnDwellStart(int, const char *)
-{
-	WriteLog("log:PythonExtension::OnDwellStart");
-	return false;
-}
-
-bool PythonExtension::OnClose(const char *filename)
-{
-	return FInitialized() && NeedsNotification("OnClose") ?
-		RunCallback("OnClose", 1, filename) : false;
-}
-
 bool PythonExtension::NeedsOnClose()
 {
-	return NeedsNotification("OnClose");
+	return cachePythonObjects.NeedsNotification(EventNumber_OnClose);
 }
 
-/*static*/ void PythonExtension::WriteText(const char* text)
+bool RunCallback(EventNumber eventNumber,
+	const char* stringParam,
+	bool useNumericPar1, int numericPar1,
+	bool useNumericPar2, int numericPar2)
 {
-	trace(text, "\n");
-}
-
-/*static*/ void PythonExtension::WriteError(const char* error)
-{
-	trace(">Python Error:", error);
-	trace("\n");
-}
-
-/*static*/ void PythonExtension::WriteError(const char* error, const char* error2)
-{
-	trace(">Python Error:", error);
-	trace(" ", error2);
-	trace("\n");
-}
-
-#if _DEBUG
-/*static*/ void PythonExtension::WriteLog(const char* text)
-{
-	trace(text, "\n");
-}
-#else
-/*static*/ void PythonExtension::WriteLog(const char*)
-{
-}
-#endif
-
-void trace(const char* text1, const char* text2 /*=NULL*/)
-{
-	if (Host())
-	{
-		if (text1)
-			Host()->Trace(text1);
-		
-		if (text2)
-			Host()->Trace(text2);
-	}
-}
-
-// holder for a PyObject, to ensure Py_DECREF is called.
-class CPyObjectOwned
-{
-private:
-	PyObject* _obj;
-
-public:
-	CPyObjectOwned()
-	{
-		_obj = NULL;
-	}
-	CPyObjectOwned(PyObject* obj)
-	{
-		_obj = obj;
-	}
-	void Attach(PyObject* obj)
-	{
-		_obj = obj;
-	}
-	~CPyObjectOwned()
-	{
-		if (_obj)
-		{
-// warning "conditional expression is constant" triggered by Python's code, not our code
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable: 4127)
-#endif
-			Py_DECREF(_obj);
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
-		}
-	}
-	operator PyObject*()
-	{
-		return _obj;
-	}
-};
-
-// holder for a PyObject, when Py_DECREF isn't needed, e.g. a borrowed reference.
-class CPyObjectPtr
-{
-private:
-	PyObject* _obj;
-
-public:
-	CPyObjectPtr(PyObject* obj)
-	{
-		_obj = obj;
-	}
-	~CPyObjectPtr()
-	{
-		// don't need to decref 
-	}
-	operator PyObject*()
-	{
-		return _obj;
-	}
-};
-
-bool PythonExtension::OnChar(char ch)
-{
-	if (FInitialized() && NeedsNotification("OnChar"))
-	{
-		CPyObjectOwned args = Py_BuildValue("(i)", (int)ch);
-		return RunCallbackArgs("OnChar", args);
-	}
-	else
-	{
-		return false;
-	}
-}
-
-bool PythonExtension::OnUserListSelection(int type, const char *selection)
-{
-	if (FInitialized() && NeedsNotification("OnUserListSelection"))
-	{
-		CPyObjectOwned args = Py_BuildValue("(i,s)", type, selection);
-		return RunCallbackArgs("OnUserListSelection", args);
-	}
-	else
-	{
-		return false;
-	}
-}
-
-bool PythonExtension::OnKey(int keyval, int modifiers)
-{
-	if (FInitialized() && NeedsNotification("OnKey"))
-	{
-		int shift = (SCMOD_SHIFT & modifiers) != 0 ? 1 : 0;
-		int ctrl = (SCMOD_CTRL & modifiers) != 0 ? 1 : 0;
-		int alt = (SCMOD_ALT & modifiers) != 0 ? 1 : 0;
-		CPyObjectOwned args = Py_BuildValue("(i,i,i,i)",
-			keyval, shift, ctrl, alt);
-		return RunCallbackArgs("OnKey", args);
-	}
-	else
-	{
-		return false;
-	}
-}
-
-bool PythonExtension::OnUserStrip(int control, int eventType)
-{
-	if (FInitialized() && NeedsNotification("OnUserStrip"))
-	{
-		CPyObjectOwned args = Py_BuildValue("(i,i)",
-			control, eventType);
-		return RunCallbackArgs("OnUserStrip", args);
-	}
-	else
-	{
-		return false;
-	}
+	return cachePythonObjects.RunCallback(eventNumber, stringParam,
+		useNumericPar1, numericPar1, useNumericPar2, numericPar2);
 }
 
 inline PyObject* IncrefAndReturnNone()
@@ -602,7 +740,7 @@ PyObject* pyfun_MessageBox(PyObject*, PyObject* args)
 	if (PyArg_ParseTuple(args, "s", &msg))
 	{
 #ifdef _WIN32
-		MessageBoxA(NULL, msg, "SciTEPython", 0);
+		MessageBoxA(NULL, msg, "SciTEPython1234", 0);
 #endif
 		return IncrefAndReturnNone();
 	}
@@ -1045,7 +1183,7 @@ PyObject* CallPaneFunction(ExtensionAPI::Pane pane, const IFaceFunction& functio
 		else
 			return Py_BuildValue("i", (int)result);
 	}
-	else 
+	else
 	{
 		// return either string or None.
 		if (returnedString)
@@ -1054,8 +1192,6 @@ PyObject* CallPaneFunction(ExtensionAPI::Pane pane, const IFaceFunction& functio
 			return Py_BuildValue("");
 	}
 }
-
-
 
 PyObject* pyfun_pane_SendScintilla(PyObject*, PyObject* args)
 {
@@ -1085,7 +1221,6 @@ PyObject* pyfun_pane_SendScintilla(PyObject*, PyObject* args)
 		return CallPaneFunction(pane, functionInfo, nameFound.c_str(), arg1, arg2);
 	}
 }
-
 
 PyObject* pyfun_app_GetConstant(PyObject*, PyObject* args)
 {
@@ -1117,7 +1252,7 @@ PyObject* pyfun_app_EnableNotification(PyObject*, PyObject* args)
 		return NULL;
 	}
 	
-	PythonExtension::Instance().EnableNotification(eventName, !!value);
+	cachePythonObjects.EnableNotification(eventName, !!value);
 	return IncrefAndReturnNone();
 }
 
@@ -1389,7 +1524,7 @@ void PythonExtension::SetupPythonNamespace()
 	CPyObjectPtr module = Py_InitModule("SciTEModule", methodsExportedToPython);
 
 	// PyRun_SimpleString does not handle errors well,
-	// check return value and not ErrorsOccurred() or it might leave python in a weird state.
+	// be sure to check return value.
 	int ret = PyRun_SimpleString(
 		"import SciTEModule\n"
 		"import sys\n"
@@ -1397,12 +1532,13 @@ void PythonExtension::SetupPythonNamespace()
 		"    def write(self, str):\n"
 		"        SciTEModule.LogStdout(str)\n"
 		"sys.stdout = StdoutCatcher()\n"
-		"sys.stderr = StdoutCatcher()\n"
+		"sys.stderr = StdoutCatcher(); print 'ok'\n"
 	);
 
 	if (ret != 0)
 	{
-		MessageBoxA(0, "Unexpected: error capturing stdout from Python. make sure python27.zip is present?", "", 0);
+		MessageBoxA(0, "Unexpected: error capturing stdout from Python. "
+			"make sure python27.zip is present?", "", 0);
 		PyErr_Print(); // if printing isn't set up, will not help, but at least will clear python's error bit
 	}
 }
@@ -1426,107 +1562,23 @@ bool GetPaneFromInt(int nPane, ExtensionAPI::Pane* outPane)
 	}
 }
 
-bool RunCallback(
-	const char* eventName, int nArgs, const char* arg1)
+void trace(const char* text1, const char* text2)
 {
-	if (nArgs == 0)
+	if (Host())
 	{
-		return RunCallbackArgs(eventName, NULL);
-	}
-	else if (nArgs == 1)
-	{
-		CPyObjectOwned args = Py_BuildValue("(s)", arg1);
-		return RunCallbackArgs(eventName, args);
-	}
-	else
-	{
-		PythonExtension::WriteError(
-			"Unexpected: calling RunCallback, only 0/1 args supported.");
-		return false;
+		if (text1)
+			Host()->Trace(text1);
+		
+		if (text2)
+			Host()->Trace(text2);
 	}
 }
 
-bool RunCallbackArgs(
-	const char* eventName, PyObject* pArgsBorrowed)
+void trace_error(const char* text1, const char* text2)
 {
-	CPyObjectOwned pName = PyString_FromString(c_PythonModuleName);
-	if (!pName)
-	{
-		PythonExtension::WriteError("Unexpected error: could not form string.");
-		return false;
-	}
-	
-	CPyObjectOwned pEventName = PyString_FromString(eventName);
-	if (!pEventName)
-	{
-		PythonExtension::WriteError("Unexpected error: could not form string for event name.");
-		return false;
-	}
-	
-	// use None if no args given
-	CPyObjectOwned pArgsTempNone = Py_None;
-	Py_INCREF(pArgsTempNone);
-	if (!pArgsBorrowed)
-	{
-		pArgsBorrowed = pArgsTempNone;
-	}
-	
-	CPyObjectOwned fullArgs = Py_BuildValue("sO", eventName, pArgsBorrowed);
-	if (!fullArgs)
-	{
-		PythonExtension::WriteError("failed to create args");
-		return false;
-	}
-	
-	CPyObjectOwned pModule = PyImport_Import(pName);
-	if (!pModule)
-	{
-		PythonExtension::WriteError("Error importing module.");
-		PyErr_Print();
-		return false;
-	}
-
-	CPyObjectPtr pDict = PyModule_GetDict(pModule);
-	if (!pDict)
-	{
-		PythonExtension::WriteError("Unexpected: could not get module dict.");
-		return false;
-	}
-	
-	CPyObjectPtr pFn = PyDict_GetItemString(pDict, "OnEvent");
-	if (!pFn)
-	{
-		// module does not define that callback.
-		return false;
-	}
-
-	if (!PyCallable_Check(pFn))
-	{
-		PythonExtension::WriteError("OnEvent not a function");
-		return false;
-	}
-	
-	CPyObjectOwned pResult = PyObject_CallObject(pFn, fullArgs);
-	if (!pResult)
-	{
-		PythonExtension::WriteError("Error in callback ", eventName);
-		PyErr_Print();
-		return false;
-	}
-	
-	// only prevent propagation if the special string StopEventPropagation is returned.
-	bool isString = PyString_Check(pResult);
-	if (isString)
-	{
-		const char* string = NULL; // we don't own this
-		string = PyString_AsString(pResult);
-		if (strcmp("StopEventPropagation", string) == 0)
-		{
-			return true;
-		}
-	}
-	
-	return false;
+	trace(">Error in Python extension.");
+	trace(text1, text2);
+	trace("\n.");
 }
 
 int FindFriendlyNamedIDMConstant(const char* name)
@@ -1556,7 +1608,6 @@ int FindFriendlyNamedIDMConstant(const char* name)
 
 void VerifyConstantsTableOrder()
 {
-#if _DEBUG
 	// binary search requires items to be sorted, so verify sort order
 	for (unsigned int i = 0; i < PythonExtension::constantsTableLen - 1; i++)
 	{
@@ -1568,7 +1619,6 @@ void VerifyConstantsTableOrder()
 			trace(first, second);
 		}
 	}
-#endif
 }
 
 static IFaceConstant rgFriendlyNamedIDMConstants[] =

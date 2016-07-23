@@ -1,7 +1,6 @@
 // SciTE Python Extension
 // Ben Fisher, 2016
 
-#include <map>
 #include <string>
 #include "Scite.h"
 #include "Scintilla.h"
@@ -10,6 +9,25 @@
 #include "SciTEKeys.h"
 #include "IFaceTable.h"
 
+enum EventNumber
+{
+	EventNumber_OnStart = 0,
+	EventNumber_OnOpen,
+	EventNumber_OnSwitchFile,
+	EventNumber_OnBeforeSave,
+	EventNumber_OnSave,
+	EventNumber_OnSavePointReached,
+	EventNumber_OnSavePointLeft,
+	EventNumber_OnDoubleClick,
+	EventNumber_OnMarginClick,
+	EventNumber_OnClose,
+	EventNumber_OnChar,
+	EventNumber_OnUserListSelection,
+	EventNumber_OnKey,
+	EventNumber_OnUserStrip,
+	EventNumber_LEN
+};
+
 class PythonExtension : public Extension
 {
 public:
@@ -17,8 +35,6 @@ public:
 	static PythonExtension &Instance();
 	void WriteText(const char* text);
 	ExtensionAPI* GetHost();
-	void EnableNotification(const char* eventName, bool enabled);
-	bool FInitialized();
 
 	virtual bool Initialise(ExtensionAPI*);
 	virtual bool Finalise();
@@ -48,18 +64,12 @@ public:
 	virtual bool OnUserStrip(int, int);
 	virtual bool NeedsOnClose();
 
-	static void WriteLog(const char* error);
-	static void WriteError(const char* error);
-	static void WriteError(const char* error, const char* error2);
 	static const IFaceConstant* const constantsTable;
 	static const size_t constantsTableLen;
 
 private:
 	ExtensionAPI* _host;
-	bool _pythonInitialized;
-	std::map<std::string, bool> _enabledNotifications;
 
-	bool NeedsNotification(const char* eventName);
 	void InitializePython();
 	void SetupPythonNamespace();
 
