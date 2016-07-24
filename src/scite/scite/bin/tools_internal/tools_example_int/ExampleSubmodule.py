@@ -31,7 +31,7 @@ def OnKey(key, shift, ctrl, alt):
     # stop the ctrl-w shortcut
     if key == ord('W') and not shift and ctrl and not alt:
         print 'swallowed'
-        return ScConst.StopEventPropagation()
+        return ScConst.StopEventPropagation
         
     # have ctrl-alt-shift-w open an example tool ui
     if key == ord('W') and shift and ctrl and alt:

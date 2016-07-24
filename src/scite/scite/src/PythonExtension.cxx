@@ -8,6 +8,7 @@
 #include <sstream>
 #include <vector>
 #include <algorithm>
+#include <unordered_set>
 
 #include "PythonExtension.h"
 #include "..\python\include\python.h"
@@ -52,11 +53,14 @@ inline sptr_t CastSzToSptr(const char *cp) {
 }
 
 // forward declarations
-void VerifyConstantsTableOrder();
+void verifyConstantsTableOrder();
 int FindFriendlyNamedIDMConstant(const char* name);
 bool GetPaneFromInt(int nPane, ExtensionAPI::Pane* outPane);
+void trace(const char* text, int n);
 void trace(const char* text1, const char* text2 = NULL);
 void trace_error(const char* text1, const char* text2 = NULL);
+void onUpdateUI();
+void onChangeCurrentFile();
 bool RunCallback(EventNumber eventNumber,
 	const char* stringPar = NULL,
 	bool useNumericPar1 = false, int numericPar1 = 0,
@@ -150,6 +154,7 @@ bool PythonExtension::OnDoubleClick()
 
 bool PythonExtension::OnUpdateUI()
 {
+	onUpdateUI();
 	return false;
 }
 
@@ -222,6 +227,7 @@ bool PythonExtension::OnFileChange()
 {
 	// the goal is to trigger the callback for all cases when the current buffer's filepath can change.
 	// new document. open document. save as. switch buffer.
+	onChangeCurrentFile();
 	return RunCallback(EventNumber_OnFileChange);
 }
 
@@ -265,8 +271,11 @@ EventNumber eventNumberFromString(const char* eventName)
 class ReusableStringStream
 {
 	std::ostringstream _strm;
+	ReusableStringStream (const ReusableStringStream& other);
+	ReusableStringStream& operator= (const ReusableStringStream& other);
 	
 public:
+	ReusableStringStream() {}
 	void Write(const char* sz)
 	{
 		_strm << sz;
@@ -296,6 +305,8 @@ class SimpleStringBuffer
 {
 	std::vector<char> _buffer;
 	bool _allocated;
+	SimpleStringBuffer (const SimpleStringBuffer& other);
+	SimpleStringBuffer& operator= (const SimpleStringBuffer& other);
 	
 public:
 	SimpleStringBuffer() : _allocated(false) {}
@@ -375,6 +386,9 @@ class CachePythonObjects
 	PyObjectOwned module;
 	PyObjectOwned moduleDict;
 	PyObjectOwned functionOnEvent;
+	
+	CachePythonObjects (const CachePythonObjects& other);
+	CachePythonObjects& operator= (const CachePythonObjects& other);
 	
 public:
 	CachePythonObjects() : initCompleted(false), initSucceeded(false)
@@ -611,7 +625,7 @@ bool PythonExtension::Initialise(ExtensionAPI* host)
 
 	if (!delayLoad)
 	{
-		VerifyConstantsTableOrder();
+		verifyConstantsTableOrder();
 		InitializePython();
 		RunCallback(EventNumber_OnStart);
 	}
@@ -736,25 +750,30 @@ PyObject* pyfun_MessageBox(PyObject*, PyObject* args)
 	}
 }
 
+void SciteOpenFile(const char* filename)
+{
+	std::string cmd = "open:";
+	for (unsigned int i = 0; i < strlen(filename); i++)
+	{
+		if (filename[i] == '\\')
+		{
+			cmd += "\\\\";
+		}
+		else
+		{
+			cmd += filename[i];
+		}
+	}
+
+	Host()->Perform(cmd.c_str());
+}
+
 PyObject* pyfun_SciteOpenFile(PyObject*, PyObject* args)
 {
 	const char* filename = NULL; // we don't own this.
 	if (PyArg_ParseTuple(args, "s", &filename) && filename)
 	{
-		std::string cmd = "open:";
-		for (unsigned int i = 0; i < strlen(filename); i++)
-		{
-			if (filename[i] == '\\')
-			{
-				cmd += "\\\\";
-			}
-			else
-			{
-				cmd += filename[i];
-			}
-		}
-
-		Host()->Perform(cmd.c_str());
+		SciteOpenFile(filename);
 		return IncrefAndReturnNone();
 	}
 	else
@@ -1482,6 +1501,258 @@ PyObject* pyfun_app_PrintSupportedCalls(PyObject*, PyObject* args)
 	return IncrefAndReturnNone();
 }
 
+// when recording location, the same filename will appear very often.
+// let's save memory usage by using a set to de-dupe strings.
+// references to elements in the unordered_set container remain valid in all cases, even after a rehash.
+// if an actual pool is needed, see http://llvm.org/docs/doxygen/html/StringPool_8h_source.html
+class SimpleStringPool
+{
+	std::tr1::unordered_set<std::string> _set;
+	SimpleStringPool (const SimpleStringPool& other);
+	SimpleStringPool& operator= (const SimpleStringPool& other);
+	
+public:
+	SimpleStringPool() {}
+	std::string* Get(const char* s)
+	{
+		std::tr1::unordered_set<std::string>::iterator it = _set.find(s);
+		if (it == _set.end())
+		{
+			it = _set.insert(s).first;
+		}
+		
+		return &(*it);
+	}
+};
+
+template <class T>
+class UndoStack
+{
+	std::vector<T> _list;
+	int _position;
+	UndoStack (const UndoStack& other);
+	UndoStack& operator= (const UndoStack& other);
+	static const int MAXSIZE = UINT_MAX/8;
+
+public:
+	UndoStack() : _position(-1) {}
+	void Add(T current)
+	{
+		if (_list.size() > MAXSIZE)
+		{
+			// we've reached the maximum size.
+			return;
+		}
+		
+		// if we are here after having called undo,
+		// invalidate items higher on the stack
+		int howManyToUndo = (_list.size() - _position) - 1;
+		int first = _position + 1;
+		_list.erase(_list.begin() + first, _list.begin() + first + howManyToUndo);
+
+		// add to stack
+		_list.push_back(current);
+		_position = _list.size() - 1;
+	}
+
+	T PeekUndo()
+	{
+		if (_position >= 0)
+			return _list[_position];
+		else
+			return T();
+	}
+
+	void Undo()
+	{
+		if (_position >= 0)
+			--_position;
+	}
+
+	T PeekRedo()
+	{
+		// cast to signed int ok because of  maximum size check in Add()
+		if (_position + 1 <= (int)(_list.size()) - 1)
+			return _list[_position + 1];
+		else
+			return T();
+	}
+
+	void Redo()
+	{
+		// cast to signed int ok because of  maximum size check in Add()
+		if (_position + 1 <= (int)(_list.size()) - 1)
+			++_position;
+	}
+};
+
+struct SavedLocation
+{
+	std::string* filename;
+	int lineNumber;
+	SavedLocation() : filename(NULL), lineNumber(INT_MIN) {}
+};
+
+// saved location.
+// tracks current file and caret location, so that the user can navigate back to the lines they were editing previously.
+// implemented in C++ for performance; there is no onCaretChange event and the onUpdateUI event is quite chatty.
+// possible future improvements:
+// 	track location in untitled documents through buffer number
+// 	track file save-as changes, possibly through buffer number
+// 	use circular buffer with maximum size
+// 	use Scintilla markers to save the correct locations even when preceding lines of text are added.
+class SavedLocationManager
+{
+	SimpleStringPool _stringpool;
+	UndoStack<SavedLocation> _stack;
+	int _prevPos;
+	int _prevLine;
+	std::string* _currentFile;
+	int _lineWeJustSet;
+	std::string* _fileWeJustSet;
+	SavedLocationManager (const SavedLocationManager& other);
+	SavedLocationManager& operator= (const SavedLocationManager& other);
+
+	bool isTooCloseToExisting(int line)
+	{
+		// if the user only moved one line away, don't need to record a new entry.
+		SavedLocation lastLocation = _stack.PeekUndo();
+		bool ret = (lastLocation.filename == _currentFile) && (lastLocation.lineNumber == line - 1 ||
+			lastLocation.lineNumber == line ||lastLocation.lineNumber == line + 1);
+		return ret;
+	}
+	
+	bool isOneWeJustSet(int line)
+	{
+		// is this "move" the result of the move we just sent to SciTE? if so, don't add to the stack.
+		bool ret = (_currentFile && _currentFile == _fileWeJustSet && line == _lineWeJustSet);
+		return ret;
+	}
+	
+	void addToStack(int line)
+	{
+		if (!isOneWeJustSet(line) && !isTooCloseToExisting(line))
+		{
+			SavedLocation location;
+			location.filename = _currentFile;
+			location.lineNumber = line;
+			_stack.Add(location);
+		}
+	}
+	
+public:
+	SavedLocationManager() : _prevPos(INT_MIN), _prevLine(INT_MIN), _currentFile(NULL),
+		_lineWeJustSet(INT_MIN), _fileWeJustSet(NULL)
+	{
+	}
+	
+	void goPrevLocation(std::string** file, int* line)
+	{
+		SavedLocation lastLocation = _stack.PeekUndo();
+		if (lastLocation.filename)
+		{
+			*file = _fileWeJustSet = lastLocation.filename;
+			*line = _lineWeJustSet = lastLocation.lineNumber;
+			goLocation(*file, *line);
+			_stack.Undo();
+		}
+	}
+	
+	void goNextLocation(std::string** file, int* line)
+	{
+		SavedLocation nextLocation = _stack.PeekRedo();
+		if (nextLocation.filename)
+		{
+			*file = _fileWeJustSet = nextLocation.filename;
+			*line = _lineWeJustSet = nextLocation.lineNumber;
+			goLocation(*file, *line);
+			_stack.Redo();
+		}
+	}
+	
+	void goLocation(std::string* file, int line)
+	{
+		if (file != _currentFile)
+		{
+			SciteOpenFile(file->c_str());
+		}
+		
+		const ExtensionAPI::Pane pane = ExtensionAPI::paneEditor;
+		Host()->Send(pane, SCI_GOTOLINE, line, 0);
+	}
+	
+	void onChangeCurrentFile()
+	{
+		if (Host())
+		{
+			// both path and name must be set, because sometimes an untitled document has a non-empty path.
+			std::string filepath = Host()->Property("FilePath");
+			std::string filename = Host()->Property("FileNameExt");
+			if (filepath.length() && filename.length())
+			{
+				_currentFile = _stringpool.Get(filepath.c_str());
+			}
+			else
+			{
+				// we can't track location in untitled documents
+				_currentFile = NULL;
+			}
+		}
+	}	
+	
+	void onUpdateUI()
+	{
+		if (Host() && _currentFile)
+		{
+			// if it's the same position, or the same line, don't add a new entry.
+			const ExtensionAPI::Pane pane = ExtensionAPI::paneEditor;
+			int pos = Host()->Send(pane, SCI_GETSELECTIONSTART, 0, 0);
+			if (pos != _prevPos)
+			{
+				int line = Host()->Send(pane, SCI_LINEFROMPOSITION, pos, 0);
+				if (line != _prevLine)
+				{
+					addToStack(line);
+					_prevLine = line;
+				}
+				
+				_prevPos = pos;
+			}
+		}
+	}
+	
+} savedLocationManager;
+
+void onUpdateUI()
+{
+	savedLocationManager.onUpdateUI();
+}
+
+void onChangeCurrentFile()
+{
+	savedLocationManager.onChangeCurrentFile();
+}
+
+PyObject* pyfun_app_GetNextOrPreviousLocation(PyObject*, PyObject* args)
+{
+	std::string* file = NULL;
+	int line = 0;
+	int isNext = 0;
+	if (!PyArg_ParseTuple(args, "i", &isNext))
+	{
+		return NULL;
+	}
+	
+	if (isNext)
+		savedLocationManager.goNextLocation(&file, &line);
+	else
+		savedLocationManager.goPrevLocation(&file, &line);
+	
+	if (file)
+		return Py_BuildValue("si", file->c_str(), line);
+	else
+		return Py_BuildValue("OO", Py_None, Py_None);
+}
 
 static PyMethodDef methodsExportedToPython[] =
 {
@@ -1499,6 +1770,7 @@ static PyMethodDef methodsExportedToPython[] =
 	{"app_UserStripSet", pyfun_app_UserStripSet, METH_VARARGS, ""},
 	{"app_UserStripSetList", pyfun_app_UserStripSetList, METH_VARARGS, ""},
 	{"app_UserStripGetValue", pyfun_app_UserStripGetValue, METH_VARARGS, ""},
+	{"app_GetNextOrPreviousLocation", pyfun_app_GetNextOrPreviousLocation, METH_VARARGS, ""},
 	{"app_PrintSupportedCalls", pyfun_app_PrintSupportedCalls, METH_VARARGS, ""},
 	{"app_SciteCommand", pyfun_app_SciteCommand, METH_VARARGS, ""},
 	{"pane_Append", pyfun_pane_Append, METH_VARARGS, ""},
@@ -1575,6 +1847,14 @@ void trace_error(const char* text1, const char* text2)
 	trace("\n.");
 }
 
+void trace(const char* text, int n)
+{
+	ReusableStringStream stm;
+	stm.Write(text);
+	stm.Write(n);
+	trace(stm.Get().c_str());
+}
+
 int FindFriendlyNamedIDMConstant(const char* name)
 {
 	// pattern from IFaceTable.cxx
@@ -1600,7 +1880,16 @@ int FindFriendlyNamedIDMConstant(const char* name)
 	return -1;
 }
 
-void VerifyConstantsTableOrder()
+void assertEq(int expected, int received)
+{
+	if (expected != received)
+	{
+		trace("\nassertion failed, expected ", expected);
+		trace(" got ", received);
+	}
+}
+
+void verifyConstantsTableOrder()
 {
 	// binary search requires items to be sorted, so verify sort order
 	for (unsigned int i = 0; i < PythonExtension::constantsTableLen - 1; i++)
@@ -1613,11 +1902,49 @@ void VerifyConstantsTableOrder()
 			trace(first, second);
 		}
 	}
+	
+	// test undo stack.
+	UndoStack<int> stack;
+	assertEq(0, stack.PeekUndo());
+	assertEq(0, stack.PeekRedo());
+	stack.Add(1);
+	assertEq(1, stack.PeekUndo());
+	stack.Add(2);
+	assertEq(2, stack.PeekUndo());
+	stack.Add(3);
+	assertEq(3, stack.PeekUndo());
+	stack.Add(4);
+	assertEq(4, stack.PeekUndo());
+	stack.Undo();
+	assertEq(3, stack.PeekUndo());
+	stack.Undo();
+	assertEq(2, stack.PeekUndo());
+	stack.Undo();
+	assertEq(1, stack.PeekUndo());
+	stack.Redo();
+	assertEq(2, stack.PeekUndo());
+	stack.Redo();
+	assertEq(3, stack.PeekUndo());
+	stack.Add(40); // not at the top of stack, will overwrite other values
+	assertEq(40, stack.PeekUndo());
+	stack.Add(50);
+	assertEq(50, stack.PeekUndo());
+	stack.Undo();
+	assertEq(40, stack.PeekUndo());
+	stack.Undo();
+	assertEq(3, stack.PeekUndo());
+	stack.Undo();
+	assertEq(2, stack.PeekUndo());
+	stack.Undo();
+	assertEq(1, stack.PeekUndo());
+	stack.Undo();
+	assertEq(0, stack.PeekUndo());
+	stack.Undo();
+	assertEq(0, stack.PeekUndo());
 }
 
 static IFaceConstant rgFriendlyNamedIDMConstants[] =
 {
-	// after modifying, enable VerifyConstantsTableOrder() to verify order.
 	//++Autogenerated -- run archive/generate/constantsTable.py and paste the results here
 	{"Abbrev", IDM_ABBREV},
 	{"About", IDM_ABOUT},

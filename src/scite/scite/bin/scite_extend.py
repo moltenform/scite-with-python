@@ -45,6 +45,12 @@ class ScAppClass(object):
     def EnableNotification(self, eventName, enabled=True):
         return SciTEModule.app_EnableNotification(eventName, 1 if enabled else 0)
     
+    def LocationNext(self):
+        return SciTEModule.app_GetNextOrPreviousLocation(1)
+        
+    def LocationPrev(self):
+        return SciTEModule.app_GetNextOrPreviousLocation(0)
+        
     def PrintSupportedCalls(self, whatToPrint=2):
         # 1=constants, 2=app methods, 3=pane methods (as called), 4=pane methods (as defined internally)
         ScOutput.BeginUndoAction()
@@ -101,6 +107,7 @@ class ScConstClass(object):
         self.eventTypeChange = 2
         self.eventTypeFocusIn = 3
         self.eventTypeFocusOut = 4
+        self.StopEventPropagation = 'StopEventPropagation'
         
     def __getattr__(self, s):
         if s.startswith('_'):
@@ -134,9 +141,6 @@ class ScConstClass(object):
         green = (val & 0x0000ff00) >> 8
         blue = (val & 0x000ff0000) >> 16
         return (red, green, blue)
-    
-    def StopEventPropagation(self):
-        return 'StopEventPropagation'
 
 class ScPaneClassUtils(object):
     '''
@@ -252,7 +256,7 @@ def OnEvent(eventName, args):
     if eventName == 'OnKey':
         import scite_extend_ui
         val = scite_extend_ui.ScMultiKeyManager.OnKey(args)
-        if val == ScConst.StopEventPropagation():
+        if val == ScConst.StopEventPropagation:
             return val
     
     # call into each plugin that registered for this event 
@@ -262,7 +266,7 @@ def OnEvent(eventName, args):
             try:
                 module = findCallbackModuleFromPath(command, path)
                 val = callCallbackModule(module, command, eventName, args)
-                if val == ScConst.StopEventPropagation():
+                if val == ScConst.StopEventPropagation:
                     # the user has asked that we not process any other callbacks
                     return val
             except:
@@ -372,7 +376,7 @@ def registerCustomCommand(heuristicDuplicateShortcut, command, number):
         filetypes = '*'
     
     if callbacks and (' ' in callbacks or '\t' in callbacks or '/' in callbacks or '\\' in callbacks):
-        assert False, 'in command %s, callbacks invalid, expected syntax like OnOpen|OnSwitchFile.' % command
+        assert False, 'in command %s, callbacks invalid, expected syntax like OnOpen|OnSave.' % command
     
     if not nameTemporary:
         assert False, 'in command %s, must define a name' % command

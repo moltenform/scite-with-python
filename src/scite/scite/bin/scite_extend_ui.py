@@ -91,7 +91,7 @@ class ScToolUIBase(object):
     def OnRawEvent(self, control, eventType):
         # if the implementation class wants, it can see the raw event too
         res = self.OnEvent(control, eventType)
-        if res == ScConst.StopEventPropagation():
+        if res == ScConst.StopEventPropagation:
             return None
         
         if eventType == ScConst.eventTypeClicked:
@@ -278,7 +278,7 @@ class ScMultiKeyChoiceClass(object):
                 import traceback
                 print('Exception thrown in OnKey, %s' % traceback.format_exc())
         
-        return ScConst.StopEventPropagation()
+        return ScConst.StopEventPropagation
 
 
 def ScAskUserInput(*args, **kwargs):
