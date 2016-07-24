@@ -12,10 +12,9 @@ def OnOpen(filename):
         print 'plugin saw OnOpen', filename
     state.currentFilename = filename
 
-def OnSwitchFile(filename):
+def OnFileChange():
     if debugTracing:
-        print 'plugin saw OnSwitchFile', filename
-    state.currentFilename = filename
+        print 'plugin saw OnFileChange'
 
 def OnClose(filename):
     if debugTracing:

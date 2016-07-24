@@ -38,24 +38,18 @@ class ShowWarnings(object):
             del self.mapFilenameToWarningStatus[name]
 
 # why do we need to track OnKey?
-# we could do everything in OnOpen and OnSwitchFile, but the issue is that
+# we could do everything in OnOpen and OnFileChange, but the issue is that
 # the OnOpen callback occurs too early, any coloring changes we make are
 # reset immediately afterwards. So switching to a file would correctly set the colors,
 # but the first time opening a file, the colors would not be seen.
 # we'll use OnKey instead, even though it's not ideal.
 
-def OnKey(*args):
+def OnKey(key, shift, ctrl, alt):
     showWarnings.showWarningIfNeeded()
     
-def OnOpen(*args):
-    showWarnings.updateCurrentFilename()
-
-def OnSwitchFile(*args):
+def OnFileChange():
     showWarnings.updateCurrentFilename()
     showWarnings.showWarningIfNeeded()
-
-def OnClose(*args):
-    showWarnings.onClose()
 
 def getListFromPropertiesString(s):
     result = []

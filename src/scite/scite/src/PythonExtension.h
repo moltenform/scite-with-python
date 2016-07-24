@@ -13,7 +13,6 @@ enum EventNumber
 {
 	EventNumber_OnStart = 0,
 	EventNumber_OnOpen,
-	EventNumber_OnSwitchFile,
 	EventNumber_OnBeforeSave,
 	EventNumber_OnSave,
 	EventNumber_OnSavePointReached,
@@ -25,6 +24,7 @@ enum EventNumber
 	EventNumber_OnUserListSelection,
 	EventNumber_OnKey,
 	EventNumber_OnUserStrip,
+	EventNumber_OnFileChange,
 	EventNumber_LEN
 };
 
@@ -63,6 +63,7 @@ public:
 	virtual bool OnClose(const char*);
 	virtual bool OnUserStrip(int, int);
 	virtual bool NeedsOnClose();
+	bool OnFileChange();
 
 	static const IFaceConstant* const constantsTable;
 	static const size_t constantsTableLen;

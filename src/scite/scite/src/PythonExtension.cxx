@@ -89,7 +89,6 @@ const char* EventNumberToString(int i)
 	{
 		case EventNumber_OnStart: return "OnStart";
 		case EventNumber_OnOpen: return "OnOpen";
-		case EventNumber_OnSwitchFile: return "OnSwitchFile";
 		case EventNumber_OnBeforeSave: return "OnBeforeSave";
 		case EventNumber_OnSave: return "OnSave";
 		case EventNumber_OnSavePointReached: return "OnSavePointReached";
@@ -101,18 +100,21 @@ const char* EventNumberToString(int i)
 		case EventNumber_OnUserListSelection: return "OnUserListSelection";
 		case EventNumber_OnKey: return "OnKey";
 		case EventNumber_OnUserStrip: return "OnUserStrip";
+		case EventNumber_OnFileChange: return "OnFileChange";
 		default: return NULL;
 	}
 }
 
 bool PythonExtension::OnOpen(const char *filename)
 {
+	OnFileChange();
 	return RunCallback(EventNumber_OnOpen, filename);
 }
 
-bool PythonExtension::OnSwitchFile(const char *filename)
+bool PythonExtension::OnSwitchFile(const char*)
 {
-	return RunCallback(EventNumber_OnSwitchFile, filename);
+	OnFileChange();
+	return false;
 }
 
 bool PythonExtension::OnBeforeSave(const char *filename)
@@ -122,6 +124,7 @@ bool PythonExtension::OnBeforeSave(const char *filename)
 
 bool PythonExtension::OnSave(const char *filename)
 {
+	OnFileChange();
 	return RunCallback(EventNumber_OnSave, filename);
 }
 
@@ -199,17 +202,27 @@ bool PythonExtension::OnUserStrip(int control, int eventType)
 
 bool PythonExtension::InitBuffer(int)
 {
+	OnFileChange();
 	return false;
 }
 
 bool PythonExtension::ActivateBuffer(int)
 {
+	OnFileChange();
 	return false;
 }
 
 bool PythonExtension::RemoveBuffer(int)
 {
+	OnFileChange();
 	return false;
+}
+
+bool PythonExtension::OnFileChange()
+{
+	// the goal is to trigger the callback for all cases when the current buffer's filepath can change.
+	// new document. open document. save as. switch buffer.
+	return RunCallback(EventNumber_OnFileChange);
 }
 
 inline bool strEqual(const char* s1, const char* s2)
