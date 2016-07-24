@@ -395,7 +395,7 @@ def RegenerateAll():
 	menuIDs  = ReadMenuIDs(srcRoot + "/scite/src/SciTE.h")
 	idsInOrder = idsFromDocumentation(srcRoot + "/scintilla/doc/ScintillaDoc.html")
 	Regenerate(srcRoot + "/scite/src/IFaceTable.cxx", "//", printIFaceTableCXXFile([f, menuIDs]))
-	Regenerate(srcRoot + "/scite/doc/PaneAPI.html", "<!--", printIFaceTableHTMLFile([f, menuIDs, idsInOrder]))
+	Regenerate(srcRoot + "/scite/bin/doc/PaneAPI.html", "<!--", printIFaceTableHTMLFile([f, menuIDs, idsInOrder]))
 
 if __name__=="__main__":
 	RegenerateAll()
