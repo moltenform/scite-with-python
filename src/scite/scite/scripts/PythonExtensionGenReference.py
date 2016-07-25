@@ -202,7 +202,7 @@ def getScEditorFunctions(name, features, mapSymbolNameToExplanation):
 	if features["Comment"]:
 		comment = '<span class="comment">%s</span>' % CommentString(features)
 
-	mapSymbolNameToExplanation[featureDefineName] = [explanation, comment, False]
+	mapSymbolNameToExplanation[featureDefineName] = [name, explanation, comment, 'Function', False]
 	
 def getScEditorPropertiesGetter(propname, property, mapSymbolNameToExplanation):
 	functionName = property['GetterName']
@@ -219,7 +219,7 @@ def getScEditorPropertiesGetter(propname, property, mapSymbolNameToExplanation):
 		comment += '<span class="comment">%s</span>' % (property["GetterComment"].replace("<", "&lt;"))
 	
 	comment = comment.replace('-- ', '')
-	mapSymbolNameToExplanation[featureDefineName] = [explanation, comment, False]
+	mapSymbolNameToExplanation[featureDefineName] = [functionName, explanation, comment, 'Getter', False]
 	
 def getScEditorPropertiesSetter(propname, property, mapSymbolNameToExplanation):
 	functionName = property['SetterName']
@@ -236,10 +236,16 @@ def getScEditorPropertiesSetter(propname, property, mapSymbolNameToExplanation):
 		comment += '<span class="comment">%s</span>' % (property["SetterComment"].replace("<", "&lt;"))
 	
 	comment = comment.replace('-- ', '')
-	mapSymbolNameToExplanation[featureDefineName] = [explanation, comment, False]
+	mapSymbolNameToExplanation[featureDefineName] = [functionName, explanation, comment, 'Setter', False]
+	
+def writeScEditorOutput(parts, out):
+	methodName, explanation, comment, fnOrProp, seen = parts
+	explanation = replaceWholeWord(explanation, 'position', 'int')
+	explanation = replaceWholeWord(explanation, 'stringresult', 'string')
+	comment = comment.replace('Result is NUL-terminated.', '').replace('NUL terminated text argument.', '')
+	out.write("<tr><td>%s</td><td>%s</td></tr>\n" % (explanation, comment))
 	
 def writeScEditorMethodsToFile(out):
-	import re
 	f = Face.Face()
 	f.ReadFromFile(srcRoot + "/scintilla/include/Scintilla.iface")
 	idsInOrder = IFaceTableGen.idsFromDocumentation(srcRoot + "/scintilla/doc/ScintillaDoc.html")
@@ -254,27 +260,40 @@ def writeScEditorMethodsToFile(out):
 			getScEditorPropertiesGetter(propname, property, mapSymbolNameToExplanation)
 		if property['SetterName']:
 			getScEditorPropertiesSetter(propname, property, mapSymbolNameToExplanation)
-		
-	lastSegment = ""
-	for segment, featureId in idsInOrder:
-		if featureId in mapSymbolNameToExplanation:
-			if segment != lastSegment:
-				out.write('<tr><td align="right"><i>%s</i></td><td>%s</td></tr>\n' % (segment, ''))
-				lastSegment = segment
-			parts = mapSymbolNameToExplanation[featureId]
-			explanation, comment, seen = parts
-			explanation = replaceWholeWord(explanation, 'position', 'int')
-			explanation = replaceWholeWord(explanation, 'stringresult', 'string')
-			comment = comment.replace('Result is NUL-terminated.', '').replace('NUL terminated text argument.', '')
-			out.write("<tr><td>%s</td><td>%s</td></tr>\n" % (explanation, comment))
-			parts[2] = True
-		else:
-			print 'warning: featureID %s not seen '%featureId
 	
+	class Section(object):
+		name = ''
+		items = None
+		def __init__(self, name):
+			self.items = []
+			self.name = name
+	
+	sections = []
+	
+	# divide the list into sections
+	for sectionName, featureId in idsInOrder:
+		if featureId in mapSymbolNameToExplanation:
+			if len(sections) == 0 or sectionName != sections[-1].name:
+				sections.append(Section(sectionName))
+			sections[-1].items.append(mapSymbolNameToExplanation[featureId])
+		else:
+			print 'warning: GetScriptableInterface told us to skip featureID %s '%featureId
+		
+	# within each section, sort by methodName
+	for section in sections:
+		out.write('<tr><td align="right"><i><br /><br /><br />%s</i></td><td>%s</td></tr>\n' % (section.name, ''))
+		
+		# because the first item is methodName, this will sort by methodName.
+		section.items.sort()
+		for parts in section.items:
+			writeScEditorOutput(parts, out)
+			parts[4] = True
+	
+	# were there any methods skipped?
 	for key in mapSymbolNameToExplanation:
 		parts = mapSymbolNameToExplanation[key]
-		if not parts[2]:
-			print 'warning: featureId for %s not in idsInOrder' % parts[0]
+		if not parts[4]:
+			print 'warning: idsInOrder did not contain featureId %s ' % parts[0]
 
 startFile = """
 <?xml version="1.0"?>
