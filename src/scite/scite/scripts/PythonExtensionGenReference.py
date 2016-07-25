@@ -219,23 +219,24 @@ StopEventPropagation'''.replace('\r\n','\n').split('\n')
 		currentList.insert(0, added)
 
 def addPythonDefinedPaneMethods(idsInOrder, mapSymbolNameToExplanation):
-	manuallyAdd = '''Line endings|string|Utils.GetEolCharacter()|Return current EOL character, e.g. \\r\\n
-Selection and information||Utils.ExpandSelectionToIncludeEntireLines()|Ensure entire lines are selected
-Text retrieval and modification||PaneAppend(string txt)|Append text
-Text retrieval and modification||PaneInsertText(string txt, int pos)|Insert text (without changing selection)
-Text retrieval and modification||PaneWrite(string txt, int pos=None)|Write text, and update selection
-Text retrieval and modification||PaneRemoveText(int pos1, int pos2)|Remove text between these positions
-Text retrieval and modification|string|PaneGetText(int pos1, int pos2)|Get text between these positions
-Searching|int,int|PaneFindText(string s, int pos1=0, int pos2=-1, wholeWord=False, matchCase=False, regExp=False, flags=0)|Find text
-Text retrieval and modification|string|GetLineText(int line)|Returns text of specified line
-Text retrieval and modification|string|GetSelectedText()|Returns selected text
-Text retrieval and modification|string|GetCurrentLineText()|Returns text of current line'''.replace('\r\n','\n').split('\n')
+	manuallyAdd = '''SCI_GETEOLMODE|Line endings|string|Utils.GetEolCharacter()|Return current EOL character, e.g. \\r\\n
+|Selection and information||Utils.ExpandSelectionToIncludeEntireLines()|Ensure entire lines are selected
+SCI_APPENDTEXT|Text retrieval and modification||PaneAppend(string txt)|Append text
+SCI_INSERTTEXT|Text retrieval and modification||PaneInsertText(string txt, int pos)|Insert text (without changing selection)
+SCI_INSERTTEXT|Text retrieval and modification||PaneWrite(string txt, int pos=None)|Write text, and update selection
+SCI_REPLACETARGET|Text retrieval and modification||PaneRemoveText(int pos1, int pos2)|Remove text between these positions
+SCI_GETTEXTRANGE|Text retrieval and modification|string|PaneGetText(int pos1, int pos2)|Get text between these positions
+SCI_FINDTEXT|Searching|int,int|PaneFindText(string s, int pos1=0, int pos2=-1, wholeWord=False, matchCase=False, regExp=False, flags=0)|Find text
+SCI_GETLINE|Text retrieval and modification|string|GetLineText(int line)|Returns text of specified line
+SCI_GETSELTEXT|Text retrieval and modification|string|GetSelectedText()|Returns selected text
+SCI_GETCURLINE|Text retrieval and modification|string|GetCurrentLineText()|Returns text of current line'''.replace('\r\n','\n').split('\n')
 	for line in manuallyAdd:
-		sectionName, returnType, methodName, comment = line.split('|')
-		fakeFeatureNameId = 'SCI_FAKE_' + methodName
-		explanation = (returnType + ' ' if returnType else '') + 'ScEditor.' + methodName
-		mapSymbolNameToExplanation[fakeFeatureNameId] = [methodName, explanation, comment, 'Function', False]
-		idsInOrder.append((sectionName, fakeFeatureNameId))
+		featureId, sectionName, returnType, methodName, comment = line.split('|')
+		fakeFeatureId = 'SCI_FAKE_' + methodName
+		explanation = returnType + ' ' if returnType else ''
+		explanation += 'ScEditor.<a href="http://www.scintilla.org/ScintillaDoc.html#' + featureId + '">' + methodName + '</a>'
+		mapSymbolNameToExplanation[fakeFeatureId] = [methodName, explanation, comment, 'Function', False]
+		idsInOrder.append((sectionName, fakeFeatureId))
 
 def writeScAppMethodsToFile(out):
 	mapIdmToText = getMapFromIdmToMenuText()
@@ -298,10 +299,16 @@ def getScEditorFunctions(name, features, mapSymbolNameToExplanation):
 				parameters += ", "
 			parameters += features['Param2Type'] + " " + features['Param2Name']
 
-	returnType = stringresult
-	if not returnType and features["ReturnType"] != "void":
+	# change from IFaceTableGen.py: these return a tuple, not just a string.
+	if not stringresult and features["ReturnType"] == "void":
+		returnType = ''
+	elif not stringresult and features["ReturnType"] != "void":
 		returnType = IFaceTableGen.convertStringResult(features["ReturnType"]) + " "
-
+	elif stringresult and features["ReturnType"] in ("void", "string", "stringresult"):
+		returnType = 'string '
+	else:
+		returnType = 'string,' + features["ReturnType"] + ' '
+	
 	explanation += '%sScEditor.%s%s%s(%s)' % (
 		returnType,
 		href,
@@ -309,7 +316,6 @@ def getScEditorFunctions(name, features, mapSymbolNameToExplanation):
 		hrefEnd,
 		parameters
 	)
-	
 	comment = ''
 	if features["Comment"]:
 		comment = '<span class="comment">%s</span>' % CommentString(features)
@@ -438,7 +444,7 @@ def writeScAppMethods(out):
 	out.write("</table>\n")
 	
 def writeScEditorMethods(out):
-	out.write("<h2>ScEditor (and ScOutput) methods</h2>\n")
+	out.write("<h2>ScEditor and ScOutput methods</h2>\n")
 	out.write('<table><tr><th style="width:35em"> </th><th> </th></tr>\n')
 	writeScEditorMethodsToFile(out)
 	out.write("</table>\n")
