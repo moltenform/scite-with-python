@@ -67,7 +67,7 @@ startFile = """
 """
 
 def RegenerateAll():
-	with open(os.path.join("..", "doc", "CommandValues.html"), "w") as out:
+	with open(os.path.join("..", "CommandValues.html"), "w") as out:
 		out.write(startFile)
 		menuFeatures(out)
 		faceFeatures(out)

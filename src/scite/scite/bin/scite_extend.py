@@ -51,7 +51,7 @@ class ScAppClass(object):
     def LocationPrev(self):
         return SciTEModule.app_GetNextOrPreviousLocation(0)
         
-    def PrintSupportedCalls(self, whatToPrint=2):
+    def _printSupportedCalls(self, whatToPrint=2):
         # 1=constants, 2=app methods, 3=pane methods (as called), 4=pane methods (as defined internally)
         ScOutput.BeginUndoAction()
         SciTEModule.app_PrintSupportedCalls(whatToPrint)
@@ -69,15 +69,6 @@ class ScAppClass(object):
         
     def GetFileDirectory(self):
         return self.GetProperty('FileDir')
-        
-    def GetLanguage(self):
-        return self.GetProperty('Language')
-        
-    def GetCurrentSelection(self):
-        return self.GetProperty('CurrentSelection')
-    
-    def GetCurrentWord(self):
-        return self.GetProperty('CurrentWord')
         
     def GetSciteDirectory(self):
         return self.GetProperty('SciteDefaultHome')
