@@ -3,12 +3,27 @@ from __future__ import with_statement
 import IFaceTableGen
 import sys
 import os
+from collections import OrderedDict
 
 srcRoot = "../.."
 sys.path.append(srcRoot + "/scintilla/scripts")
 
 import Face
 from FileGenerator import Regenerate
+
+knownSkipped = dict(
+	SCI_GETTEXTRANGE=1, # use PaneGetText instead
+	SCI_GETSTYLEDTEXT=1,
+	SCI_ADDSTYLEDTEXT=1,
+	SCI_FINDTEXT=1, # use PaneFindText instead
+	SCI_FORMATRANGE=1,
+	SCI_SETUSEPALETTE=1, # deprecated
+	SCI_GETUSEPALETTE=1, # deprecated
+	SCI_GETKEYSUNICODE=1, # deprecated
+	SCI_SETKEYSUNICODE=1, # deprecated
+	StyleByteIndicators=1, # no longer supported
+	message=1
+	)
 
 def cell(s):
 	return "<td>%s</td>" % s
@@ -110,20 +125,24 @@ StopEventPropagation'''.replace('\r\n','\n').split('\n')
 	for added in manuallyAddConstants:
 		currentList.insert(0, added)
 
-def addPythonDefinedPaneMethods():
-	manuallyAdd = '''Utils.GetAllText()
-Utils.GetCurLine()
-Utils.GetEolCharacter()
-Utils.ExpandSelectionToIncludeEntireLines()
-PaneAppend(txt)
-PaneInsertText(txt, pos)
-PaneRemoveText(npos1, npos2)
-PaneGetText(n1, n2)
-PaneFindText(s, pos1=0, pos2=-1, wholeWord=False, matchCase=False, regExp=False, flags=0) 
-PaneWrite(txt, pos=None)
-GetLineText(line)
-GetSelectedText()
-GetCurrentLineText()'''.replace('\r\n','\n').split('\n')
+def addPythonDefinedPaneMethods(idsInOrder, mapSymbolNameToExplanation):
+	manuallyAdd = '''Line endings|string|Utils.GetEolCharacter()|Return current EOL character, e.g. \\r\\n
+Selection and information||Utils.ExpandSelectionToIncludeEntireLines()|Ensure entire lines are selected
+Text retrieval and modification||PaneAppend(string txt)|Append text
+Text retrieval and modification||PaneInsertText(string txt, int pos)|Insert text (without changing selection)
+Text retrieval and modification||PaneWrite(string txt, int pos=None)|Write text, and update selection
+Text retrieval and modification||PaneRemoveText(int pos1, int pos2)|Remove text between these positions
+Text retrieval and modification|string|PaneGetText(int pos1, int pos2)|Get text between these positions
+Searching|int,int|PaneFindText(string s, int pos1=0, int pos2=-1, wholeWord=False, matchCase=False, regExp=False, flags=0)|Find text
+Text retrieval and modification|string|GetLineText(int line)|Returns text of specified line
+Text retrieval and modification|string|GetSelectedText()|Returns selected text
+Text retrieval and modification|string|GetCurrentLineText()|Returns text of current line'''.replace('\r\n','\n').split('\n')
+	for line in manuallyAdd:
+		sectionName, returnType, methodName, comment = line.split('|')
+		fakeFeatureNameId = 'SCI_FAKE_' + methodName
+		explanation = (returnType + ' ' if returnType else '') + 'ScEditor.' + methodName
+		mapSymbolNameToExplanation[fakeFeatureNameId] = [methodName, explanation, comment, 'Function', False]
+		idsInOrder.append((sectionName, fakeFeatureNameId))
 
 def writeScAppMethodsToFile(out):
 	mapIdmToText = getMapFromIdmToMenuText()
@@ -244,13 +263,14 @@ def writeScEditorOutput(parts, out):
 	explanation = replaceWholeWord(explanation, 'stringresult', 'string')
 	comment = comment.replace('Result is NUL-terminated.', '').replace('NUL terminated text argument.', '')
 	out.write("<tr><td>%s</td><td>%s</td></tr>\n" % (explanation, comment))
-	
+
 def writeScEditorMethodsToFile(out):
 	f = Face.Face()
 	f.ReadFromFile(srcRoot + "/scintilla/include/Scintilla.iface")
 	idsInOrder = IFaceTableGen.idsFromDocumentation(srcRoot + "/scintilla/doc/ScintillaDoc.html")
 	(constants, functions, properties) = IFaceTableGen.GetScriptableInterface(f)
 	mapSymbolNameToExplanation = {}
+	addPythonDefinedPaneMethods(idsInOrder, mapSymbolNameToExplanation)
 	
 	for name, features in functions:
 		getScEditorFunctions(name, features, mapSymbolNameToExplanation)
@@ -261,31 +281,25 @@ def writeScEditorMethodsToFile(out):
 		if property['SetterName']:
 			getScEditorPropertiesSetter(propname, property, mapSymbolNameToExplanation)
 	
-	class Section(object):
-		name = ''
-		items = None
-		def __init__(self, name):
-			self.items = []
-			self.name = name
-	
-	sections = []
+	sections = OrderedDict()
 	
 	# divide the list into sections
 	for sectionName, featureId in idsInOrder:
 		if featureId in mapSymbolNameToExplanation:
-			if len(sections) == 0 or sectionName != sections[-1].name:
-				sections.append(Section(sectionName))
-			sections[-1].items.append(mapSymbolNameToExplanation[featureId])
-		else:
-			print 'warning: GetScriptableInterface told us to skip featureID %s '%featureId
+			if sectionName not in sections:
+				sections[sectionName] = []
+			
+			sections[sectionName].append(mapSymbolNameToExplanation[featureId])
+		elif featureId not in knownSkipped:
+			print 'GetScriptableInterface said to skip featureID %s, add to knownSkipped if this looks right.'%featureId
 		
 	# within each section, sort by methodName
-	for section in sections:
-		out.write('<tr><td align="right"><i><br /><br /><br />%s</i></td><td>%s</td></tr>\n' % (section.name, ''))
+	for sectionName in sections:
+		out.write('<tr><td align="right"><i><br /><br /><br />%s</i></td><td>%s</td></tr>\n' % (sectionName, ''))
 		
 		# because the first item is methodName, this will sort by methodName.
-		section.items.sort()
-		for parts in section.items:
+		sections[sectionName].sort()
+		for parts in sections[sectionName]:
 			writeScEditorOutput(parts, out)
 			parts[4] = True
 	

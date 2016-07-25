@@ -8,7 +8,7 @@ debugTracing = False
 class ScAppClass(object):
     '''
     Methods starting with "Cmd" are routed to SciTE,
-    See documentation for a list of supported methods.
+    See SciTEWithPythonAPIReference.html for a list of supported methods.
     example:
         from scite_extend_ui import ScApp
         ScApp.Trace('test')
@@ -19,45 +19,56 @@ class ScAppClass(object):
         self.cachedCallbackModules = dict()
     
     def Trace(self, s):
+        '''write to ScOutput, doesn't include newline'''
         return SciTEModule.app_Trace(s)
     
     def MsgBox(self, s):
+        '''Show message box with text s'''
         return SciTEModule.app_MsgBox(s)
         
     def OpenFile(self, s):
+        '''Open file'''
         return SciTEModule.app_OpenFile(s)
         
     def GetProperty(self, s):
+        '''Returns value of property'''
         return SciTEModule.app_GetProperty(s)
         
     def SetProperty(self, s, v):
+        '''Set value of property'''
         if debugTracing:
             print('SetProperty %s=%s'%(s, v))
 
         return SciTEModule.app_SetProperty(s, v)
     
     def UnsetProperty(self, s):
+        '''Unset property'''
         return SciTEModule.app_UnsetProperty(s)
         
     def UpdateStatusBar(self, updateSlowData=False):
+        '''Update status bar'''
         return SciTEModule.app_UpdateStatusBar(updateSlowData)
         
     def EnableNotification(self, eventName, enabled=True):
+        '''Enables notifcation (doesn't need to be called by plugins)'''
         return SciTEModule.app_EnableNotification(eventName, 1 if enabled else 0)
     
     def LocationNext(self):
+        '''Go to next location'''
         return SciTEModule.app_GetNextOrPreviousLocation(1)
         
     def LocationPrev(self):
+        '''Go to previous location'''
         return SciTEModule.app_GetNextOrPreviousLocation(0)
         
     def _printSupportedCalls(self, whatToPrint=2):
-        # 1=constants, 2=app methods, 3=pane methods (as called), 4=pane methods (as defined internally)
+        '''1=constants, 2=app methods, 3=pane methods (as called), 4=pane methods (as defined)'''
         ScOutput.BeginUndoAction()
         SciTEModule.app_PrintSupportedCalls(whatToPrint)
         ScOutput.EndUndoAction()
     
     def GetFilePath(self, cannotBeUntitled=True):
+        '''Returns full file path'''
         if cannotBeUntitled:
             # we usually don't want untitled documents to look like they have a path
             return self.GetProperty('FilePath') if len(self.GetFileName()) > 0 else ''
@@ -65,18 +76,23 @@ class ScAppClass(object):
             return self.GetProperty('FilePath')
         
     def GetFileName(self):
+        '''Returns file name'''
         return self.GetProperty('FileNameExt')
         
     def GetFileDirectory(self):
+        '''Returns directory of file'''
         return self.GetProperty('FileDir')
         
     def GetSciteDirectory(self):
+        '''Returns SciTE location'''
         return self.GetProperty('SciteDefaultHome')
         
     def GetSciteUserDirectory(self):
+        '''Returns SciTE user dir location'''
         return self.GetProperty('SciteUserHome')
         
     def __getattr__(self, s):
+        '''Run a command, see the full list in SciTEWithPythonAPIReference.html'''
         if s.startswith('Cmd'):
             # return a callable object; it looks like a method to the caller.
             commandName =  s[len('Cmd'):]
@@ -86,11 +102,14 @@ class ScAppClass(object):
 
 class ScConstClass(object):
     '''
-    a class for retrieving a SciTE constants from IFaceTable.cxx
+    a class for retrieving a SciTE constant.
     example:
-        from scite_extend_ui import ScConst 
-        n = ScConst.SCFIND_WHOLEWORD
-    See documentation for a list of supported constants.
+        from scite_extend_ui import ScConst
+        matchType = ScConst.SCFIND_MATCHCASE
+        ScEditor.SearchNext(matchType, 'a')
+        color = ScConst.MakeColor(0, 250, 200)
+        ScEditor.SetMarkerBack(1, color)
+    See SciTEWithPythonAPIReference.html for a list of constants.
     '''
     def __init__(self):
         self.eventTypeUnknown = 0
@@ -138,20 +157,14 @@ class ScPaneClassUtils(object):
     Helpers for ScPaneClass
     example:
         from scite_extend_ui import ScEditor
-        print(ScEditor.Utils.GetEolCharacter())
+        ScEditor.Utils.ExpandSelectionToIncludeEntireLines()
     '''
     pane = None
     def __init__(self, pane):
         self.pane = pane
-        
-    def GetAllText(self):
-        return self.pane.Textrange(0, self.pane.GetLength())
-        
-    def GetCurLine(self):
-        nLine = self.pane.LineFromPosition(self.pane.GetCurrentPos())
-        return self.pane.GetLine(nLine)
     
     def GetEolCharacter(self):
+        '''Return current EOL character, e.g. \r\n'''
         n = self.pane.GetEOLMode()
         if n == 0:
             return '\r\n'
@@ -161,6 +174,7 @@ class ScPaneClassUtils(object):
             return '\n'
             
     def ExpandSelectionToIncludeEntireLines(self):
+        '''Ensure entire lines are selected'''
         startline = self.pane.LineFromPosition(self.pane.GetSelectionStart())
         endline = self.pane.LineFromPosition(self.pane.GetSelectionEnd()) + 1
         startpos = self.pane.PositionFromLine(startline)
@@ -170,14 +184,13 @@ class ScPaneClassUtils(object):
         while self.pane.GetCharAt(endpos - 1) in (ord('\r'), ord('\n')):
             endpos -= 1
         self.pane.SetSelection(startpos, endpos)
-        
+
 class ScPaneClass(object):
     '''
-    represents a Scintilla window, either the main code editor or the output pane.
-    Methods beginning with 'Get' are property queries sent to Scintilla.
-    Methods beginning with 'Set' are property changes sent to Scintilla.
-    Methods beginning with 'Cmd' are commands sent to Scintilla.
-    See documentation for a list of supported methods.
+    represents a Scintilla window.
+    ScEditor is an instance of this class representing the main code editor.
+    ScOutput is an instance of this class representing the output pane.
+    See SciTEWithPythonAPIReference.html for a list of supported methods.
     example:
         from scite_extend_ui import ScEditor
         print('language is ' + ScEditor.GetLexerLanguage())
@@ -193,18 +206,30 @@ class ScPaneClass(object):
     
     # pane methods
     def PaneAppend(self, txt):
+        '''Append text'''
         return SciTEModule.pane_Append(self.paneNumber, txt)
 
     def PaneInsertText(self, txt, pos):
+        '''Insert text (without changing selection)'''
         return SciTEModule.pane_Insert(self.paneNumber, pos, txt)
         
+    def PaneWrite(self, txt, pos=None):
+        '''Insert text, and update selection'''
+        if pos is None:
+            pos = self.GetCurrentPos()
+        SciTEModule.pane_Insert(self.paneNumber, pos, txt)
+        self.GotoPos(pos + len(txt))
+        
     def PaneRemoveText(self, npos1, npos2):
+        '''Remove text between these positions'''
         return SciTEModule.pane_Remove(self.paneNumber, npos1, npos2)
         
     def PaneGetText(self, n1, n2):
+        '''Get text between these positions'''
         return SciTEModule.pane_Textrange(self.paneNumber, n1, n2)
     
-    def PaneFindText(self, s, pos1=0, pos2=-1, wholeWord=False, matchCase=False, regExp=False, flags=0): 
+    def PaneFindText(self, s, pos1=0, pos2=-1, wholeWord=False, matchCase=False, regExp=False, flags=0):
+        '''Find text'''
         if wholeWord:
             flags |= ScConst.SCFIND_WHOLEWORD
         if matchCase:
@@ -213,25 +238,23 @@ class ScPaneClass(object):
             flags |= ScConst.SCFIND_REGEXP
             
         return SciTEModule.pane_FindText(self.paneNumber, s, flags, pos1, pos2)
-        
-    def PaneWrite(self, txt, pos=None):
-        if pos is None:
-            pos = self.GetCurrentPos()
-        SciTEModule.pane_Insert(self.paneNumber, pos, txt)
-        self.GotoPos(pos + len(txt))
     
     # helpers where the Scintilla version is less convenient to use
     def GetLineText(self, line):
+        '''Returns text of specified line'''
         return self.GetLine(line)[0]
     
     def GetSelectedText(self):
+        '''Returns selected text'''
         return self.GetSelText()[0]
         
     def GetCurrentLineText(self):
+        '''Returns text of current line'''
         return self.GetCurLine()[0]
 
     # redirect most methods on this object to call into Scintilla.
     def __getattr__(self, sprop):
+        '''See SciTEWithPythonAPIReference.html for a list of supported methods.'''
         if sprop.startswith('_'):
             raise AttributeError()
         else:
