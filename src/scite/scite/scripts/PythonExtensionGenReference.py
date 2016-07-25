@@ -11,6 +11,19 @@ sys.path.append(srcRoot + "/scintilla/scripts")
 import Face
 from FileGenerator import Regenerate
 
+sectionsToHide = {
+	'Error handling':0,
+	'Mouse capture':0,
+	'Key bindings':0,
+	'Popup edit menu':0,
+	'Macro recording':0,
+	'Direct access':0,
+	'Multiple views':0,
+	'Background loading and saving':0,
+	'Notifications':0,
+	'Deprecated messages and notifications':0,
+}
+
 knownMissingFromGetScriptableInterface = dict(
 	SCI_GETTEXTRANGE=0, # use PaneGetText instead
 	SCI_GETSTYLEDTEXT=0,
@@ -323,8 +336,8 @@ def getScEditorFunctions(name, features, mapSymbolNameToExplanation):
 	mapSymbolNameToExplanation[featureDefineName] = [name, explanation, comment, 'Function', False]
 	
 def getScEditorPropertiesGetter(propname, property, mapSymbolNameToExplanation):
-	functionName = property['GetterName']
-	featureDefineName = "SCI_" + functionName.upper()
+	functionName = ('Get' + propname) if not propname.startswith('Get') else propname
+	featureDefineName = "SCI_" + property['GetterName'].upper()
 	explanation = ""
 	href = "<a href='http://www.scintilla.org/ScintillaDoc.html#" + featureDefineName + "'>"
 	hrefEnd = "</a>"
@@ -340,8 +353,8 @@ def getScEditorPropertiesGetter(propname, property, mapSymbolNameToExplanation):
 	mapSymbolNameToExplanation[featureDefineName] = [functionName, explanation, comment, 'Getter', False]
 	
 def getScEditorPropertiesSetter(propname, property, mapSymbolNameToExplanation):
-	functionName = property['SetterName']
-	featureDefineName = "SCI_" + functionName.upper()
+	functionName = ('Set' + propname) if not propname.startswith('Set') else propname
+	featureDefineName = "SCI_" + property['SetterName'].upper()
 	explanation = ""
 	href = "<a href='http://www.scintilla.org/ScintillaDoc.html#" + featureDefineName + "'>"
 	hrefEnd = "</a>"
@@ -395,6 +408,9 @@ def writeScEditorMethodsToFile(out):
 		
 	# within each section, sort by methodName
 	for sectionName in sections:
+		if sectionsToHide.get(sectionName, None) == 0:
+			continue
+		
 		out.write('<tr><td align="right"><i><br /><br /><br />%s</i></td><td>%s</td></tr>\n' % (sectionName, ''))
 		
 		# because the first item is methodName, this will sort by methodName.
@@ -456,7 +472,7 @@ def writeScConstMethods(out):
 	out.write("</table>\n")
 
 def RegenerateAll():
-	with open(os.path.join("..", "SciTEWithPythonAPIReference.html"), "w") as out:
+	with open("../bin/doc/SciTEWithPythonAPIReference.html", "w") as out:
 		out.write(startFile)
 		writeScAppMethods(out)
 		writeScEditorMethods(out)
