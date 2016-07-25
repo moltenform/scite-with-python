@@ -13,6 +13,16 @@ from FileGenerator import Regenerate
 def cell(s):
 	return "<td>%s</td>" % s
 
+def CommentString(prop):
+	if prop and prop["Comment"]:
+		return (" ".join(prop["Comment"])).replace("<", "&lt;")
+	return ""
+
+def replaceWholeWord(starget, sin, srep):
+    import re
+    sin = '\\b' + re.escape(sin) + '\\b'
+    return re.sub(sin, srep, starget)
+
 def getConstantsFromIFaceTableSrc():
 	# returns list of strings
 	results = []
@@ -148,6 +158,124 @@ def writeScConstMethodsToFile(out):
 			constant = 'ScConst.' + constant
 			out.write("<tr><td>%s</td></tr>\n" % (constant))
 
+def getScEditorFunctions(name, features, mapSymbolNameToExplanation):
+	featureDefineName = "SCI_" + name.upper()
+	explanation = ""
+	href = ""
+	hrefEnd = ""
+	href = "<a href='http://www.scintilla.org/ScintillaDoc.html#" + featureDefineName + "'>"
+	hrefEnd = "</a>"
+
+	if features['Param1Type'] in IFaceTableGen.nonScriptableTypes or features['Param2Type'] in IFaceTableGen.nonScriptableTypes:
+		return
+
+	parameters = ""
+	stringresult = ""
+	if features['Param2Type'] == "stringresult":
+		stringresult = "string "
+		if features['Param1Name'] and features['Param1Name'] != "length":
+			parameters += features['Param1Type'] + " " + features['Param1Name']
+	else:
+		if features['Param1Name']:
+			parameters += features['Param1Type'] + " " + features['Param1Name']
+			if features['Param1Name'] == "length" and features['Param2Type'] == "string":
+				# special case removal
+				parameters = ""
+		if features['Param2Name']:
+			if parameters:
+				parameters += ", "
+			parameters += features['Param2Type'] + " " + features['Param2Name']
+
+	returnType = stringresult
+	if not returnType and features["ReturnType"] != "void":
+		returnType = IFaceTableGen.convertStringResult(features["ReturnType"]) + " "
+
+	explanation += '%sScEditor.%s%s%s(%s)' % (
+		returnType,
+		href,
+		name,
+		hrefEnd,
+		parameters
+	)
+	
+	comment = ''
+	if features["Comment"]:
+		comment = '<span class="comment">%s</span>' % CommentString(features)
+
+	mapSymbolNameToExplanation[featureDefineName] = [explanation, comment, False]
+	
+def getScEditorPropertiesGetter(propname, property, mapSymbolNameToExplanation):
+	functionName = property['GetterName']
+	featureDefineName = "SCI_" + functionName.upper()
+	explanation = ""
+	href = "<a href='http://www.scintilla.org/ScintillaDoc.html#" + featureDefineName + "'>"
+	hrefEnd = "</a>"
+	explanation = property["PropertyType"] + " ScEditor." + href + functionName + hrefEnd + '('
+	if property["IndexParamType"] != "void":
+		explanation += property["IndexParamType"] + ' ' + property["IndexParamName"]
+	explanation += ')'
+	comment = ''
+	if property["GetterComment"]:
+		comment += '<span class="comment">%s</span>' % (property["GetterComment"].replace("<", "&lt;"))
+	
+	comment = comment.replace('-- ', '')
+	mapSymbolNameToExplanation[featureDefineName] = [explanation, comment, False]
+	
+def getScEditorPropertiesSetter(propname, property, mapSymbolNameToExplanation):
+	functionName = property['SetterName']
+	featureDefineName = "SCI_" + functionName.upper()
+	explanation = ""
+	href = "<a href='http://www.scintilla.org/ScintillaDoc.html#" + featureDefineName + "'>"
+	hrefEnd = "</a>"
+	explanation = "ScEditor." + href + functionName + hrefEnd + '('
+	if property["IndexParamType"] != "void":
+		explanation += property["IndexParamType"] + ' ' + property["IndexParamName"] + ', '
+	explanation += property["PropertyType"] + ' value)'
+	comment = ''
+	if property["SetterComment"]:
+		comment += '<span class="comment">%s</span>' % (property["SetterComment"].replace("<", "&lt;"))
+	
+	comment = comment.replace('-- ', '')
+	mapSymbolNameToExplanation[featureDefineName] = [explanation, comment, False]
+	
+def writeScEditorMethodsToFile(out):
+	import re
+	f = Face.Face()
+	f.ReadFromFile(srcRoot + "/scintilla/include/Scintilla.iface")
+	idsInOrder = IFaceTableGen.idsFromDocumentation(srcRoot + "/scintilla/doc/ScintillaDoc.html")
+	(constants, functions, properties) = IFaceTableGen.GetScriptableInterface(f)
+	mapSymbolNameToExplanation = {}
+	
+	for name, features in functions:
+		getScEditorFunctions(name, features, mapSymbolNameToExplanation)
+		
+	for propname, property in properties:
+		if property['GetterName']:
+			getScEditorPropertiesGetter(propname, property, mapSymbolNameToExplanation)
+		if property['SetterName']:
+			getScEditorPropertiesSetter(propname, property, mapSymbolNameToExplanation)
+		
+	lastSegment = ""
+	for segment, featureId in idsInOrder:
+		if featureId in mapSymbolNameToExplanation:
+			if segment != lastSegment:
+				out.write('<tr><td align="right"><i>%s</i></td><td>%s</td></tr>\n' % (segment, ''))
+				lastSegment = segment
+			parts = mapSymbolNameToExplanation[featureId]
+			explanation, comment, seen = parts
+			explanation = replaceWholeWord(explanation, 'position', 'int')
+			explanation = replaceWholeWord(explanation, 'stringresult', 'string')
+			comment = comment.replace('Result is NUL-terminated.', '').replace('NUL terminated text argument.', '')
+			out.write("<tr><td>%s</td><td>%s</td></tr>\n" % (explanation, comment))
+			parts[2] = True
+		else:
+			print 'warning: featureID %s not seen '%featureId
+	
+	for key in mapSymbolNameToExplanation:
+		parts = mapSymbolNameToExplanation[key]
+		if not parts[2]:
+			print 'warning: featureId for %s not in idsInOrder' % parts[0]
+
 startFile = """
 <?xml version="1.0"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
@@ -166,13 +294,19 @@ startFile = """
 
 def writeScAppMethods(out):
 	out.write("<h2>ScApp methods</h2>\n")
-	out.write("<table>\n")
+	out.write("<table><tr><th> </th><th> </th></tr>\n")
 	writeScAppMethodsToFile(out)
 	out.write("</table>\n")
-
+	
+def writeScEditorMethods(out):
+	out.write("<h2>ScEditor (and ScOutput) methods</h2>\n")
+	out.write('<table><tr><th style="width:35em"> </th><th> </th></tr>\n')
+	writeScEditorMethodsToFile(out)
+	out.write("</table>\n")
+	
 def writeScConstMethods(out):
 	out.write("<h2>ScConst properties and methods</h2>\n")
-	out.write("<table>\n")
+	out.write("<table><tr><th> </th></tr>\n")
 	writeScConstMethodsToFile(out)
 	out.write("</table>\n")
 
@@ -180,6 +314,7 @@ def RegenerateAll():
 	with open(os.path.join("..", "SciTEWithPythonAPIReference.html"), "w") as out:
 		out.write(startFile)
 		writeScAppMethods(out)
+		writeScEditorMethods(out)
 		writeScConstMethods(out)
 		out.write("</body>\n</html>\n")
 	
