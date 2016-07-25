@@ -11,19 +11,112 @@ sys.path.append(srcRoot + "/scintilla/scripts")
 import Face
 from FileGenerator import Regenerate
 
-knownSkipped = dict(
-	SCI_GETTEXTRANGE=1, # use PaneGetText instead
-	SCI_GETSTYLEDTEXT=1,
-	SCI_ADDSTYLEDTEXT=1,
-	SCI_FINDTEXT=1, # use PaneFindText instead
-	SCI_FORMATRANGE=1,
-	SCI_SETUSEPALETTE=1, # deprecated
-	SCI_GETUSEPALETTE=1, # deprecated
-	SCI_GETKEYSUNICODE=1, # deprecated
-	SCI_SETKEYSUNICODE=1, # deprecated
-	StyleByteIndicators=1, # no longer supported
-	message=1
+knownMissingFromGetScriptableInterface = dict(
+	SCI_GETTEXTRANGE=0, # use PaneGetText instead
+	SCI_GETSTYLEDTEXT=0,
+	SCI_ADDSTYLEDTEXT=0,
+	SCI_FINDTEXT=0, # use PaneFindText instead
+	SCI_FORMATRANGE=0,
+	SCI_SETUSEPALETTE=0, # deprecated
+	SCI_GETUSEPALETTE=0, # deprecated
+	SCI_GETKEYSUNICODE=0, # deprecated
+	SCI_SETKEYSUNICODE=0, # deprecated
+	StyleByteIndicators=0, # no longer supported
+	message=0
 	)
+
+knownMissingFromIdsInOrder = dict(
+	SCI_FORMFEED=0,
+	SCI_SCROLLTOSTART=1, # still useful
+	SCI_CHARRIGHTRECTEXTEND=0,
+	SCI_LINEDOWNRECTEXTEND=0,
+	SCI_WORDRIGHT=1, # still useful
+	SCI_LINEEND=0,
+	SCI_STUTTEREDPAGEUPEXTEND=0,
+	SCI_STUTTEREDPAGEDOWN=0,
+	SCI_LINEUPRECTEXTEND=0,
+	SCI_DELWORDRIGHTEND=0,
+	SCI_WORDPARTLEFTEXTEND=0,
+	SCI_PAGEUPEXTEND=0,
+	SCI_WORDPARTRIGHTEXTEND=0,
+	SCI_LINECOPY=0,
+	SCI_VCHOMEDISPLAY=0,
+	SCI_LINEENDWRAP=0,
+	SCI_HOMEDISPLAY=0,
+	SCI_DOCUMENTENDEXTEND=0,
+	SCI_HOMERECTEXTEND=0,
+	SCI_PARAUPEXTEND=0,
+	SCI_PAGEUPRECTEXTEND=0,
+	SCI_WORDLEFTEND=0,
+	SCI_VCHOME=0,
+	SCI_CANCEL=1, # still useful
+	SCI_LINEDOWNEXTEND=0,
+	SCI_LINEDELETE=0,
+	SCI_WORDPARTLEFT=0,
+	SCI_LINEUPEXTEND=0,
+	SCI_DELLINERIGHT=0,
+	SCI_DELWORDLEFT=0,
+	SCI_CHARRIGHT=0,
+	SCI_HOMEDISPLAYEXTEND=0,
+	SCI_PRIVATELEXERCALL=1, # still useful
+	SCI_WORDLEFTENDEXTEND=0,
+	SCI_SETSTYLEBITS=0,
+	SCI_PAGEDOWN=0,
+	SCI_PARAUP=1, # still useful
+	SCI_DOCUMENTEND=0,
+	SCI_CHARLEFTRECTEXTEND=0,
+	SCI_VCHOMEDISPLAYEXTEND=0,
+	SCI_LINETRANSPOSE=0,
+	SCI_LOWERCASE=1, # still useful
+	SCI_DELWORDRIGHT=0,
+	SCI_SCROLLTOEND=0,
+	SCI_LINECUT=0,
+	SCI_HOME=0,
+	SCI_LINEDOWN=0,
+	SCI_SELECTIONDUPLICATE=0,
+	SCI_LINEUP=0,
+	SCI_DOCUMENTSTARTEXTEND=0,
+	SCI_LINEENDWRAPEXTEND=0,
+	SCI_VCHOMEEXTEND=0,
+	SCI_VERTICALCENTRECARET=0,
+	SCI_PARADOWN=1, # still useful
+	SCI_HOMEWRAPEXTEND=0,
+	SCI_HOMEWRAP=0,
+	SCI_LINEENDRECTEXTEND=0,
+	SCI_LINESCROLLDOWN=1, # still useful
+	SCI_LINEDUPLICATE=0,
+	SCI_DOCUMENTSTART=0,
+	SCI_WORDLEFT=1, # still useful
+	SCI_CHARLEFT=0,
+	SCI_UPPERCASE=1, # still useful
+	SCI_WORDRIGHTENDEXTEND=0,
+	SCI_EDITTOGGLEOVERTYPE=0,
+	SCI_LINEENDEXTEND=0,
+	SCI_WORDRIGHTEND=0,
+	SCI_WORDPARTRIGHT=0,
+	SCI_DELETEBACK=0,
+	SCI_PAGEUP=1, # still useful
+	SCI_WORDLEFTEXTEND=0,
+	SCI_LINEENDDISPLAYEXTEND=0,
+	SCI_STUTTEREDPAGEUP=0,
+	SCI_PAGEDOWNRECTEXTEND=0,
+	SCI_HOMEEXTEND=0,
+	SCI_PARADOWNEXTEND=0,
+	SCI_LINESCROLLUP=1, # still useful
+	SCI_WORDRIGHTEXTEND=0,
+	SCI_VCHOMERECTEXTEND=0,
+	SCI_DELLINELEFT=0,
+	SCI_PAGEDOWNEXTEND=0,
+	SCI_BACKTAB=1, # still useful
+	SCI_VCHOMEWRAPEXTEND=0,
+	SCI_NEWLINE=0,
+	SCI_CHARRIGHTEXTEND=0,
+	SCI_CHARLEFTEXTEND=0,
+	SCI_STUTTEREDPAGEDOWNEXTEND=0,
+	SCI_VCHOMEWRAP=0,
+	SCI_DELETEBACKNOTLINE=0,
+	SCI_TAB=1, # still useful
+	SCI_LINEENDDISPLAY=0)
 
 def cell(s):
 	return "<td>%s</td>" % s
@@ -290,8 +383,9 @@ def writeScEditorMethodsToFile(out):
 				sections[sectionName] = []
 			
 			sections[sectionName].append(mapSymbolNameToExplanation[featureId])
-		elif featureId not in knownSkipped:
-			print 'GetScriptableInterface said to skip featureID %s, add to knownSkipped if this looks right.'%featureId
+		elif featureId not in knownMissingFromGetScriptableInterface:
+			print('GetScriptableInterface said to skip featureID %s, ' + 
+				'add to knownMissingFromGetScriptableInterface if this looks right.' % featureId)
 		
 	# within each section, sort by methodName
 	for sectionName in sections:
@@ -303,11 +397,23 @@ def writeScEditorMethodsToFile(out):
 			writeScEditorOutput(parts, out)
 			parts[4] = True
 	
-	# were there any methods skipped?
+	# get remaining methods that weren't in IdsInOrder
+	remaining = []
 	for key in mapSymbolNameToExplanation:
 		parts = mapSymbolNameToExplanation[key]
 		if not parts[4]:
-			print 'warning: idsInOrder did not contain featureId %s ' % parts[0]
+			shouldInclude = knownMissingFromIdsInOrder.get(key, None)
+			if key is None:
+				print('IdsInOrder did not contain featureId %s, please add to knownMissingFromIdsInOrder.' % key)
+			elif shouldInclude:
+				remaining.append(parts)
+	
+	# write keyboard commands
+	out.write('<tr><td align="right"><i><br /><br /><br />%s</i></td><td>%s</td></tr>\n' % ('Keyboard commands', ''))
+	remaining.sort()
+	for parts in remaining:
+		writeScEditorOutput(parts, out)
+
 
 startFile = """
 <?xml version="1.0"?>
