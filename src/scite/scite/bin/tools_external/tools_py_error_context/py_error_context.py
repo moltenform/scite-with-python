@@ -24,6 +24,7 @@ import runpy
 
 revstack = True
 ignoreduplicates = True
+maxPrintLen = 400
 ignorelist = ['__name__', '__doc__', '__file__', '__package__']
 
 def print_exc_vars():
@@ -64,7 +65,9 @@ def print_exc_vars():
         for key, value in frame.f_locals.items():
             try:
                 if key not in ignorelist and str(value).find("<module") == -1 and str(value).find("<function") == -1:
-                    print("%s = %s" % (key, printer.pformat(value)))
+                    strValue = printer.pformat(value)
+                    toPrint = strValue if len(strValue) < maxPrintLen else (strValue[0:maxPrintLen] + '...(TRUNCATED)')
+                    print("%s = %s" % (key, toPrint))
                     if ignoreduplicates:
                         ignorelist.append(key)
             except:

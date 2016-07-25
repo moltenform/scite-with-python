@@ -10,9 +10,14 @@ def onCloseTag():
     lexerLanguage = ScEditor.GetLexerLanguage()
 
 def getTextToInsertOnOpenParen(lexerLanguage):
+    from scite_extend_ui import ScEditor
+    lineText, linePos = ScEditor.GetCurLine()
+    
+    # if there is a subsequent character and it is not whitespace, do nothing.
+    if linePos < len(lineText) and lineText[linePos].strip():
+        return None
+        
     if lexerLanguage == 'python':
-        from scite_extend_ui import ScEditor
-        lineText, linePos = ScEditor.GetCurLine()
         if lineText.startswith('    def ') and not ')' in lineText:
             # because it's indented, this looks like a class method, so let's add the self parameter
             return 'self)'
