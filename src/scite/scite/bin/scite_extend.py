@@ -384,7 +384,10 @@ def registerCustomCommand(heuristicDuplicateShortcut, command, number):
     shortcutTemporary = ScApp.GetProperty('customcommand.' + command + '.shortcut')
     modeTemporary = ScApp.GetProperty('customcommand.' + command + '.mode')
     stdinTemporary = ScApp.GetProperty('customcommand.' + command + '.stdin')
-    actionTemporary, subsystem = findChosenProperty(command, ['waitforcomplete_console', 'waitforcomplete', 'start', 'py'])
+    actionTemporary, subsystem = findChosenProperty(command, \
+        ['waitforcomplete_console', 'waitforcomplete', 'start', 'py_immediate', 'py'])
+    
+    isPython = subsystem and subsystem.startswith('py')
     
     if not filetypes:
         filetypes = '*'
@@ -395,7 +398,7 @@ def registerCustomCommand(heuristicDuplicateShortcut, command, number):
     if not nameTemporary:
         assert False, 'in command %s, must define a name' % command
         
-    if not callbacks and (path and subsystem != 'py'):
+    if not callbacks and (path and not isPython):
         assert False, 'in command %s, currently path is only needed for python modules' % command
     
     if shortcutTemporary and shortcutTemporary.lower() in heuristicDuplicateShortcut:
@@ -409,6 +412,9 @@ def registerCustomCommand(heuristicDuplicateShortcut, command, number):
     if not callbacks and (not actionTemporary or not subsystem):
         assert False, 'in command %s, must define exactly one action' % command
     
+    if subsystem == 'py_immediate' and actionTemporary and '$(' in actionTemporary:
+        assert False, 'in command %s, py_immediate actions cannot contain $() expansions'
+    
     # map subsystem names to SciTE's subsystem names
     if subsystem == 'waitforcomplete_console':
         modePrefix = 'subsystem:console,savebefore:no'
@@ -416,6 +422,8 @@ def registerCustomCommand(heuristicDuplicateShortcut, command, number):
         modePrefix = 'subsystem:windows,savebefore:no'
     elif subsystem == 'start':
         modePrefix = 'subsystem:shellexec,savebefore:no'
+    elif subsystem == 'py_immediate':
+        modePrefix = 'subsystem:immediate,savebefore:no'
     else:
         modePrefix = 'subsystem:director,savebefore:no'
     
@@ -423,7 +431,7 @@ def registerCustomCommand(heuristicDuplicateShortcut, command, number):
         modePrefix += ','
     
     actionPrefix = ''
-    if subsystem == 'py':
+    if subsystem and isPython:
         actionPrefix = 'py:from scite_extend_ui import *; '
         if 'ThisModule()' in actionTemporary:
             assert path, 'in command %s, use of ThisModule requires setting .path'
@@ -433,16 +441,27 @@ def registerCustomCommand(heuristicDuplicateShortcut, command, number):
         registerCallbacks(command, path, callbacks)
     
     if actionTemporary:
+        # the immediate subsystem apparently doesn't run $() expanation, and so set the action directly.
+        if subsystem == 'py_immediate':
+            actionSet = actionPrefix + ' ' + actionTemporary
+        else:
+            actionSet = actionPrefix + '$(customcommand.' + command + '.action.' + subsystem + ')'
+            
         ScApp.SetProperty('command.name.%d.%s' % (number, filetypes), '$(customcommand.' + command + '.name)')
         ScApp.SetProperty('command.shortcut.%d.%s' % (number, filetypes), '$(customcommand.' + command + '.shortcut)')
         ScApp.SetProperty('command.mode.%d.%s' % (number, filetypes), modePrefix + '$(customcommand.' + command + '.mode)')
         ScApp.SetProperty('command.input.%d.%s' % (number, filetypes), '$(customcommand.' + command + '.stdin)')
-        ScApp.SetProperty('command.%d.%s' % (number, filetypes), actionPrefix + '$(customcommand.' + command + '.action.' + subsystem + ')')
-        
-# create singleton instances
-ScEditor = ScPaneClass(0)
-ScOutput = ScPaneClass(1)
-ScApp = ScAppClass()
-ScConst = ScConstClass()
-lookForRegistration()
+        ScApp.SetProperty('command.%d.%s' % (number, filetypes), actionSet)
+
+try:
+    # create singleton instances
+    ScEditor = ScPaneClass(0)
+    ScOutput = ScPaneClass(1)
+    ScApp = ScAppClass()
+    ScConst = ScConstClass()
+    lookForRegistration()
+except:
+    import traceback
+    traceback.print_exc()
+    raise
 
