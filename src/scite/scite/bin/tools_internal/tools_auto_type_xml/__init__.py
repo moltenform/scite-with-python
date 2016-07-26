@@ -91,7 +91,7 @@ def OnChar(key):
 if __name__ == '__main__':
     from ben_python_common import assertEq
     
-    # a helpre so that you can use the | character to indicate caret position
+    # a helper so that you can use the | character to indicate caret position
     def testGetTextToInsertOnCloseTag(expected, input):
         before, after = input.split('|')
         lineText = before + after
