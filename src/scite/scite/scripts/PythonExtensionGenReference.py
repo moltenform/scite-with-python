@@ -40,96 +40,96 @@ knownMissingFromGetScriptableInterface = dict(
 
 knownMissingFromIdsInOrder = dict(
 	SCI_FORMFEED=0,
-	SCI_SCROLLTOSTART=1, # still useful
-	SCI_CHARRIGHTRECTEXTEND=0,
-	SCI_LINEDOWNRECTEXTEND=0,
-	SCI_WORDRIGHT=1, # still useful
-	SCI_LINEEND=0,
+	SCI_SCROLLTOSTART=1,
+	SCI_CHARRIGHTRECTEXTEND=1,
+	SCI_LINEDOWNRECTEXTEND=1,
+	SCI_WORDRIGHT=1,
+	SCI_LINEEND=1,
 	SCI_STUTTEREDPAGEUPEXTEND=0,
 	SCI_STUTTEREDPAGEDOWN=0,
-	SCI_LINEUPRECTEXTEND=0,
-	SCI_DELWORDRIGHTEND=0,
-	SCI_WORDPARTLEFTEXTEND=0,
-	SCI_PAGEUPEXTEND=0,
-	SCI_WORDPARTRIGHTEXTEND=0,
-	SCI_LINECOPY=0,
-	SCI_VCHOMEDISPLAY=0,
-	SCI_LINEENDWRAP=0,
+	SCI_LINEUPRECTEXTEND=1,
+	SCI_DELWORDRIGHTEND=1,
+	SCI_WORDPARTLEFTEXTEND=1,
+	SCI_PAGEUPEXTEND=1,
+	SCI_WORDPARTRIGHTEXTEND=1,
+	SCI_LINECOPY=1,
+	SCI_VCHOMEDISPLAY=1,
+	SCI_LINEENDWRAP=1,
 	SCI_HOMEDISPLAY=0,
-	SCI_DOCUMENTENDEXTEND=0,
-	SCI_HOMERECTEXTEND=0,
-	SCI_PARAUPEXTEND=0,
-	SCI_PAGEUPRECTEXTEND=0,
-	SCI_WORDLEFTEND=0,
-	SCI_VCHOME=0,
-	SCI_CANCEL=1, # still useful
-	SCI_LINEDOWNEXTEND=0,
-	SCI_LINEDELETE=0,
-	SCI_WORDPARTLEFT=0,
-	SCI_LINEUPEXTEND=0,
+	SCI_DOCUMENTENDEXTEND=1,
+	SCI_HOMERECTEXTEND=1,
+	SCI_PARAUPEXTEND=1,
+	SCI_PAGEUPRECTEXTEND=1,
+	SCI_WORDLEFTEND=1,
+	SCI_VCHOME=1,
+	SCI_CANCEL=1,
+	SCI_LINEDOWNEXTEND=1,
+	SCI_LINEDELETE=1,
+	SCI_WORDPARTLEFT=1,
+	SCI_LINEUPEXTEND=1,
 	SCI_DELLINERIGHT=0,
-	SCI_DELWORDLEFT=0,
-	SCI_CHARRIGHT=0,
+	SCI_DELWORDLEFT=1,
+	SCI_CHARRIGHT=1,
 	SCI_HOMEDISPLAYEXTEND=0,
-	SCI_PRIVATELEXERCALL=1, # still useful
-	SCI_WORDLEFTENDEXTEND=0,
-	SCI_SETSTYLEBITS=0,
-	SCI_PAGEDOWN=0,
-	SCI_PARAUP=1, # still useful
-	SCI_DOCUMENTEND=0,
-	SCI_CHARLEFTRECTEXTEND=0,
-	SCI_VCHOMEDISPLAYEXTEND=0,
-	SCI_LINETRANSPOSE=0,
-	SCI_LOWERCASE=1, # still useful
-	SCI_DELWORDRIGHT=0,
-	SCI_SCROLLTOEND=0,
-	SCI_LINECUT=0,
-	SCI_HOME=0,
-	SCI_LINEDOWN=0,
-	SCI_SELECTIONDUPLICATE=0,
-	SCI_LINEUP=0,
-	SCI_DOCUMENTSTARTEXTEND=0,
-	SCI_LINEENDWRAPEXTEND=0,
-	SCI_VCHOMEEXTEND=0,
+	SCI_PRIVATELEXERCALL=1,
+	SCI_WORDLEFTENDEXTEND=1,
+	SCI_SETSTYLEBITS=0, # deprecated
+	SCI_PAGEDOWN=1,
+	SCI_PARAUP=1,
+	SCI_DOCUMENTEND=1,
+	SCI_CHARLEFTRECTEXTEND=1,
+	SCI_VCHOMEDISPLAYEXTEND=1,
+	SCI_LINETRANSPOSE=1,
+	SCI_LOWERCASE=1,
+	SCI_DELWORDRIGHT=1,
+	SCI_SCROLLTOEND=1,
+	SCI_LINECUT=1,
+	SCI_HOME=1,
+	SCI_LINEDOWN=1,
+	SCI_SELECTIONDUPLICATE=1,
+	SCI_LINEUP=1,
+	SCI_DOCUMENTSTARTEXTEND=1,
+	SCI_LINEENDWRAPEXTEND=1,
+	SCI_VCHOMEEXTEND=1,
 	SCI_VERTICALCENTRECARET=0,
-	SCI_PARADOWN=1, # still useful
-	SCI_HOMEWRAPEXTEND=0,
-	SCI_HOMEWRAP=0,
-	SCI_LINEENDRECTEXTEND=0,
-	SCI_LINESCROLLDOWN=1, # still useful
-	SCI_LINEDUPLICATE=0,
-	SCI_DOCUMENTSTART=0,
-	SCI_WORDLEFT=1, # still useful
-	SCI_CHARLEFT=0,
-	SCI_UPPERCASE=1, # still useful
-	SCI_WORDRIGHTENDEXTEND=0,
+	SCI_PARADOWN=1,
+	SCI_HOMEWRAPEXTEND=1,
+	SCI_HOMEWRAP=1,
+	SCI_LINEENDRECTEXTEND=1,
+	SCI_LINESCROLLDOWN=1,
+	SCI_LINEDUPLICATE=1,
+	SCI_DOCUMENTSTART=1,
+	SCI_WORDLEFT=1,
+	SCI_CHARLEFT=1,
+	SCI_UPPERCASE=1,
+	SCI_WORDRIGHTENDEXTEND=1,
 	SCI_EDITTOGGLEOVERTYPE=0,
-	SCI_LINEENDEXTEND=0,
-	SCI_WORDRIGHTEND=0,
-	SCI_WORDPARTRIGHT=0,
-	SCI_DELETEBACK=0,
-	SCI_PAGEUP=1, # still useful
-	SCI_WORDLEFTEXTEND=0,
-	SCI_LINEENDDISPLAYEXTEND=0,
+	SCI_LINEENDEXTEND=1,
+	SCI_WORDRIGHTEND=1,
+	SCI_WORDPARTRIGHT=1,
+	SCI_DELETEBACK=1,
+	SCI_PAGEUP=1,
+	SCI_WORDLEFTEXTEND=1,
+	SCI_LINEENDDISPLAYEXTEND=1,
 	SCI_STUTTEREDPAGEUP=0,
-	SCI_PAGEDOWNRECTEXTEND=0,
-	SCI_HOMEEXTEND=0,
-	SCI_PARADOWNEXTEND=0,
-	SCI_LINESCROLLUP=1, # still useful
-	SCI_WORDRIGHTEXTEND=0,
-	SCI_VCHOMERECTEXTEND=0,
+	SCI_PAGEDOWNRECTEXTEND=1,
+	SCI_HOMEEXTEND=1,
+	SCI_PARADOWNEXTEND=1,
+	SCI_LINESCROLLUP=1,
+	SCI_WORDRIGHTEXTEND=1,
+	SCI_VCHOMERECTEXTEND=1,
 	SCI_DELLINELEFT=0,
-	SCI_PAGEDOWNEXTEND=0,
-	SCI_BACKTAB=1, # still useful
-	SCI_VCHOMEWRAPEXTEND=0,
+	SCI_PAGEDOWNEXTEND=1,
+	SCI_BACKTAB=1,
+	SCI_VCHOMEWRAPEXTEND=1,
 	SCI_NEWLINE=0,
-	SCI_CHARRIGHTEXTEND=0,
-	SCI_CHARLEFTEXTEND=0,
+	SCI_CHARRIGHTEXTEND=1,
+	SCI_CHARLEFTEXTEND=1,
 	SCI_STUTTEREDPAGEDOWNEXTEND=0,
-	SCI_VCHOMEWRAP=0,
+	SCI_VCHOMEWRAP=1,
 	SCI_DELETEBACKNOTLINE=0,
-	SCI_TAB=1, # still useful
-	SCI_LINEENDDISPLAY=0)
+	SCI_TAB=1,
+	SCI_LINEENDDISPLAY=1)
 
 def cell(s):
 	return "<td>%s</td>" % s
@@ -289,7 +289,7 @@ def getScEditorFunctions(name, features, mapSymbolNameToExplanation):
 	explanation = ""
 	href = ""
 	hrefEnd = ""
-	href = "<a href='http://www.scintilla.org/ScintillaDoc.html#" + featureDefineName + "'>"
+	href = '<a href="http://www.scintilla.org/ScintillaDoc.html#' + featureDefineName + '">'
 	hrefEnd = "</a>"
 
 	if features['Param1Type'] in IFaceTableGen.nonScriptableTypes or features['Param2Type'] in IFaceTableGen.nonScriptableTypes:
@@ -339,7 +339,7 @@ def getScEditorPropertiesGetter(propname, property, mapSymbolNameToExplanation):
 	functionName = ('Get' + propname) if not propname.startswith('Get') else propname
 	featureDefineName = "SCI_" + property['GetterName'].upper()
 	explanation = ""
-	href = "<a href='http://www.scintilla.org/ScintillaDoc.html#" + featureDefineName + "'>"
+	href = '<a href="http://www.scintilla.org/ScintillaDoc.html#' + featureDefineName + '">'
 	hrefEnd = "</a>"
 	explanation = property["PropertyType"] + " ScEditor." + href + functionName + hrefEnd + '('
 	if property["IndexParamType"] != "void":
@@ -356,7 +356,7 @@ def getScEditorPropertiesSetter(propname, property, mapSymbolNameToExplanation):
 	functionName = ('Set' + propname) if not propname.startswith('Set') else propname
 	featureDefineName = "SCI_" + property['SetterName'].upper()
 	explanation = ""
-	href = "<a href='http://www.scintilla.org/ScintillaDoc.html#" + featureDefineName + "'>"
+	href = '<a href="http://www.scintilla.org/ScintillaDoc.html#' + featureDefineName + '">'
 	hrefEnd = "</a>"
 	explanation = "ScEditor." + href + functionName + hrefEnd + '('
 	if property["IndexParamType"] != "void":
@@ -377,6 +377,7 @@ def writeScEditorOutput(parts, out):
 	out.write("<tr><td>%s</td><td>%s</td></tr>\n" % (explanation, comment))
 
 def writeScEditorMethodsToFile(out):
+	import re
 	f = Face.Face()
 	f.ReadFromFile(srcRoot + "/scintilla/include/Scintilla.iface")
 	idsInOrder = IFaceTableGen.idsFromDocumentation(srcRoot + "/scintilla/doc/ScintillaDoc.html")
@@ -411,7 +412,8 @@ def writeScEditorMethodsToFile(out):
 		if sectionsToHide.get(sectionName, None) == 0:
 			continue
 		
-		out.write('<tr><td align="right"><i><br /><br /><br />%s</i></td><td>%s</td></tr>\n' % (sectionName, ''))
+		out.write('<tr><td align="right"><i><br /><br /><br />%s</i></td><td>%s</td></tr>\n' %
+			(sectionName, ''))
 		
 		# because the first item is methodName, this will sort by methodName.
 		sections[sectionName].sort()
@@ -431,9 +433,16 @@ def writeScEditorMethodsToFile(out):
 				remaining.append(parts)
 	
 	# write keyboard commands
-	out.write('<tr><td align="right"><i><br /><br /><br />%s</i></td><td>%s</td></tr>\n' % ('Keyboard commands', ''))
+	out.write('<tr><td align="right"><i><br /><br /><br />%s</i></td><td>%s</td></tr>\n' %
+		('Commands typically bound to key presses', ''))
 	remaining.sort()
+	reFindShortcuts = re.compile(re.escape('http://www.scintilla.org/ScintillaDoc.html#') + r'[^"]+"')
+	replaceWith = 'http://www.scintilla.org/ScintillaDoc.html#KeyboardCommands"'
 	for parts in remaining:
+		# these don't have specific anchor tags, so rewrite the link to point at #KeyboardCommands
+		replaced = reFindShortcuts.sub(replaceWith, parts[1])
+		assert parts[1] != replaced
+		parts[1] = replaced
 		writeScEditorOutput(parts, out)
 
 
