@@ -204,12 +204,13 @@ class ScMultiKeyChoiceClass(object):
     Provide a list in the form 'C|choiceID|Shown In UI', where C is a capitol alphanumeric char,
     and a callback which will be sent choiceID.
     '''
-    def __init__(self, choices, callback, label='Please choose:'):
+    def __init__(self, choices, callback, showPerforming=True, label='Please choose:'):
         if len(choices) == 0 or not '|' in choices[0]:
             raise ValueError('choices must be a non-empty list of strings')
 
         self.callback = callback
         self.label = label
+        self.showPerforming = showPerforming
         self.choiceKeys = []
         self.choiceIDs = []
         self.choiceShown = []
@@ -258,15 +259,21 @@ class ScMultiKeyChoiceClass(object):
     
     def OnKey(self, key, shift, ctrl, alt):
         escapeKeyCode = 27
-        if not shift and not ctrl and not alt:
+        modifierKeys = (16, 17, 18)
+        if key and key not in modifierKeys:
             # exit the key-swallowing mode, even if an exception is thrown later
             ScMultiKeyManager.SetActiveKeyListener(None)
             
             try:
                 self.EraseInstructions()
-                index = self.GetChoiceIDFromKey(key)
+                index = None
+                
+                if not shift and not ctrl and not alt:
+                    index = self.GetChoiceIDFromKey(key)
+                    
                 if index is not None:
-                    print('Performing ' + self.choiceShown[index] + '...')
+                    if self.showPerforming:
+                        print('Performing ' + self.choiceShown[index] + '...')
                     self.callback(self.choiceIDs[index])
                     print('Done')
                 elif key == ord('Q') or key == escapeKeyCode:
