@@ -39,9 +39,9 @@ def print_exc_vars():
         #Python 2.4 or above
         atrace = traceback.format_exc().split('\n  File')
         if atrace[-1].find('DEBUG') == -1:
-            print("\n  File " + str(atrace[-1]).strip())
+            print('\n  File ' + str(atrace[-1]).strip())
         else:
-            print("\n  File " + str(atrace[-1].split(',')[1]) + ' Breakpoint')
+            print('\n  File ' + str(atrace[-1].split(',')[1]) + ' Breakpoint')
     except:
         traceback.print_exc()
     
@@ -50,7 +50,7 @@ def print_exc_vars():
     
     for frame in stack:
         # skip the frame that is py_error_context.py itself, it's not useful to show
-        if frame.f_code.co_filename.endswith("py_error_context.py"):
+        if frame.f_code.co_filename.endswith('py_error_context.py'):
             continue
         
         # skip runpy, it's not useful to show
@@ -64,16 +64,16 @@ def print_exc_vars():
         print('\n  File "%s", line %s, in %s' % (frame.f_code.co_filename, frame.f_lineno, frame.f_code.co_name))
         for key, value in frame.f_locals.items():
             try:
-                if key not in ignorelist and str(value).find("<module") == -1 and str(value).find("<function") == -1:
+                if key not in ignorelist and str(value).find('<module') == -1 and str(value).find('<function') == -1:
                     strValue = printer.pformat(value)
                     toPrint = strValue if len(strValue) < maxPrintLen else (strValue[0:maxPrintLen] + '...(TRUNCATED)')
-                    print("%s = %s" % (key, toPrint))
+                    print('%s = %s' % (key, toPrint))
                     if ignoreduplicates:
                         ignorelist.append(key)
             except:
                 # We have to be careful not to cause a new error in our error printer.
                 # Calling str() on an unknown object could cause an error we don't want.
-                print "<ERROR WHILE PRINTING VALUE>"
+                print('<ERROR WHILE PRINTING VALUE>')
 
 def prepare_and_exec(filename):
      # add dir to sys.path
@@ -94,8 +94,8 @@ if __name__ == '__main__':
     args = list(sys.argv)
     if len(args)>1:
         if args[1].find('py_error_context.py') != -1:
-            print "Cannot use py_error_context on itself :)"
+            print('Cannot use py_error_context on itself :)')
         else:
            prepare_and_exec(args[1])
     else:
-        print "Usage: py_error_context.py nameofscript.py"
+        print('Usage: py_error_context.py nameofscript.py')

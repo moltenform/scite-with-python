@@ -1,27 +1,21 @@
 
 debugTracing = False
 
-class State(object):
-    def __init__(self):
-        if debugTracing:
-            print 'new State'
-        self.currentFilename = 'not set'
-
 def OnOpen(filename):
     if debugTracing:
         print 'plugin saw OnOpen', filename
-    state.currentFilename = filename
 
 def OnFileChange():
     if debugTracing:
-        print 'plugin saw OnFileChange'
+        print('plugin saw OnFileChange')
 
 def OnClose(filename):
     if debugTracing:
-        print 'plugin saw OnClose', filename
+        print('plugin saw OnClose' + filename)
 
-def PrintCurrent():
-    print 'plugin says that the current filename is %s' % (state.currentFilename)
+def CallSubmodule():
+    import ExampleSubmodule
+    ExampleSubmodule.CallSubmodule()
 
 def OnKey(*args):
     import ExampleSubmodule
@@ -31,4 +25,4 @@ def OnUserStrip(*args):
     import ExampleSubmodule
     return ExampleSubmodule.OnUserStrip(*args)
 
-state = State()
+print('Loading the module. Expect to see this message only once.')
