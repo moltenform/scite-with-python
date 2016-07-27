@@ -12,18 +12,27 @@ def getCurrentPane():
     else:
         return None
 
-def doesStringBeginAndEndWithNewlines(s):
-    if not s:
+newlineChars = (ord('\r'), ord('\n'))
+
+def doesStringBeginWithCrnl(pos, fnCharAt):
+    return fnCharAt(pos) == newlineChars[0] and fnCharAt(pos + 1) == newlineChars[1]
+    
+def doesStringBeginAndEndWithNewlines(pos1, pos2, fnCharAt):
+    if pos1 >= pos2:
         return False
     
-    if len(s.replace('\r\n', '\n')) < 2:
+    if pos2 - pos1 == 1 and fnCharAt(pos1) in newlineChars:
+        # just a matter of preference, but let's not accept a single newline.
+        return False
+    
+    if pos2 - pos1 == 2 and doesStringBeginWithCrnl(pos1, fnCharAt):
         # just a matter of preference, but let's not accept a single newline.
         return False
     
     # considered rejecting if there are inner newlines,
     # but decided it's ok to have inner newlines, since it might be convenient,
     # even if the string didn't come from DoLineCutIfNoSelection.
-    return s[0] in ('\r', '\n') and s[-1] in ('\r', '\n')
+    return fnCharAt(pos1) in newlineChars and fnCharAt(pos2 - 1) in newlineChars
 
 def selectEntireLineAndPrecedingNewline(pane):
     pane.Home()
@@ -92,8 +101,7 @@ def runCustomPaste(pane):
             # nothing was pasted, maybe the clipboard was empty
             return
         
-        pastedText = pane.PaneGetText(prevPos, resultingPos)
-        if doesStringBeginAndEndWithNewlines(pastedText):
+        if doesStringBeginAndEndWithNewlines(prevPos, resultingPos, pane.GetCharAt):
             # let's remove the inserted text, move to the preceding line, and call paste again.
             pane.PaneRemoveText(prevPos, resultingPos)
             pane.Home()
@@ -101,7 +109,7 @@ def runCustomPaste(pane):
             pane.Paste()
             
             # remove the initial newline
-            if pastedText.startswith('\r\n'):
+            if doesStringBeginWithCrnl(posBeforePasted, pane.GetCharAt):
                 countCharsToDelete = 2
             else:
                 countCharsToDelete = 1
@@ -121,17 +129,19 @@ def runCustomPaste(pane):
 if __name__ == '__main__':
     from ben_python_common import assertEq
     
-    assertEq(False, doesStringBeginAndEndWithNewlines(None))
-    assertEq(False, doesStringBeginAndEndWithNewlines(''))
-    assertEq(False, doesStringBeginAndEndWithNewlines('\n'))
-    assertEq(False, doesStringBeginAndEndWithNewlines('\r\n'))
-    assertEq(True, doesStringBeginAndEndWithNewlines('\n\n'))
-    assertEq(True, doesStringBeginAndEndWithNewlines(u'\n\n'))
-    assertEq(True, doesStringBeginAndEndWithNewlines('\r\n\n'))
-    assertEq(True, doesStringBeginAndEndWithNewlines('\n\r\n'))
-    assertEq(True, doesStringBeginAndEndWithNewlines('\na\n'))
-    assertEq(True, doesStringBeginAndEndWithNewlines('\n a \n'))
-    assertEq(True, doesStringBeginAndEndWithNewlines('\r\na\r\n'))
-    assertEq(True, doesStringBeginAndEndWithNewlines('\r\n a \r\n'))
-    assertEq(True, doesStringBeginAndEndWithNewlines('\r\n a\r\na \r\n'))
+    def testBeginAndEndWithNewlines(s):
+        return doesStringBeginAndEndWithNewlines(0, len(s), lambda n: ord(s[n]))
+    
+    assertEq(False, testBeginAndEndWithNewlines(''))
+    assertEq(False, testBeginAndEndWithNewlines('\n'))
+    assertEq(False, testBeginAndEndWithNewlines('\r\n'))
+    assertEq(True, testBeginAndEndWithNewlines('\n\n'))
+    assertEq(True, testBeginAndEndWithNewlines(u'\n\n'))
+    assertEq(True, testBeginAndEndWithNewlines('\r\n\n'))
+    assertEq(True, testBeginAndEndWithNewlines('\n\r\n'))
+    assertEq(True, testBeginAndEndWithNewlines('\na\n'))
+    assertEq(True, testBeginAndEndWithNewlines('\n a \n'))
+    assertEq(True, testBeginAndEndWithNewlines('\r\na\r\n'))
+    assertEq(True, testBeginAndEndWithNewlines('\r\n a \r\n'))
+    assertEq(True, testBeginAndEndWithNewlines('\r\n a\r\na \r\n'))
     
