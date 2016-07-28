@@ -1513,7 +1513,7 @@ class SimpleStringPool
 	
 public:
 	SimpleStringPool() {}
-	std::string* Get(const char* s)
+	const std::string* Get(const char* s)
 	{
 		std::tr1::unordered_set<std::string>::iterator it = _set.find(s);
 		if (it == _set.end())
@@ -1521,7 +1521,8 @@ public:
 			it = _set.insert(s).first;
 		}
 		
-		return &(*it);
+		const std::string& ref = *it;
+		return &ref;
 	}
 };
 
@@ -1588,7 +1589,7 @@ public:
 
 struct SavedLocation
 {
-	std::string* filename;
+	const std::string* filename;
 	int lineNumber;
 	SavedLocation() : filename(NULL), lineNumber(INT_MIN) {}
 };
@@ -1607,9 +1608,9 @@ class SavedLocationManager
 	UndoStack<SavedLocation> _stack;
 	int _prevPos;
 	int _prevLine;
-	std::string* _currentFile;
+	const std::string* _currentFile;
 	int _lineWeJustSet;
-	std::string* _fileWeJustSet;
+	const std::string* _fileWeJustSet;
 	SavedLocationManager (const SavedLocationManager& other);
 	SavedLocationManager& operator= (const SavedLocationManager& other);
 
@@ -1646,31 +1647,31 @@ public:
 	{
 	}
 	
-	void goPrevLocation(std::string** file, int* line)
+	void goPrevLocation(const std::string*& file, int& line)
 	{
 		SavedLocation lastLocation = _stack.PeekUndo();
 		if (lastLocation.filename)
 		{
-			*file = _fileWeJustSet = lastLocation.filename;
-			*line = _lineWeJustSet = lastLocation.lineNumber;
-			goLocation(*file, *line);
+			file = _fileWeJustSet = lastLocation.filename;
+			line = _lineWeJustSet = lastLocation.lineNumber;
+			goLocation(file, line);
 			_stack.Undo();
 		}
 	}
 	
-	void goNextLocation(std::string** file, int* line)
+	void goNextLocation(const std::string*& file, int& line)
 	{
 		SavedLocation nextLocation = _stack.PeekRedo();
 		if (nextLocation.filename)
 		{
-			*file = _fileWeJustSet = nextLocation.filename;
-			*line = _lineWeJustSet = nextLocation.lineNumber;
-			goLocation(*file, *line);
+			file = _fileWeJustSet = nextLocation.filename;
+			line = _lineWeJustSet = nextLocation.lineNumber;
+			goLocation(file, line);
 			_stack.Redo();
 		}
 	}
 	
-	void goLocation(std::string* file, int line)
+	void goLocation(const std::string* file, int line)
 	{
 		if (file != _currentFile)
 		{
@@ -1735,7 +1736,7 @@ void onChangeCurrentFile()
 
 PyObject* pyfun_app_GetNextOrPreviousLocation(PyObject*, PyObject* args)
 {
-	std::string* file = NULL;
+	const std::string* file = NULL;
 	int line = 0;
 	int isNext = 0;
 	if (!PyArg_ParseTuple(args, "i", &isNext))
@@ -1744,9 +1745,9 @@ PyObject* pyfun_app_GetNextOrPreviousLocation(PyObject*, PyObject* args)
 	}
 	
 	if (isNext)
-		savedLocationManager.goNextLocation(&file, &line);
+		savedLocationManager.goNextLocation(file, line);
 	else
-		savedLocationManager.goPrevLocation(&file, &line);
+		savedLocationManager.goPrevLocation(file, line);
 	
 	if (file)
 		return Py_BuildValue("si", file->c_str(), line);
