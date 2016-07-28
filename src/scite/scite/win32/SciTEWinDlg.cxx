@@ -1150,13 +1150,14 @@ void SciTEWin::PerformGrep() {
 	std::string findCommand = props.GetNewExpandString("find.command");
 	if (findCommand == "") {
 		// Call InternalGrep in a new thread
-		// searchParams is "(w|~)(c|~)(d|~)(b|~)\0files\0text"
-		// A "w" indicates whole word, "c" case sensitive, "d" dot directories, "b" binary files
+		// searchParams is "(w|~)(c|~)(d|~)(b|~)(r|~)\0files\0text"
+		// A "w" indicates whole word, "c" case sensitive, "d" dot directories, "b" binary files, "r" regex
 		std::string searchParams;
 		searchParams.append(wholeWord ? "w" : "~");
 		searchParams.append(matchCase ? "c" : "~");
 		searchParams.append(props.GetInt("find.in.dot") ? "d" : "~");
 		searchParams.append(props.GetInt("find.in.binary") ? "b" : "~");
+		searchParams.append(regExp ? "r" : "~");
 		searchParams.append("\0", 1);
 		searchParams.append(props.GetString("find.files"));
 		searchParams.append("\0", 1);
@@ -1194,10 +1195,21 @@ BOOL SciTEWin::GrepMessage(HWND hDlg, UINT message, WPARAM wParam) {
 			// Empty means use internal that can respond to flags
 			dlg.SetCheck(IDWHOLEWORD, wholeWord);
 			dlg.SetCheck(IDMATCHCASE, matchCase);
+			dlg.SetCheck(IDREGEXP, regExp);
 		} else {
 			dlg.Enable(IDWHOLEWORD, false);
 			dlg.Enable(IDMATCHCASE, false);
+			dlg.Enable(IDREGEXP, false);
 		}
+
+		{
+			bool rexexpCompiled = CXX11_REGEX_ENABLED;
+			if (!rexexpCompiled || !props.GetInt("find.in.files.enable.regexp")) {
+				HWND wnd = ::GetDlgItem(hDlg, IDREGEXP);
+				::ShowWindow(wnd, SW_HIDE);
+			}
+		}
+
 		return TRUE;
 
 	case WM_CLOSE:
@@ -1230,6 +1242,7 @@ BOOL SciTEWin::GrepMessage(HWND hDlg, UINT message, WPARAM wParam) {
 
 			wholeWord = dlg.Checked(IDWHOLEWORD);
 			matchCase = dlg.Checked(IDMATCHCASE);
+			regExp = dlg.Checked(IDREGEXP);
 
 			FillCombos(dlg);
 

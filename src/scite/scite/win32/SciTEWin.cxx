@@ -769,22 +769,15 @@ DWORD SciTEWin::ExecuteOne(const Job &jobToRun) {
 	}
 
 	if (jobToRun.jobType == jobGrep) {
-		// jobToRun.command is "(w|~)(c|~)(d|~)(b|~)\0files\0text"
+		// jobToRun.command is "(w|~)(c|~)(d|~)(b|~)(r|~)\0files\0text"
 		const char *grepCmd = jobToRun.command.c_str();
 		if (*grepCmd) {
-			GrepFlags gf = grepNone;
-			if (*grepCmd == 'w')
-				gf = static_cast<GrepFlags>(gf | grepWholeWord);
-			grepCmd++;
-			if (*grepCmd == 'c')
-				gf = static_cast<GrepFlags>(gf | grepMatchCase);
-			grepCmd++;
-			if (*grepCmd == 'd')
-				gf = static_cast<GrepFlags>(gf | grepDot);
-			grepCmd++;
-			if (*grepCmd == 'b')
-				gf = static_cast<GrepFlags>(gf | grepBinary);
-			const char *findFiles = grepCmd + 2;
+			// parse grepflags
+			std::string spec = grepCmd;
+			GrepFlags gf = GrepFlagsFromString(GUI::gui_string(spec.begin(), spec.end()));
+
+			// command delimited by nul bytes, go to the next string by moving strlen + 1.
+			const char *findFiles = grepCmd + strlen(grepCmd) + 1;
 			const char *findText = findFiles + strlen(findFiles) + 1;
 			if (cmdWorker.outputScroll == 1)
 				gf = static_cast<GrepFlags>(gf | grepScroll);

@@ -4648,16 +4648,10 @@ bool SciTEBase::ProcessCommandLine(GUI::gui_string &args, int phase) {
 			} else if ((tolower(arg[0]) == 'p') && (arg[1] == 0)) {
 				performPrint = true;
 			} else if (GUI::gui_string(arg) == GUI_TEXT("grep") && (wlArgs.size() - i >= 4)) {
-				// in form -grep [w~][c~][d~][b~] "<file-patterns>" "<search-string>"
-				GrepFlags gf = grepStdOut;
-				if (wlArgs[i+1][0] == 'w')
-					gf = static_cast<GrepFlags>(gf | grepWholeWord);
-				if (wlArgs[i+1][1] == 'c')
-					gf = static_cast<GrepFlags>(gf | grepMatchCase);
-				if (wlArgs[i+1][2] == 'd')
-					gf = static_cast<GrepFlags>(gf | grepDot);
-				if (wlArgs[i+1][3] == 'b')
-					gf = static_cast<GrepFlags>(gf | grepBinary);
+				// in form -grep [w~][c~][d~][b~][r~] "<file-patterns>" "<search-string>"
+				GrepFlags gf = GrepFlagsFromString(wlArgs[i+1]);
+				gf = static_cast<GrepFlags>(gf | grepStdOut);
+				
 				std::string sSearch = GUI::UTF8FromString(wlArgs[i+3].c_str());
 				std::string unquoted = UnSlashString(sSearch.c_str());
 				sptr_t originalEnd = 0;

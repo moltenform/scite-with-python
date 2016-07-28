@@ -19,6 +19,28 @@ extern const GUI::gui_char propAbbrevFileName[];
 #endif
 #endif
 
+// is regex support available
+#ifndef CXX11_REGEX_ENABLED
+
+#ifdef _MSC_VER
+#if (_MSC_VER >= 1600)
+#define CXX11_REGEX_ENABLED 1
+#define stdregex std
+#elif (_MSC_VER >= 1500)
+#define CXX11_REGEX_ENABLED 1
+#define stdregex std::tr1
+#else
+#define CXX11_REGEX_ENABLED 0
+#endif
+#else
+
+#define CXX11_REGEX_ENABLED 1
+#define stdregex std
+
+#endif
+
+#endif
+
 inline int Minimum(int a, int b) {
 	return (a < b) ? a : b;
 }
@@ -916,8 +938,9 @@ protected:
 	void OpenFilesFromStdin();
 	enum GrepFlags {
 	    grepNone = 0, grepWholeWord = 1, grepMatchCase = 2, grepStdOut = 4,
-	    grepDot = 8, grepBinary = 16, grepScroll = 32
+	    grepDot = 8, grepBinary = 16, grepScroll = 32, grepRegexp = 64
 	};
+	GrepFlags GrepFlagsFromString(const GUI::gui_string &spec);
 	virtual bool GrepIntoDirectory(const FilePath &directory);
 	void GrepRecursive(GrepFlags gf, FilePath baseDir, const char *searchString, const GUI::gui_char *fileTypes);
 	void InternalGrep(GrepFlags gf, const GUI::gui_char *directory, const GUI::gui_char *files,

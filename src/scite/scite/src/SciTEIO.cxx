@@ -41,6 +41,10 @@
 #include "SciTEBase.h"
 #include "Utf8_16.h"
 
+#if CXX11_REGEX_ENABLED
+#include <regex>
+#endif
+
 #if defined(GTK)
 const GUI::gui_char propUserFileName[] = GUI_TEXT("properties/.SciTEUser.properties");
 #elif defined(__APPLE__)
@@ -1323,6 +1327,98 @@ static bool IsWordCharacter(int ch) {
 	return (ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z')  || (ch >= '0' && ch <= '9')  || (ch == '_');
 }
 
+#if CXX11_REGEX_ENABLED
+
+class RegexpSearch
+{
+	bool use;
+	bool valid;
+	stdregex::regex regexObject;
+
+public:
+	RegexpSearch::RegexpSearch() : use(false), valid(false) {}
+
+	bool Init(const char *searchString, bool matchCase, bool wholeWord) {
+		stdregex::regex::flag_type flagsRe = stdregex::regex::ECMAScript;
+		std::string sRegex = searchString;
+		use = true;
+
+		if (!searchString || !searchString[0]) {
+			return false;
+		}
+
+		if (!matchCase) {
+			flagsRe |= stdregex::regex::icase;
+		}
+
+		if (wholeWord) {
+			sRegex = std::string("\\b") + sRegex + "\\b";
+		}
+
+		try {
+			regexObject.assign(sRegex, flagsRe);
+		} catch (stdregex::regex_error &) {
+			// Failed to create regular expression
+			return false;
+		}
+
+		valid = true;
+		return true;
+	}
+
+	const char *Search(const char *line) { 
+		try {
+			if (valid && stdregex::regex_search(line, regexObject)) {
+				return line;
+			}
+		} catch (stdregex::regex_error &) {
+			return NULL;
+		}
+
+		return NULL;
+	}
+
+	bool Use() {
+		return use;
+	}
+
+	bool Enabled() { 
+		return true;
+	}
+};
+
+#else
+
+class RegexpSearch
+{
+public:
+	RegexpSearch::RegexpSearch() {}
+	bool Init(const char *, bool, bool) { return false; }
+	const char *Search(const char *) { return NULL; }
+	bool Use() { return false; }
+	bool Enabled() { return false; }
+};
+
+#endif
+
+SciTEBase::GrepFlags SciTEBase::GrepFlagsFromString(const GUI::gui_string &spec)
+{
+	// [w~][c~][d~][b~][r~]
+	GrepFlags gf = grepNone;
+	if (spec.length() > 0 && spec[0] == 'w')
+		gf = static_cast<GrepFlags>(gf | grepWholeWord);
+	if (spec.length() > 1 && spec[1] == 'c')
+		gf = static_cast<GrepFlags>(gf | grepMatchCase);
+	if (spec.length() > 2 && spec[2] == 'd')
+		gf = static_cast<GrepFlags>(gf | grepDot);
+	if (spec.length() > 3 && spec[3] == 'b')
+		gf = static_cast<GrepFlags>(gf | grepBinary);
+	if (spec.length() > 4 && spec[4] == 'r')
+		gf = static_cast<GrepFlags>(gf | grepRegexp);
+
+	return gf;
+}
+
 bool SciTEBase::GrepIntoDirectory(const FilePath &directory) {
     const GUI::gui_char *sDirectory = directory.AsInternal();
 #ifdef __APPLE__
@@ -1335,6 +1431,18 @@ bool SciTEBase::GrepIntoDirectory(const FilePath &directory) {
 void SciTEBase::GrepRecursive(GrepFlags gf, FilePath baseDir, const char *searchString, const GUI::gui_char *fileTypes) {
 	FilePathSet directories;
 	FilePathSet files;
+
+	bool flagsRegexp = gf & grepRegexp;
+	bool flagsMatchCase = gf & grepMatchCase;
+	bool flagsWholeWord = gf & grepWholeWord;
+	RegexpSearch regexpSearch;
+	if (flagsRegexp && regexpSearch.Enabled() && props.GetInt("find.in.files.enable.regexp"))
+	{
+		if (!regexpSearch.Init(searchString, flagsMatchCase, flagsWholeWord)) {
+			return;
+		}
+	}
+
 	baseDir.List(directories, files);
 	size_t searchLength = strlen(searchString);
 	std::string os;
@@ -1345,12 +1453,14 @@ void SciTEBase::GrepRecursive(GrepFlags gf, FilePath baseDir, const char *search
 		if (*fileTypes == '\0' || fPath.Matches(fileTypes)) {
 			//OutputAppendStringSynchronised(i->AsInternal());
 			//OutputAppendStringSynchronised("\n");
-			FileReader fr(fPath, gf & grepMatchCase);
+			FileReader fr(fPath, flagsMatchCase || regexpSearch.Use());
 			if ((gf & grepBinary) || !fr.BufferContainsNull()) {
 				while (const char *line = fr.Next()) {
-					const char *match = strstr(line, searchString);
+					const char *match = regexpSearch.Use() ? 
+						regexpSearch.Search(line) :
+						strstr(line, searchString);
 					if (match) {
-						if (gf & grepWholeWord) {
+						if (flagsWholeWord && !regexpSearch.Use()) {
 							const char *lineEnd = line + strlen(line);
 							while (match) {
 								if (((match == line) || !IsWordCharacter(match[-1])) &&
