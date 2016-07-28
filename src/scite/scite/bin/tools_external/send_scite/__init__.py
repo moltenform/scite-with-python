@@ -3,6 +3,11 @@ import ctypes
 import sys
 from ctypes import wintypes
 
+# Note: this code isn't currently for the full Director interface (SciTEDirector.html),
+# it's for one-off messages sent to a SciTE main window.
+# So, to retrieve the hwnd, either use findFirstSciteInstance below,
+# or use the property $(SciTEWindowID). Not $(WindowID), which is for a director.
+
 WM_COPYDATA = 0x4a
 
 context64bit = sys.maxsize > 2**32
@@ -26,7 +31,7 @@ def findFirstSciteInstance(windowClass='SciTEWindow'):
     hwnd = ctypes.windll.user32.FindWindowA(windowClass, receiver)
     return hwnd or None
 
-def sendCopyDataMessage(message, hwnd, dwData=0):
+def sendCopyDataMessage(hwnd, message, dwData=0):
     assert isinstance(message, str)
     sender_hwnd = 0
     buf = ctypes.create_string_buffer(message)
@@ -61,14 +66,13 @@ def escapeMessage(message):
     # message expects preceding dash.
     return '"' + '-' + message + '"'
         
-def sendSciteMessage(message, hwnd):
+def sendSciteMessage(hwnd, message):
     needToEscape = True
     if needToEscape:
        message = escapeMessage(message)
        if not message:
            return None
-           
-    return sendCopyDataMessage(message, hwnd, dwData=0)
 
+    return sendCopyDataMessage(hwnd, message, dwData=0)
 
 

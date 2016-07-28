@@ -749,6 +749,13 @@ void SciTEBase::ReadProperties() {
 	}
 
 	props.Set("AbbrevPath", pathAbbreviations.AsUTF8().c_str());
+	
+	// When using the full Director interface (SciTEDirector.html), one can use the 
+	// property "WindowID" which gives the HWND of class DirectorExtension.
+	// But for one-off messages it's simpler to just send a WM_COPYDATA to a main window,
+	// so adding property "SciTEWindowID" which exposes the HWND of class SciTEWindow.
+	std::string sWindowID = StdStringFromSizeT(reinterpret_cast<size_t>(GetID()));
+	props.Set("SciTEWindowID", sWindowID.c_str());
 
 	int tech = props.GetInt("technology");
 	wEditor.Call(SCI_SETTECHNOLOGY, tech);
