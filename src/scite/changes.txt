@@ -1,20 +1,21 @@
-
-Leaving notes here, these steps will be taken when a new version of SciTE is released.
+ 
+Summary of the steps taken from SciTE mainline to SciTE with python.
 
 Moved properties and doc to a subdirectory,
-	updated cxx source to look for properties/SciTEGlobal.properties instead of SciTEGlobal.properties
+	changed SciTE source to look for properties/SciTEGlobal.properties instead of SciTEGlobal.properties
 
 Combine some uncommonly used properties files into one file (others.properties)
 	move the ones to combine into one directory
 	cd to that directory. ensure unix tools are in the path.
 	tail -n +1 * > ../others.properties
 	open ../others.properties and replace "==> " with "## ==> "
+	move contents of css.properties into html.properties
 	
 Generate table of SciTE commands
-	edit archive/generate/constantsTable.py to point to SciTE.h
-	run archive/generate/constantsTable.py
-	review the output and fill in any missing entries marked by "NOTSEENBEFORE"
+	run scite/src/scripts/PythonExtensionGenTable.py
+	if "NOTSEENBEFORE" is in the output, add an entry to currentNames and run again.
 	paste the output into scite/scite/src/PythonExtension.cxx, into the table "static IFaceConstant rgFriendlyNamedIDMConstants[]"
+	run scite/src/scripts/PythonExtensionGenReference.py to rebuild documentation.
 
 Trim languages menu
 	Comment out these properties lines
@@ -43,11 +44,18 @@ Trim languages menu
 	*language.lisp=Lisp|lisp||
 	Hypertext to *language.html=H&TML|html|$(keyHTML)|
 
+------------------------------------------------------------------
+Modifications to SciTE source code include
+	look for props in properties\
+	python extension
+	New feature: user can hide specified menu items via properties files (menu.hidemenuitems)
+	New feature: user can limit number of menuitems shown for properties files (menu.limitpropertiesmenuitems)
+	New feature: warn if the max number of buffers has been opened. (buffers.warn.limitreached)
+	New feature: on Windows, increased number of slots for mru items
+	New feature: SciTEWindowID property
+	New feature: internal grep supports regex search
 
 
+	
 
-
-
----------------------
-Tips I've learned
-	Other features of properties files: $(star, $(escape
+	

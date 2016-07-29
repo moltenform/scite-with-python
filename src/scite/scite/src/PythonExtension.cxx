@@ -10,12 +10,25 @@
 #include <algorithm>
 #include <unordered_set>
 
-#include "PythonExtension.h"
-#include "..\python\include\python.h"
-
 #ifdef _WIN32
 #include <windows.h>
 #endif
+
+// for msvc 9 (internally 1500), unordered_set is in the tr1 namespace
+#ifdef _MSC_VER
+
+#if (_MSC_VER <= 1500)
+#define std_unordered_set std::tr1::unordered_set
+#else
+#define std_unordered_set std::unordered_set
+#endif
+
+#else
+#define std_unordered_set std::unordered_set
+#endif
+
+#include "PythonExtension.h"
+#include "..\python\include\python.h"
 
 // name of the python module to run on startup
 static const char* c_PythonModuleName = "scite_extend_ui";
@@ -1507,7 +1520,7 @@ PyObject* pyfun_app_PrintSupportedCalls(PyObject*, PyObject* args)
 // if an actual pool is needed, see http://llvm.org/docs/doxygen/html/StringPool_8h_source.html
 class SimpleStringPool
 {
-	std::tr1::unordered_set<std::string> _set;
+	std_unordered_set<std::string> _set;
 	SimpleStringPool (const SimpleStringPool& other);
 	SimpleStringPool& operator= (const SimpleStringPool& other);
 	
@@ -1515,7 +1528,7 @@ public:
 	SimpleStringPool() {}
 	const std::string* Get(const char* s)
 	{
-		std::tr1::unordered_set<std::string>::iterator it = _set.find(s);
+		std_unordered_set<std::string>::iterator it = _set.find(s);
 		if (it == _set.end())
 		{
 			it = _set.insert(s).first;
@@ -1647,7 +1660,7 @@ public:
 	{
 	}
 	
-	void goPrevLocation(const std::string*& file, int& line)
+	void goPrevLocation(const std::string* &file, int& line)
 	{
 		SavedLocation lastLocation = _stack.PeekUndo();
 		if (lastLocation.filename)
@@ -1659,7 +1672,7 @@ public:
 		}
 	}
 	
-	void goNextLocation(const std::string*& file, int& line)
+	void goNextLocation(const std::string* &file, int& line)
 	{
 		SavedLocation nextLocation = _stack.PeekRedo();
 		if (nextLocation.filename)
