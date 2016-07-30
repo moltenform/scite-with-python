@@ -2,7 +2,7 @@
 # include excerpts of ScITE code, and alert us when any of this code is updated.
 
 import os
-from ShowBindingsReadProps import retrieveCodeLines, readall, warn
+from ShowBindingsReadProps import retrieveCodeLines, addBindingsManual, readall, warn
 
 gtkKeyHandlerMethodExpectedText = r'''class KeyToCommand {
 public:
@@ -445,24 +445,24 @@ scintillaKeyHandlerMethodExpectedTextMustInclude = r'''	return KeyDownWithModifi
 
 # instead of writing code to parse a few lines, write the bindings manually here,
 # and verify in ShowKeyboardBindingsDetectCodeChange.py that the table hasn't changed.
-gtkKmapBindings = r'''Control+Tab|IDM_NEXTFILESTACK|30|gtk|SciTEGTK.cxx static KeyToCommand kmap[]
-Shift+Control+Tab|IDM_PREVFILESTACK|30|gtk|SciTEGTK.cxx static KeyToCommand kmap[]
-Control+Enter|IDM_COMPLETEWORD|30|gtk|SciTEGTK.cxx static KeyToCommand kmap[]
-Alt+F2|IDM_BOOKMARK_NEXT_SELECT|30|gtk|SciTEGTK.cxx static KeyToCommand kmap[]
-Alt+Shift+F2|IDM_BOOKMARK_PREV_SELECT|30|gtk|SciTEGTK.cxx static KeyToCommand kmap[]
-Control+F3|IDM_FINDNEXTSEL|30|gtk|SciTEGTK.cxx static KeyToCommand kmap[]
-Control+Shift+F3|IDM_FINDNEXTBACKSEL|30|gtk|SciTEGTK.cxx static KeyToCommand kmap[]
-Control+F4|IDM_CLOSE|30|gtk|SciTEGTK.cxx static KeyToCommand kmap[]
-Control+J|IDM_PREVMATCHPPC|30|gtk|SciTEGTK.cxx static KeyToCommand kmap[]
-Control+Shift+J|IDM_SELECTTOPREVMATCHPPC|30|gtk|SciTEGTK.cxx static KeyToCommand kmap[]
-Control+K|IDM_NEXTMATCHPPC|30|gtk|SciTEGTK.cxx static KeyToCommand kmap[]
-Control+Shift+K|IDM_SELECTTONEXTMATCHPPC|30|gtk|SciTEGTK.cxx static KeyToCommand kmap[]
-Control+*|IDM_EXPAND|30|gtk|SciTEGTK.cxx static KeyToCommand kmap[]'''
+gtkKmapBindings = r'''Control+Tab|IDM_NEXTFILESTACK|30|gtk|KeyToCommand kmap[]
+Shift+Control+Tab|IDM_PREVFILESTACK|30|gtk|KeyToCommand kmap[]
+Control+Enter|IDM_COMPLETEWORD|30|gtk|KeyToCommand kmap[]
+Alt+F2|IDM_BOOKMARK_NEXT_SELECT|30|gtk|KeyToCommand kmap[]
+Alt+Shift+F2|IDM_BOOKMARK_PREV_SELECT|30|gtk|KeyToCommand kmap[]
+Control+F3|IDM_FINDNEXTSEL|30|gtk|KeyToCommand kmap[]
+Control+Shift+F3|IDM_FINDNEXTBACKSEL|30|gtk|KeyToCommand kmap[]
+Control+F4|IDM_CLOSE|30|gtk|KeyToCommand kmap[]
+Control+J|IDM_PREVMATCHPPC|30|gtk|KeyToCommand kmap[]
+Control+Shift+J|IDM_SELECTTOPREVMATCHPPC|30|gtk|KeyToCommand kmap[]
+Control+K|IDM_NEXTMATCHPPC|30|gtk|KeyToCommand kmap[]
+Control+Shift+K|IDM_SELECTTONEXTMATCHPPC|30|gtk|KeyToCommand kmap[]
+Control+*|IDM_EXPAND|30|gtk|KeyToCommand kmap[]'''
 
 # instead of writing code to parse a few lines, write the bindings manually here,
 # and verify in ShowKeyboardBindingsDetectCodeChange.py that the table hasn't changed.
 def addCallsToAssignKeyBindings(props, allBindings):
-	bindings = '''Control+Shift+L|SCI_LINEDELETE|1|any|SciTEProps.cxx AssignKey'''
+	bindings = '''Control+Shift+L|SCI_LINEDELETE|1|any|SciTEProps.cxx AssignKey\n'''
 	if props.GetInt("os.x.home.end.keys"):
 		bindings += '''Home|SCI_SCROLLTOSTART|1|any|SciTEProps.cxx AssignKey
 Shift+Home|SCI_NULL|1|any|SciTEProps.cxx AssignKey
@@ -496,9 +496,9 @@ Shift+Home|SCI_HOMEEXTEND|1|any|SciTEProps.cxx AssignKey
 Shift+Alt+Home|SCI_HOMERECTEXTEND|1|any|SciTEProps.cxx AssignKey
 End|SCI_LINEEND|1|any|SciTEProps.cxx AssignKey
 Shift+End|SCI_LINEENDEXTEND|1|any|SciTEProps.cxx AssignKey'''
-		addBindingsManual(allBindings, bindings)
+	addBindingsManual(allBindings, bindings)
 
-callsToAssignKey = r'''if (props.GetInt("os.x.home.end.keys")) {
+callsToAssignKey = r'''	if (props.GetInt("os.x.home.end.keys")) {
 		AssignKey(SCK_HOME, 0, SCI_SCROLLTOSTART);
 		AssignKey(SCK_HOME, SCMOD_SHIFT, SCI_NULL);
 		AssignKey(SCK_HOME, SCMOD_SHIFT | SCMOD_ALT, SCI_NULL);
@@ -538,7 +538,7 @@ callsToAssignKey = r'''if (props.GetInt("os.x.home.end.keys")) {
 	scrollOutput = props.GetInt("output.scroll", 1);'''
 
 
-def detectCodeChanges(filename, expectedText, mustInclude):
+def detectCodeChanges(filename, expectedText, mustInclude=None):
 	expectedLines = expectedText.replace('\r\n', '\n').split('\n')
 	first, last = expectedLines[0], expectedLines[-1]
 	linesGot = retrieveCodeLines(filename, first, last, mustInclude)
