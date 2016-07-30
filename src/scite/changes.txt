@@ -10,6 +10,7 @@ Combine some uncommonly used properties files into one file (others.properties)
 	tail -n +1 * > ../others.properties
 	open ../others.properties and replace "==> " with "## ==> "
 	move contents of css.properties into html.properties
+	change all command.name.1.tool to command.name.9.tool, to not interfere with our Ctrl+1 shortcut
 	
 Generate table of SciTE commands
 	run scite/src/scripts/PythonExtensionGenTable.py
