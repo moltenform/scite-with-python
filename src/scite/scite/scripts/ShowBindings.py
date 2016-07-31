@@ -71,7 +71,7 @@ def getScintillaBindings(props):
 def writeOutputFile(bindings, outputFile):
 	import PythonExtensionGenReference
 	mapSciteToString = PythonExtensionGenReference.getMapFromIdmToMenuText()
-	mapScintillaToString = dict()
+	mapScintillaToString = getMapScintillaToString()
 	setsSeen = dict()
 	with open(outputFile, 'w') as out:
 		out.write(PythonExtensionGenReference.startFile.replace('%script%', __file__))
@@ -91,13 +91,16 @@ def renderCommand(command, mapSciteToString, mapScintillaToString):
 		command = 'buffer' + num
 	elif command in mapSciteToString:
 		command = mapSciteToString[command]
+	elif command in mapScintillaToString:
+		command = mapScintillaToString[command]
+		command = command.replace('V C ', 'Visual Studio-style ')
 	elif command.startswith('IDM_'):
 		command = command.replace('IDM_', '').lower().replace('_', ' ')
-	elif command.startswith('SCI_'):
-		command = command.replace('SCI_', '').lower().replace('_', ' ')
+		command = command.replace('matchppc', ' match ppc')
 		
-	command = command[0].upper() + command[1:]
+	command = command[0].upper() + command[1:].lower()
 	command = command.replace('...', '')
+	command = command.replace('Buffer', 'Buffer ')
 	return command
 
 def writeOutputBinding(out, binding, mapSciteToString, mapScintillaToString):
@@ -112,6 +115,31 @@ def writeOutputBinding(out, binding, mapSciteToString, mapScintillaToString):
 		notes += 'props'
 	
 	out.write('<td>%s</td></tr>\n' % escapeXml(notes))
+
+def getMapScintillaToString():
+	import re
+	mapScintillaToString = dict()
+	mapNumberToSciConstant = dict()
+	with open('../../scintilla/include/Scintilla.h', 'r') as f:
+		for line in f:
+			if line.startswith('#define SCI_'):
+				poundDefine, constantName, number = line.split()
+				mapNumberToSciConstant[number] = constantName
+	
+	r = re.compile(r'(get|set|fun) ([^=]+)=([0-9]+)\(')
+	rSpaceBeforeCapital = re.compile(r'([A-Z])')
+	with open('../../scintilla/include/Scintilla.iface', 'r') as f:
+		for line in f:
+			matchObj = r.match(line)
+			if matchObj:
+				number = matchObj.group(3)
+				sciConst = mapNumberToSciConstant.get(number, None)
+				if sciConst is not None:
+					name = matchObj.group(2).split(' ')[-1]
+					name = rSpaceBeforeCapital.sub(r' \1', name)
+					mapScintillaToString[sciConst] = name.lstrip(' ')
+	
+	return mapScintillaToString
 
 def readFromSciTEItemFactoryEntry(parts, bindings):
 	path, shortcut, gcallback, command, itemType, whitespace = parts
@@ -273,8 +301,8 @@ def readFromScintillaKeyMap(bindings):
 
 def main():
 	checkForAnyLogicChanges()
-	props = getAllProperties('../bin')
 	for platform in ('gtk', 'win32'):
+		props = getAllProperties('../bin', platform)
 		platformCapitalized = platform[0].upper() + platform[1:]
 		outputFile = '../bin/doc/CurrentBindings%s.html' % platformCapitalized
 		bindings = []
@@ -328,17 +356,7 @@ Left|SCI_CHARLEFT|0|any|Scintilla keymap'''
 	assertEqArray(expectedArr, entriesRead)
 
 
-
-#~ props = getAllProperties('../bin')
-#~ print '\n'.join(map(repr, getGtkBindings(props)))
-#~ bindings = []
-#~ readFromSciTEItemFactoryList(bindings)
-#~ print '\n'.join(map(repr, bindings))
-	
 if __name__ == '__main__':
 	tests()
 	main()
-#~ bindings = []
-#~ readFromScintillaKeyMap(bindings)
-#~ print '\n'.join(map(repr, bindings))
 	

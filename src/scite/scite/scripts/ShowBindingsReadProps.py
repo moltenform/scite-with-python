@@ -3,9 +3,10 @@ import os
 import re
 
 class PropSetFile(object):
-	props = None
-	def __init__(self):
+	def __init__(self, platform):
 		self.props = dict()
+		self.condition = None
+		self.platform = platform
 
 	def Set(self, key, val):
 		self.props[key] = val
@@ -31,7 +32,7 @@ class PropSetFile(object):
 			propname = s[2:-1]
 			return self.Evaluate(propname)
 		elif '$(' in s:
-			raise RuntimeError("We don't yet support expressions containing $()", s)
+			raise RuntimeError("We don't yet support expressions containing $() " + s)
 		else:
 			return s
 
@@ -60,13 +61,26 @@ class PropSetFile(object):
 		if s.startswith('#') or not s.strip():
 			return
 			
-		# we don't yet support if/then
-		if s.startswith('if '):
+		if s.startswith('if PLAT_WIN'):
+			self.condition = 'win32'
 			return
-		
-		# we don't yet support if/then
-		if s[0] == '\t':
-			s = s[1:]
+		elif s.startswith('if PLAT_MAC'):
+			self.condition = 'mac'
+			return
+		elif s.startswith('if PLAT_GTK'):
+			self.condition = 'gtk'
+			return
+		elif s.startswith('if '):
+			raise RuntimeError("Unsupported conditional" + s)
+			
+		if self.condition:
+			if s[0] == '\t':
+				if self.platform != self.condition:
+					return
+				else:
+					s = s[1:]
+			else:
+				self.condition = None
 		
 		# we don't yet support sections
 		if s[0] == '[':
@@ -83,8 +97,8 @@ class PropSetFile(object):
 			print('Encountered exception for line "%s"' % s)
 			raise
 			
-def getAllProperties(dir):
-	props = PropSetFile()
+def getAllProperties(dir, platform):
+	props = PropSetFile(platform)
 	for (path, dirs, files) in os.walk(dir):
 		if not path.endswith(os.sep + 'disabled') and not 'tools_example' in path:
 			for file in files:
@@ -319,11 +333,15 @@ user.shortcuts=\
 Ctrl+Shift+V|IDM_PASTEANDDOWN|\
 Ctrl+PageDown|IDM_NEXTFILE|
 
-*language.sql=S&QL|sql||
-*language.html=H&TML|html|Control+Alt+Shift+F11|
-*language.php=P&HP|php|$(keyMissing)|
-*language.xml=&XML|xml|$(keyXML)|
-keyXML=Alt+Shift+/
+if PLAT_GTK
+	*language.sql=S&QL|sql||
+	*language.html=H&TML|html|Control+Alt+Shift+F11|
+	*language.php=P&HP|php|$(keyMissing)|
+	*language.xml=&XML|xml|$(keyXML)|
+	keyXML=Alt+Shift+/
+if PLAT_WIN
+	user.shortcuts=
+	*language.xml=&XML|xml|Ctrl+O|
 
 fff=*
 command.name.11.$(fff)=Test Aaa
@@ -339,7 +357,7 @@ command.name.4.$(fff)=Test Ddd
 command.name.5.*.y=Test Ccc
 command.shortcut.5.*.y=Shift+Tab'''
 
-	props = PropSetFile()
+	props = PropSetFile('gtk')
 	props.ReadString(mockProperties)
 	results = readFromProperties(props)
 	results.sort(key=lambda obj: obj.getSortKey())
