@@ -55,8 +55,7 @@ Modifications to SciTE source code include
 	New feature: on Windows, increased number of slots for mru items
 	New feature: SciTEWindowID property
 	New feature: internal grep supports regex search
+	New feature: user.shortcuts supports SCI_ constants
 
-
-	
 
 	

@@ -1653,6 +1653,13 @@ int SciTEBase::GetMenuCommandAsInt(std::string commandName) {
 	if (i != -1) {
 		return IFaceTable::constants[i].value;
 	}
-	// Otherwise we might have entered a number as command to access a "SCI_" command
+
+	i = IFaceTable::FindFunctionByConstantName(commandName.c_str());
+	if (i != -1 && IFaceTable::functions[i].paramType[0] == iface_void &&
+			IFaceTable::functions[i].paramType[1] == iface_void) {
+		return IFaceTable::functions[i].value;
+	}
+
+	// Otherwise we might have entered a number as command
 	return atoi(commandName.c_str());
 }
