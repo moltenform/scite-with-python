@@ -17,92 +17,92 @@ testForAppFunctions = [
 
 # test all permutations of data types
 testForEditorPaneFunctions = [
-    #void|void|void|Home
+    # void|void|void|Home
     ('Go to start of line (return None)', lambda: print(ScEditor.Home())),
-    #void|void|void|LineDuplicate
+    # void|void|void|LineDuplicate
     ('Duplicate current selection (return None)', lambda: print(ScEditor.LineDuplicate())),
-    #bool|void|void|CanUndo
+    # bool|void|void|CanUndo
     ('Can undo? (return bool)', lambda: print(ScEditor.CanUndo())),
-    #int|int|int|MarkerAdd
+    # int|int|int|MarkerAdd
     ('add marker on the 4th line (return markerid)', lambda: print(ScEditor.MarkerAdd(3, 1))),
-    #int|int|stringresult|GetLine
+    # int|int|stringresult|GetLine
     ('get text on line 4 (return text, length)', lambda: print(ScEditor.GetLine(3))),
-    #int|int|string|SearchNext
+    # int|int|string|SearchNext
     ('find next occurence of "a", same case', lambda: print(ScEditor.SearchNext(ScConst.SCFIND_MATCHCASE, 'a'))),
-    #int|int|string|SearchNext
+    # int|int|string|SearchNext
     ('find next occurence of "a", any case', lambda: print(ScEditor.SearchNext(0, 'a'))),
-    #int|int|void|LineLength
+    # int|int|void|LineLength
     ('how many chars on 4th line including newlines?', lambda: print(ScEditor.LineLength(3))),
-    #int|length|stringresult|GetCurLine
+    # int|length|stringresult|GetCurLine
     ('returns (text of current line, index of caret on line)', lambda: print(ScEditor.GetCurLine())),
-    #int|position|bool|WordEndPosition
+    # int|position|bool|WordEndPosition
     ('length of current word?', lambda: print(ScEditor.WordEndPosition(ScEditor.GetCurrentPos(), True) - ScEditor.WordStartPosition(ScEditor.GetCurrentPos(), True))),
-    #int|position|void|LineFromPosition
+    # int|position|void|LineFromPosition
     ('which line am I currently on?', lambda: print(ScEditor.LineFromPosition(1 + ScEditor.GetCurrentPos()))),
-    #position|int|void|PositionFromLine
+    # position|int|void|PositionFromLine
     ('which pos begins the 2nd line?', lambda: print(ScEditor.PositionFromLine(1))),
-    #int|void|stringresult|GetSelText
+    # int|void|stringresult|GetSelText
     ('return selected text', lambda: print(ScEditor.GetSelText())),
-    #position|int|int|CharPositionFromPoint
+    # position|int|int|CharPositionFromPoint
     ('what is char position at x,y 1,1?', lambda: print(ScEditor.CharPositionFromPoint(1, 1))),
-    #position|position|void|BraceMatch
+    # position|position|void|BraceMatch
     ('position of matching brace or -1', lambda: print(ScEditor.BraceMatch(ScEditor.GetCurrentPos()))),
-    #void|bool|colour|SetSelBack
+    # void|bool|colour|SetSelBack
     ('make selection orange', lambda: print(ScEditor.SetSelBack(True, ScConst.MakeColor(192, 96, 0)))),
-    #void|int|int|HideLines
+    # void|int|int|HideLines
     ('Make the 3rd and 4th lines disappear', lambda: print(ScEditor.HideLines(2, 3))),
-    #void|int|string|UserListShow
+    # void|int|string|UserListShow
     ('Display a list of strings a|b|c', lambda: print(ScEditor.UserListShow(1, 'a b c'))),
-    #void|int|void|GotoLine
+    # void|int|void|GotoLine
     ('go to 1st line', lambda: print(ScEditor.GotoLine(0))),
-    #void|length|string|AddText
+    # void|length|string|AddText
     ('add text "Test" to doc', lambda: print(ScEditor.AddText('Test'))),
-    #void|position|position|SetSel
+    # void|position|position|SetSel
     ('select the 3-6th char', lambda: print(ScEditor.SetSel(3, 6))),
-    #void|void|string|SetText
+    # void|void|string|SetText
     ('set entire doc to string "hi"', lambda: print(ScEditor.SetText('hi'))),
-    #void|void|void|ClearAll
+    # void|void|void|ClearAll
     ('clear entire doc', lambda: print(ScEditor.ClearAll()))]
 
 # test all permutations of data types
 testForEditorPaneProperties = [
-    #bool|int|void|GetFoldExpanded
+    # bool|int|void|GetFoldExpanded
     ("is the fold on 4th line expanded?", lambda: print(ScEditor.GetFoldExpanded(3))),
-    #void|int|bool|SetFoldExpanded
+    # void|int|bool|SetFoldExpanded
     ("expand the 4th line (not its children)", lambda: print(ScEditor.SetFoldExpanded(3, True))),
-    #bool|void|void|GetSelectionEmpty
+    # bool|void|void|GetSelectionEmpty
     ("is selection empty?", lambda: print(ScEditor.GetSelectionEmpty())),
-    #void|int|void|SetCaretWidth
+    # void|int|void|SetCaretWidth
     ("make the caret wide", lambda: print(ScEditor.SetCaretWidth(9))),
-    #void|colour|void|SetCaretFore
+    # void|colour|void|SetCaretFore
     ("make caret orange", lambda: print(ScEditor.SetCaretFore(ScConst.MakeColor(192, 96, 0)))),
-    #colour|void|void|GetCaretFore
+    # colour|void|void|GetCaretFore
     ("get foreground color of caret (rgb).", lambda: print(ScConst.GetColor(ScEditor.GetCaretFore()))),
-    #int|int|void|GetLineIndentation
+    # int|int|void|GetLineIndentation
     ("get indentation of the 4th line", lambda: print(ScEditor.GetLineIndentation(3))),
-    #int|position|void|GetCharAt
+    # int|position|void|GetCharAt
     ("get 3rd char", lambda: print(chr(ScEditor.GetCharAt(2)))),
-    #int|void|void|GetLineCount
+    # int|void|void|GetLineCount
     ("count lines in doc", lambda: print(ScEditor.GetLineCount())),
-    #position|int|void|GetLineEndPosition
+    # position|int|void|GetLineEndPosition
     ("get distance until end of line", lambda: print(ScEditor.GetLineEndPosition(ScEditor.LineFromPosition(ScEditor.GetCurrentPos())) - ScEditor.GetCurrentPos())),
-    #position|void|void|GetCurrentPos
+    # position|void|void|GetCurrentPos
     ("current pos?", lambda: print(ScEditor.GetCurrentPos())),
-    #stringresult|int|void|GetStyleFont
-    ("style font for style #1", lambda: print(ScEditor.GetStyleFont(1))),
-    #stringresult|string|void|GetProperty
+    # stringresult|int|void|GetStyleFont
+    ("style font for style # 1", lambda: print(ScEditor.GetStyleFont(1))),
+    # stringresult|string|void|GetProperty
     ("what is the value of property 'fold.html'?", lambda: print(ScEditor.GetProperty('fold.html'))),
-    #stringresult|void|void|GetLexerLanguage
+    # stringresult|void|void|GetLexerLanguage
     ("GetLexerLanguage", lambda: print(ScEditor.GetLexerLanguage())),
-    #void|void|string|SetLexerLanguage
+    # void|void|string|SetLexerLanguage
     ("replace selection with 'Test'", lambda: print(ScEditor.ReplaceSel('Test'))),
-    #void|bool|void|SetViewEOL
+    # void|bool|void|SetViewEOL
     ("toggle view eol chars", lambda: print(ScEditor.SetViewEOL(not ScEditor.GetViewEOL()))),
-    #void|int|colour|SetMarkerBack
+    # void|int|colour|SetMarkerBack
     ("make marker type 1 mint green (ctrl F2 to see it)", lambda: print(ScEditor.SetMarkerBack(1, ScConst.MakeColor(0, 250, 200)))),
-    #void|int|int|SetLineIndentation
+    # void|int|int|SetLineIndentation
     ("set indentation of 4th line to 0", lambda: print(ScEditor.SetLineIndentation(3, 0))),
-    #void|position|void|SetCurrentPos
+    # void|position|void|SetCurrentPos
     ("set position/beginning of selection to beginning", lambda: print(ScEditor.SetCurrentPos(0)))]
 
 allFunctions = []
@@ -160,7 +160,7 @@ def First():
         Next()
         
     elif currentFnIndex < len(currentFnSet):
-        print('Doing this: '+currentFnSet[currentFnIndex][0])
+        print('Doing this: ' + currentFnSet[currentFnIndex][0])
         currentFnSet[currentFnIndex][1]()
     else:
         print('Nothing to do anymore.')
@@ -170,7 +170,7 @@ def Next():
     # by pressing Ctrl-Shift-F1 (customcommand.begin_tests.shortcut)
     global currentFnSet, currentFnIndex
     if currentFnSet is None:
-        print('Not initialized, please press '+ScApp.GetProperty('customcommand.begin_tests.shortcut') +
+        print('Not initialized, please press ' + ScApp.GetProperty('customcommand.begin_tests.shortcut') +
             ' to begin')
         return
     currentFnIndex += 1
@@ -178,7 +178,6 @@ def Next():
         print('Done')
         return
         
-    print('\n\nFrom now on, pressing '+ScApp.GetProperty('customcommand.begin_tests.shortcut') +
-         ' will start the action:\n"' + currentFnSet[currentFnIndex][0] +'"')
+    print('\n\nFrom now on, pressing ' + ScApp.GetProperty('customcommand.begin_tests.shortcut') +
+         ' will start the action:\n"' + currentFnSet[currentFnIndex][0] + '"')
     print('To go next, press ' + ScApp.GetProperty('customcommand.begin_tests_next.shortcut'))
-

@@ -60,7 +60,7 @@ def copy(srcfile, destfile, overwrite):
         failIfExists = c_int(0) if overwrite else c_int(1)
         res = windll.kernel32.CopyFileW(c_wchar_p(srcfile), c_wchar_p(destfile), failIfExists)
         if not res:
-            raise IOError('CopyFileW failed (maybe dest already exists?) '+
+            raise IOError('CopyFileW failed (maybe dest already exists?) ' +
                 getPrintable(srcfile + '->' + destfile))
     else:
         if overwrite:
@@ -81,7 +81,7 @@ def move(srcfile, destfile, overwrite):
         replaceExisting = c_int(1) if overwrite else c_int(0)
         res = windll.kernel32.MoveFileExW(c_wchar_p(srcfile), c_wchar_p(destfile), replaceExisting)
         if not res:
-            raise IOError('MoveFileExW failed (maybe dest already exists?) '+
+            raise IOError('MoveFileExW failed (maybe dest already exists?) ' +
                 getPrintable(srcfile + '->' + destfile))
     elif sys.platform.startswith('linux') and overwrite:
         _os.rename(srcfile, destfile)

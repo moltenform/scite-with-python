@@ -6,8 +6,8 @@
 #
 # The Alphanum Algorithm is discussed at http://www.DaveKoelle.com
 #
-#* Python implementation provided by Chris Hulan (chris.hulan@gmail.com)
-#* Distributed under same license as original
+# Python implementation provided by Chris Hulan (chris.hulan@gmail.com)
+# Distributed under same license as original
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -32,7 +32,7 @@ def chunkify(str):
     the numeric substrings are converted to integer, non-numeric are left as is
     """
     chunks = re.findall("(\d+|\D+)", str)
-    chunks = [re.match('\d', x) and int(x) or x for x in chunks] #convert numeric strings to numbers
+    chunks = [re.match('\d', x) and int(x) or x for x in chunks]  # convert numeric strings to numbers
     return chunks
 
 def sortalphanum(a, b):
@@ -46,7 +46,7 @@ def sortalphanum(a, b):
     aChunks = chunkify(a)
     bChunks = chunkify(b)
 
-    return cmp(aChunks, bChunks) #built in comparison works once data is prepared
+    return cmp(aChunks, bChunks)  # built in comparison works once data is prepared
 
 def naturalsortclassic(unsorted):
     unsorted.sort(sortalphanum)

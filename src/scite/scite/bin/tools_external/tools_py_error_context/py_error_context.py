@@ -1,5 +1,5 @@
 # print_error_context - Quick and dirty debugging. Usage: py_error_context.py {nameofscript}
-# Runs a Python script, displaying local variables on error. 
+# Runs a Python script, displaying local variables on error.
 # Intended for SciTE code editor. (Looks better in Python 2.4 and above)
 # Inspired by http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/52215 (pydebug.py)
 # Made hacktastic by Ben Fisher in 2007
@@ -36,7 +36,7 @@ def print_exc_vars():
         tb = tb.tb_next
     
     try:
-        #Python 2.4 or above
+        # Python 2.4 or above
         atrace = traceback.format_exc().split('\n  File')
         if atrace[-1].find('DEBUG') == -1:
             print('\n  File ' + str(atrace[-1]).strip())
@@ -76,7 +76,7 @@ def print_exc_vars():
                 print('<ERROR WHILE PRINTING VALUE>')
 
 def prepare_and_exec(filename):
-     # add dir to sys.path
+    # add dir to sys.path
     sys.path.append(os.path.split(filename)[0])
     
     # change cwd
@@ -92,10 +92,10 @@ def prepare_and_exec(filename):
 
 if __name__ == '__main__':
     args = list(sys.argv)
-    if len(args)>1:
+    if len(args) > 1:
         if args[1].find('py_error_context.py') != -1:
             print('Cannot use py_error_context on itself :)')
         else:
-           prepare_and_exec(args[1])
+            prepare_and_exec(args[1])
     else:
         print('Usage: py_error_context.py nameofscript.py')

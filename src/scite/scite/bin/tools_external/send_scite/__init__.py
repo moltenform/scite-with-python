@@ -69,10 +69,8 @@ def escapeMessage(message):
 def sendSciteMessage(hwnd, message):
     needToEscape = True
     if needToEscape:
-       message = escapeMessage(message)
-       if not message:
-           return None
+        message = escapeMessage(message)
+        if not message:
+            return None
 
     return sendCopyDataMessage(hwnd, message, dwData=0)
-
-

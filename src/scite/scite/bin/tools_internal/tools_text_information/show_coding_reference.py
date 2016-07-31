@@ -2,7 +2,7 @@
 class ShowCodingReference(object):
     def go(self):
         from scite_extend_ui import ScAskUserChoiceByPressingKey
-        self.choices = ['G|searchweb|Google selection', 
+        self.choices = ['G|searchweb|Google selection',
             'C|colorpicker|Show rgb color picker',
             'A|ascii|Show table of ascii codes',
             'H|hexeditor|Edit this file in hex editor']
@@ -52,8 +52,8 @@ class ShowCodingReference(object):
         propname = 'customcommand.open_in_hex_editor.binary'
         binaryPath = ScApp.GetProperty(propname)
         if not files.isfile(binaryPath):
-            doc = '''Could not find the hex editor at 
-%s, 
+            doc = '''Could not find the hex editor at
+%s,
 Please open
 %s/tools_internal/tools_text_information/register.properties
 
@@ -74,7 +74,7 @@ def DoShowCodingReference():
     ShowCodingReference().go()
                 
 if __name__ == '__main__':
-    from ben_python_common import assertEq, assertException
+    from ben_python_common import assertEq
     
     assertEq('#ff0102', getHexColor(255, 1, 2))
     assertEq('#0102ff', getHexColor(1, 2, 255))

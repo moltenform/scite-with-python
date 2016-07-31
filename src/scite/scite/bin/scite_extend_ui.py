@@ -148,7 +148,7 @@ class ScAskUserInputBase(ScToolUIBase):
         textEntered = self.Get(self.cmb)
         self.callback(textEntered)
 
-class ScAskUserInput(ScAskUserInputBase):
+class ScAskUserInputClass(ScAskUserInputBase):
     '''Currently has identical behavior as ScAskUserInputBase'''
     pass
 
@@ -158,7 +158,7 @@ class ScAskUserChoiceClass(ScAskUserInputBase):
     Provide a list in the form 'choiceID|Shown In UI', and a callback which will be sent choiceID.
     '''
     def __init__(self, choices, callback, label='Please choose:', leaveOpen=False):
-        if len(choices) == 0 or not '|' in choices[0]:
+        if len(choices) == 0 or '|' not in choices[0]:
             raise ValueError('choices must be a non-empty list of strings')
 
         self.choiceIDs = [s.split('|')[0] for s in choices]
@@ -205,7 +205,7 @@ class ScMultiKeyChoiceClass(object):
     and a callback which will be sent choiceID.
     '''
     def __init__(self, choices, callback, showPerforming=True, label='Please choose:'):
-        if len(choices) == 0 or not '|' in choices[0]:
+        if len(choices) == 0 or '|' not in choices[0]:
             raise ValueError('choices must be a non-empty list of strings')
 
         self.callback = callback
@@ -289,7 +289,7 @@ class ScMultiKeyChoiceClass(object):
 
 
 def ScAskUserInput(*args, **kwargs):
-    toolUI = ScAskUserInput(*args, **kwargs)
+    toolUI = ScAskUserInputClass(*args, **kwargs)
     toolUI.Show()
     
 def ScAskUserChoice(*args, **kwargs):
@@ -299,10 +299,8 @@ def ScAskUserChoice(*args, **kwargs):
 def ScAskUserChoiceByPressingKey(*args, **kwargs):
     multikey = ScMultiKeyChoiceClass(*args, **kwargs)
     multikey.Show()
-    
 
 
 # create singleton instances
 ScToolUIManager = ScToolUIManagerClass()
 ScMultiKeyManager = ScMultiKeyManagerClass()
-

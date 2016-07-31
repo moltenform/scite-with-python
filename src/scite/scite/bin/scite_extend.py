@@ -95,7 +95,7 @@ class ScAppClass(object):
         '''Run a command, see the full list in SciTEWithPythonAPIReference.html'''
         if s.startswith('Cmd'):
             # return a callable object; it looks like a method to the caller.
-            commandName =  s[len('Cmd'):]
+            commandName = s[len('Cmd'):]
             return (lambda: SciTEModule.app_SciteCommand(commandName))
         else:
             raise AttributeError()
@@ -159,7 +159,6 @@ class ScPaneClassUtils(object):
         from scite_extend_ui import ScEditor
         ScEditor.Utils.ExpandSelectionToIncludeEntireLines()
     '''
-    pane = None
     def __init__(self, pane):
         self.pane = pane
     
@@ -199,7 +198,6 @@ class ScPaneClass(object):
         ScEditor.LineDuplicate()
     '''
     
-    paneNumber = -1
     def __init__(self, paneNumber):
         self.paneNumber = paneNumber
         self.Utils = ScPaneClassUtils(self)
@@ -273,7 +271,7 @@ def OnEvent(eventName, args):
         if val == ScConst.StopEventPropagation:
             return val
     
-    # call into each plugin that registered for this event 
+    # call into each plugin that registered for this event
     callbacks = ScApp.registeredCallbacks.get(eventName, None)
     if callbacks:
         for command, path in callbacks:
@@ -298,7 +296,7 @@ def findCallbackModuleFromPath(command, path):
     expectedPythonModdir = os.path.join(ScApp.GetSciteDirectory(), path)
     expectedPythonInit = os.path.join(expectedPythonModdir, '__init__.py')
     if not os.path.isfile(expectedPythonInit):
-        raise RuntimeError, 'command %s could not find a file at %s' % (command, expectedPythonInit)
+        raise RuntimeError('command %s could not find a file at %s' % (command, expectedPythonInit))
     
     # I could use imp.load_source to load the __init__.py directly, but then it can't access its submodules
     pathsaved = sys.path
@@ -321,7 +319,7 @@ def findCallbackModule(command):
 def callCallbackModule(module, command, eventName, args):
     function = getattr(module, eventName, None)
     if not function:
-        raise RuntimeError, 'command %s registered for event %s but we could not find function of this name' % (command, eventName)
+        raise RuntimeError('command %s registered for event %s but we could not find function of this name' % (command, eventName))
     else:
         return function(*args) if args else function()
 
@@ -384,7 +382,7 @@ def registerCustomCommand(heuristicDuplicateShortcut, command, number):
     shortcutTemporary = ScApp.GetProperty('customcommand.' + command + '.shortcut')
     modeTemporary = ScApp.GetProperty('customcommand.' + command + '.mode')
     stdinTemporary = ScApp.GetProperty('customcommand.' + command + '.stdin')
-    actionTemporary, subsystem = findChosenProperty(command, \
+    actionTemporary, subsystem = findChosenProperty(command,
         ['waitforcomplete_console', 'waitforcomplete', 'start', 'py_immediate', 'py'])
     
     isPython = subsystem and subsystem.startswith('py')
@@ -402,7 +400,7 @@ def registerCustomCommand(heuristicDuplicateShortcut, command, number):
         assert False, 'in command %s, currently path is only needed for python modules' % command
     
     if shortcutTemporary and shortcutTemporary.lower() in heuristicDuplicateShortcut:
-        raise RuntimeError, 'command %s, the shortcut %s was apparently already registered ' % (command, shortcutTemporary)
+        raise RuntimeError('command %s, the shortcut %s was apparently already registered ' % (command, shortcutTemporary))
     else:
         heuristicDuplicateShortcut[(shortcutTemporary or '').lower()] = True
     

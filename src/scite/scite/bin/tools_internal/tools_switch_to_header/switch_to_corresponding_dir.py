@@ -4,7 +4,7 @@ from ben_python_common import files, assertEq
 # Sometimes you'll have two copies of a codebase in separate directories.
 # The "switch_to_corresponding_dir" plugin lets you quickly switch from one directory's version of a file to another.
 # for example, there are two files, c:\example\working\foo\bar\code.cpp and c:\example\master\foo\bar\code.cpp.
-# if you set up a mapping c:\example\working|c:\example\master in the list defined by 
+# if you set up a mapping c:\example\working|c:\example\master in the list defined by
 #                           customcommand.switch_to_corresponding_dir.directorymappings,
 # you can open the file c:\example\working\foo\bar\code.cpp
 # run the "switch_to_corresponding_dir" plugin,
@@ -15,17 +15,17 @@ def getCandidates(currentFile, mappings):
     candidates = []
     currentFileLower = currentFile.lower()
     for srcdir, destdir in mappings:
-       if currentFileLower.startswith(srcdir.lower() + files.sep):
-           filejustpath = currentFile[len(srcdir):]
-           destfile = destdir + filejustpath
-           candidates.append(destfile)
+        if currentFileLower.startswith(srcdir.lower() + files.sep):
+            filejustpath = currentFile[len(srcdir):]
+            destfile = destdir + filejustpath
+            candidates.append(destfile)
     
-    return candidates 
+    return candidates
 
 def getMappingsFromString(s):
     '''mappings are stored in a list of (srcdir, destdir), preserves order unlike dict.'''
     result = []
-    s = s.replace('\r\n','\n').replace('\r', '\n')
+    s = s.replace('\r\n', '\n').replace('\r', '\n')
     s = s.replace('||', '\n')
     lines = s.split('\n')
     for line in lines:
@@ -54,10 +54,10 @@ def SwitchToCorrespondingDir():
     propMappings = ScApp.GetProperty(propKey)
     if not currentFile:
         print('It doesn\'t appear that a file is open.')
-    elif not propMappings or not '|' in propMappings:
+    elif not propMappings or '|' not in propMappings:
         print('It doesn\'t appear that anything has been set in ' + propKey)
-        print('Edit %s to see an example and provide a definition.' % 
-            files.join(ScApp.GetSciteDirectory(), 
+        print('Edit %s to see an example and provide a definition.' %
+            files.join(ScApp.GetSciteDirectory(),
             'tools_internal/tools_switch_to_header/register.properties'))
     else:
         target = getTargetFile(propMappings, currentFile)
@@ -105,4 +105,3 @@ if __name__ == '__main__':
     mpMany = r'c:\e\ww|c:\e\mm||c:\e\w|c:\e\m1||c:\e\w|c:\e\m2||c:\e\w|c:\e\m3'
     assertEq([r'c:\e\m1\a.cpp', r'c:\e\m2\a.cpp', r'c:\e\m3\a.cpp'],
         getCandidates(r'c:\e\w\a.cpp', getMappingsFromString(mpMany)))
-

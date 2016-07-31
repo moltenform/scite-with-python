@@ -1,7 +1,7 @@
 
 
 def WritePrintStatement(word):
-    from scite_extend_ui import ScApp, ScEditor
+    from scite_extend_ui import ScEditor
     whatToWrite = "print '''%s''', %s"%(word, word)
     
     ScEditor.BeginUndoAction()

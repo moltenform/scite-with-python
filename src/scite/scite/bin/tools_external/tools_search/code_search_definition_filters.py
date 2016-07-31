@@ -379,7 +379,7 @@ def tests():
     # class: Buffer, Rectangle
     # enum: GrepFlags, IndentationStatus
     # typedef: utf8, WindowID
-    # methods: int SciTEBase::IndentOfBlock, int SciTEBase::CallFocused, 
+    # methods: int SciTEBase::IndentOfBlock, int SciTEBase::CallFocused,
     # GetNewExpandString, static const char *GetNextPropItem
     # functions: inline bool isspacechar, static size_t FindCaseInsensitive
     # variables: PropSetFile::caseSensitiveFilenames, static lua_State *luaState,

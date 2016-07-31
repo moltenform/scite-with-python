@@ -1,13 +1,9 @@
 
 useLexersParens = ['cpp', 'python']
-useLexersXml = ['xml','hypertext']
+useLexersXml = ['xml', 'hypertext']
 singletonsXml = ('br', 'img', 'hr', 'meta')
 openParen, closeParen = ord('('), ord(')')
 openAngle, closeAngle = ord('<'), ord('>')
-
-def onCloseTag():
-    from scite_extend_ui import ScEditor, ScOutput, ScApp
-    lexerLanguage = ScEditor.GetLexerLanguage()
 
 def getTextToInsertOnOpenParen(lexerLanguage):
     from scite_extend_ui import ScEditor
@@ -18,7 +14,7 @@ def getTextToInsertOnOpenParen(lexerLanguage):
         return None
         
     if lexerLanguage == 'python':
-        if lineText.startswith('    def ') and not ')' in lineText:
+        if lineText.startswith('    def ') and ')' not in lineText:
             # because it's indented, this looks like a class method, so let's add the self parameter
             return 'self)'
     
@@ -52,7 +48,6 @@ def onCloseTag():
 def getTextToInsertOnCloseTag(lexerLanguage, lineText, linePos):
     # go back to the nearest < character
     i = linePos - 1
-    posAlphaSeen = 0
     while i >= 0 and lineText[i] != '<':
         if lineText[i] == '>' and i != linePos - 1:
             # there's already a closing tag and it's not the one we just typed... exit

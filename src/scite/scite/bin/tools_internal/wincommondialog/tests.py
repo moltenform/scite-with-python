@@ -13,6 +13,7 @@ def testDisallowCastToBool(obj):
 
 def tests():
     import os
+    
     def announce(s):
         showMsg(s)
         
@@ -124,4 +125,3 @@ def tests():
 
 if __name__ == '__main__':
     tests()
-    

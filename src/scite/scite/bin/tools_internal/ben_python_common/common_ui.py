@@ -251,7 +251,7 @@ def softDeleteFile(s):
     prefix = files.getname(files.getparent(s))[0:2] + '_'
     newname = trashdir + files.sep + prefix + files.split(s)[1] + getRandomString()
     if files.exists(newname):
-        raise Exception('already exists ' + newname + 
+        raise Exception('already exists ' + newname +
             '. is this directory full of files, or was the random seed reused?')
     files.move(s, newname, False)
     return newname

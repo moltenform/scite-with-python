@@ -2,21 +2,21 @@
 class ShowSelectionInfo(object):
     def go(self):
         from scite_extend_ui import ScAskUserChoiceByPressingKey
-        self.choices = ['S|sum|Sum of numbers', 
+        self.choices = ['S|sum|Sum of numbers',
             'T|stats|Stats e.g. mean of numbers',
             'I|sumtimes|Sum of times (mm:ss)',
             'A|ascii|Show ascii of selected text',
             'C|counting|Line count, word count, char count']
         label = 'Please select some text and choose:'
         ScAskUserChoiceByPressingKey(
-        choices=self.choices, label=label, callback=self.onChoiceMade)
+            choices=self.choices, label=label, callback=self.onChoiceMade)
 
     def onChoiceMade(self, choice):
         from scite_extend_ui import ScEditor
         selected = ScEditor.GetSelectedText()
         
         if selected:
-             # look for a method named choice
+            # look for a method named choice
             assert choice in [s.split('|')[1] for s in self.choices]
             method = self.__getattribute__(choice)
             method(selected)
@@ -126,11 +126,11 @@ class BasicStats(object):
     def _ss(self, data):
         """Return sum of square deviations of sequence data."""
         c = self.mean(data)
-        total = sum((x-c)**2 for x in data)
+        total = sum((x - c) ** 2 for x in data)
         # The following sum should mathematically equal zero, but due to rounding
         # error may not.
-        total2 = sum((x-c) for x in data)
-        total -=  total2**2/len(data)
+        total2 = sum((x - c) for x in data)
+        total -= total2 ** 2 / len(data)
         assert not total < 0, 'negative sum of square deviations: %f' % total
         return total
     
@@ -146,14 +146,14 @@ class BasicStats(object):
         if n < 2:
             raise ValueError('variance requires at least two data points')
         ss = self._ss(data)
-        return ss/(float(n)-1)
+        return ss / (float(n) - 1)
     
     def pvariance(self, data, mu=None):
         n = len(data)
         if n < 1:
             raise ValueError('pvariance requires at least one data point')
         ss = self._ss(data)
-        return ss/float(n)
+        return ss / float(n)
     
     def stdev(self, data):
         import math
@@ -167,7 +167,7 @@ def DoShowSelectionInfo():
     ShowSelectionInfo().go()
 
 if __name__ == '__main__':
-    from ben_python_common import assertEq, assertFloatEq, assertException
+    from ben_python_common import assertEq, assertFloatEq
     
     st = BasicStats()
     assertFloatEq(2.8, st.mean([1, 2, 3, 4, 4]))
@@ -194,6 +194,3 @@ if __name__ == '__main__':
     assertEq(1, getWordCount('test'))
     assertEq(15, getWordCount('Lorem ipsum dolor sit amet, consectetur adipiscing ' +
         'elit. In id aliquam lorem, eu pulvinar velit.'))
-
-
-

@@ -5,7 +5,7 @@ data1 = getData1();
 data2 = getData2();
 data3 = getData3();
 
-First, write 
+First, write
 data@ = getData@();
 data@ = getData@();
 data@ = getData@();
@@ -17,7 +17,7 @@ dataRed = getDataRed();
 dataGreen = getDataGreen();
 dataBlue = getDataBlue();
 
-First, write 
+First, write
 data@Red@ = getData@@();
 data@Green@ = getData@@();
 data@Blue@ = getData@@();
@@ -71,7 +71,7 @@ def atreplacewords(lines, silent=False):
 def atreplacewords_impl(lineOrig, silent):
     # let's say the string is in the form before@value@after
     uniqueMarker = '\x01\x01\x01marker\x01\x01\x01'
-    assert not uniqueMarker in lineOrig
+    assert uniqueMarker not in lineOrig
     line = lineOrig.replace('@@', uniqueMarker)
     parts = line.split('@')
     if len(parts) != 3:
@@ -94,7 +94,7 @@ if __name__ == '__main__':
         fn(arr)
         assertEq(expected, '|'.join(arr))
     
-    #leading zeros disabled and not needed
+    # leading zeros disabled and not needed
     input = 'data@ = getData@();|data@ = getData@();|data@ = getData@();'
     expected = 'data1 = getData1();|data2 = getData2();|data3 = getData3();'
     testLines(expected, input, lambda s: atreplacenumbers_impl(s, 1, False))

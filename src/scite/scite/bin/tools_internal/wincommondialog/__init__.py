@@ -24,7 +24,7 @@ def askOKCancel(text, title=''):
     return True if retcode == 8 else False
 
 def askYesNoCancel(text, title=''):
-    '''ask user to choose Yes, No, or Cancel. 
+    '''ask user to choose Yes, No, or Cancel.
     call .value() on the object that is returned to see the result'''
     retcode, stdout = callProc(['simple', 'yesnocancel', title, text])
     if retcode == 8:
@@ -49,11 +49,11 @@ def askColor():
 
 def askFileBase(action, types=None, startdir=None, mult=False):
     '''open file dialog.
-    note: in Python 3 this will support unicode, but in Python 2 it will not, 
+    note: in Python 3 this will support unicode, but in Python 2 it will not,
     see files.runWithoutWaitUnicode for my workaround for a similar case.'''
     if types and ('*' in types or '.' in types):
         raise ValueError('types should be just the extension, e.g. "png" not "*.png"')
-    args = ['file', action, types or '*' ]
+    args = ['file', action, types or '*']
     if startdir:
         args.append(startdir)
     retcode, stdout = callProc(args)
@@ -83,7 +83,7 @@ def askOpenFile(types=None, startdir=None, mult=False):
     
     # confirm files exist.
     if results:
-        assertTrue(all(files.isfile(filename) for filename in (results if mult else [results])), 
+        assertTrue(all(files.isfile(filename) for filename in (results if mult else [results])),
             'Unicode not supported due to limitation in the Python 2 subprocess module.')
     return results
 
@@ -92,7 +92,7 @@ def askSaveFile(types=None, startdir=None, autoFixExtension=True):
     result = askFileBase(action='save', types=types, startdir=startdir)
     
     # add the extension if the user didn't add it...
-    # we can do this because we only support one extension, otherwise we'd have to 
+    # we can do this because we only support one extension, otherwise we'd have to
     # do this in C++ and look at ofn.nFilterIndex.
     if result and types and autoFixExtension and not result.lower().endswith('.' + types.lower()):
         proposedName = result + '.' + types
@@ -110,7 +110,6 @@ def askInput(prompt='Please provide input:', title='', default=''):
     '''ask user to provide text'''
     retcode, stdout = callProc(['text', title, prompt, default])
     try:
-        maxSplits = 2
         parts = stdout.split('|')
         if parts[1] == 'text_cancel':
             return None
@@ -140,10 +139,12 @@ class DisallowCastToBool(object):
     the caller should instead say if result.value() == 'yes': ...'''
     def __init__(self, value):
         self.val = value
+    
     def __nonzero__(self):
         raise RuntimeError('you must use .value() to check the value.')
+    
     def __bool__(self):
         raise RuntimeError('you must use .value() to check the value.')
+    
     def value(self):
         return self.val
-

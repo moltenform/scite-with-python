@@ -6,7 +6,7 @@ import subprocess
 from code_search_definition_filters import getFilterObject, filterLine
 
 def getSciteInternalSearchArgs(wholeWord, matchCase,
-    includeHidden, includeBinary, filetypes, searchTerm):
+        includeHidden, includeBinary, filetypes, searchTerm):
     s = ''
     s += 'w' if wholeWord else '~'
     s += 'c' if matchCase else '~'

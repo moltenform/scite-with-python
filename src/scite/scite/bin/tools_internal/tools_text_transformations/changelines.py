@@ -4,9 +4,9 @@ class ChangeLines(object):
         from scite_extend_ui import ScAskUserChoiceByPressingKey
         self.choices = ['A|sortaz|Sort A-Z',
             'Z|sortza|Sort Z-A',
-            'R|reverse|Reverse', 
+            'R|reverse|Reverse',
             'S|shuffle|Quick shuffle',
-            'N|sortnum|Sort numbers naturally', 
+            'N|sortnum|Sort numbers naturally',
             '2|sortcol2|Sort by 2nd col',
             '3|sortcol3|Sort by 3rd col',
             '4|sortcol4|Sort by 4th col',
@@ -73,7 +73,7 @@ class ChangeLines(object):
                 return '\n'
         else:
             print(silent or 'Contains both unix and windows newlines, ' +
-                    'please address this first.')
+                'please address this first.')
             return None
 
     def sortaz(self, lines):
@@ -86,7 +86,7 @@ class ChangeLines(object):
         lines.reverse()
 
     def shuffle(self, lines):
-        # we call it quick shuffle in UI because the number of permutations is often 
+        # we call it quick shuffle in UI because the number of permutations is often
         # larger than the RNG period, and so for some lengths many orderings will never be seen.
         import random
         random.shuffle(lines)

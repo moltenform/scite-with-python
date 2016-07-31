@@ -8,7 +8,7 @@ except ImportError:
     from ConfigParser import RawConfigParser, NoOptionError
 
 def getStorageFilePath():
-    from scite_extend_ui import ScAskUserChoiceByPressingKey, ScApp
+    from scite_extend_ui import ScApp
     appUserDir = ScApp.GetSciteUserDirectory()
     return ben_python_common.files.join(appUserDir, 'SciTE_quick_info.session')
 
@@ -58,7 +58,9 @@ class BaseAskChoiceStoredData(object):
         else:
             import wincommondialog
             defaultText = currentContents if currentContents else self.getDefaultForNewInput()
-            value = wincommondialog.askInput('Please enter a value for ' + choiceId + ', or type "clip" to use current clipboard contents:', default=defaultText)
+            value = wincommondialog.askInput('Please enter a value for ' + choiceId +
+                ', or type "clip" to use current clipboard contents:', default=defaultText)
+            
             if value:
                 if value.strip() == 'clip':
                     value = ben_python_common.getClipboardText()
@@ -134,7 +136,7 @@ class QuickInfo(object):
     def go(self):
         from scite_extend_ui import ScAskUserChoiceByPressingKey
         self.choices = ['O|storedfilename_get|open stored filename...',
-        'P|storedfilename_set|set stored filename...\n', 
+        'P|storedfilename_set|set stored filename...\n',
         'J|storeddirectory_get|open stored directory...',
         'K|storeddirectory_set|set stored directory...\n',
         'T|storedstring_get|open stored string...',
@@ -173,8 +175,7 @@ class QuickInfo(object):
             storageFilename = getStorageFilePath()
             obj = classType(title, sectionName, storageFilename, getOrSet)
             obj.go()
-    
-         
+
     def openscratchfile(self):
         from scite_extend_ui import ScApp
         propname = 'customcommand.quick_info.scratchfilepath'
@@ -182,11 +183,11 @@ class QuickInfo(object):
         propertiesfile = files.join(ScApp.GetSciteDirectory(),
                 'tools_internal', 'tools_quick_info', 'register.properties')
         if not scratchpath:
-            print('No scratch file path set, please open \n%s\n and provide a value for \n%s\n' % 
+            print('No scratch file path set, please open \n%s\n and provide a value for \n%s\n' %
                 (propertiesfile, propname))
         elif not files.isfile(scratchpath):
             print(('scratch file path set to %s but this file does not exist, please ' +
-                'open \n%s\n and provide a value for \n%s\n') % 
+                'open \n%s\n and provide a value for \n%s\n') %
                 (scratchpath, propertiesfile, propname))
         else:
             ScApp.OpenFile(scratchpath)
@@ -205,7 +206,7 @@ class QuickInfo(object):
             for full, short in files.listfiles(dir):
                 ext = files.splitext(short)[1]
                 ext = ext.lstrip('.')
-                if not ext in skipExts:
+                if ext not in skipExts:
                     listFiles.append((short, ext))
             
             if sortByExtension:

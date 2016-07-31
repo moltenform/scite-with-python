@@ -52,8 +52,7 @@ def OnFileChange():
     showWarnings.showWarningIfNeeded()
 
 def getListFromPropertiesString(s):
-    result = []
-    s = s.replace('\r\n','\n').replace('\r', '\n')
+    s = s.replace('\r\n', '\n').replace('\r', '\n')
     s = s.replace('|', '\n')
     lines = s.split('\n')
     return [line.strip() for line in lines if line.strip()]
@@ -99,5 +98,3 @@ if __name__ == '__main__':
     assertEq(True, shouldWarn(r'c:\example\warn1\d\d\d\a.txt', listDirs))
     assertEq(True, shouldWarn(r'c:\exAMPle\warn1\aCAPITAL.txt', listDirs))
     assertEq(True, shouldWarn(r'c:\example\warn2\a.txt', listDirs))
-    
-    
