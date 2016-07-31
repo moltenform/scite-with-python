@@ -773,8 +773,7 @@ DWORD SciTEWin::ExecuteOne(const Job &jobToRun) {
 		const char *grepCmd = jobToRun.command.c_str();
 		if (*grepCmd) {
 			// parse grepflags
-			std::string spec = grepCmd;
-			GrepFlags gf = GrepFlagsFromString(GUI::gui_string(spec.begin(), spec.end()));
+			GrepFlags gf = GrepFlagsFromString(GUI::StringFromUTF8(grepCmd));
 
 			// command delimited by nul bytes, go to the next string by moving strlen + 1.
 			const char *findFiles = grepCmd + strlen(grepCmd) + 1;
