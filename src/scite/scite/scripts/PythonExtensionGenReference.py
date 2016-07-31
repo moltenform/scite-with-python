@@ -10,19 +10,18 @@ srcRoot = "../.."
 sys.path.append(srcRoot + "/scintilla/scripts")
 
 import Face
-from FileGenerator import Regenerate
 
 sectionsToHide = {
-	'Error handling':0,
-	'Mouse capture':0,
-	'Key bindings':0,
-	'Popup edit menu':0,
-	'Macro recording':0,
-	'Direct access':0,
-	'Multiple views':0,
-	'Background loading and saving':0,
-	'Notifications':0,
-	'Deprecated messages and notifications':0,
+	'Error handling': 0,
+	'Mouse capture': 0,
+	'Key bindings': 0,
+	'Popup edit menu': 0,
+	'Macro recording': 0,
+	'Direct access': 0,
+	'Multiple views': 0,
+	'Background loading and saving': 0,
+	'Notifications': 0,
+	'Deprecated messages and notifications': 0,
 }
 
 knownMissingFromGetScriptableInterface = dict(
@@ -36,8 +35,7 @@ knownMissingFromGetScriptableInterface = dict(
 	SCI_GETKEYSUNICODE=0, # deprecated
 	SCI_SETKEYSUNICODE=0, # deprecated
 	StyleByteIndicators=0, # no longer supported
-	message=0
-	)
+	message=0)
 
 knownMissingFromIdsInOrder = dict(
 	SCI_FORMFEED=0,
@@ -138,9 +136,9 @@ def CommentString(prop):
 	return ''
 
 def replaceWholeWord(starget, sin, srep):
-    import re
-    sin = '\\b' + re.escape(sin) + '\\b'
-    return re.sub(sin, srep, starget)
+	import re
+	sin = '\\b' + re.escape(sin) + '\\b'
+	return re.sub(sin, srep, starget)
 
 def getConstantsFromIFaceTableSrc():
 	# returns list of strings
@@ -152,8 +150,8 @@ def getConstantsFromIFaceTableSrc():
 		constantname = parts[0]
 		constantname = constantname.lstrip(' {"\t')
 		constantname = constantname.rstrip(' "')
-		if not (constantname.startswith('IDM_') or constantname.startswith('SCE_') or \
-			constantname.startswith('SCI_') or constantname.startswith('SCK_') or \
+		if not (constantname.startswith('IDM_') or constantname.startswith('SCE_') or
+			constantname.startswith('SCI_') or constantname.startswith('SCK_') or
 			constantname.startswith('SCLEX')):
 			results.append(constantname)
 	return results
@@ -186,7 +184,7 @@ def getMapFromIdmToMenuText():
 				symbol = symbol.strip()
 				text = text[1:].replace("&", "").replace("...", "")
 				if "\\t" in text:
-					text = text.split("\\t",1)[0]
+					text = text.split("\\t", 1)[0]
 				map[symbol] = text
 	return map
 
@@ -202,7 +200,7 @@ GetFilePath|Returns full file path
 GetFileName|Returns file name
 GetFileDirectory|Returns directory of file
 GetSciteDirectory|Returns SciTE location
-GetSciteUserDirectory|Returns SciTE user dir location'''.replace('\r\n','\n').split('\n')
+GetSciteUserDirectory|Returns SciTE user dir location'''.replace('\r\n', '\n').split('\n')
 	manuallyAddMethods.reverse()
 	for line in manuallyAddMethods:
 		methodName, desc = line.split('|')
@@ -214,7 +212,7 @@ def addPythonDefinedConstants(currentList):
 	manuallyAddConstants = '''MakeKeymod(keycode, shift=False, ctrl=False, alt=False)
 MakeColor(red, green, blue)
 GetColor(val)
-StopEventPropagation'''.replace('\r\n','\n').split('\n')
+StopEventPropagation'''.replace('\r\n', '\n').split('\n')
 	manuallyAddConstants.reverse()
 	for added in manuallyAddConstants:
 		currentList.insert(0, added)
@@ -230,7 +228,7 @@ SCI_GETTEXTRANGE|Text retrieval and modification|string|PaneGetText(int pos1, in
 SCI_FINDTEXT|Searching|int,int|PaneFindText(string s, int pos1=0, int pos2=-1, wholeWord=False, matchCase=False, regExp=False, flags=0)|Find text
 SCI_GETLINE|Text retrieval and modification|string|GetLineText(int line)|Returns text of specified line
 SCI_GETSELTEXT|Text retrieval and modification|string|GetSelectedText()|Returns selected text
-SCI_GETCURLINE|Text retrieval and modification|string|GetCurrentLineText()|Returns text of current line'''.replace('\r\n','\n').split('\n')
+SCI_GETCURLINE|Text retrieval and modification|string|GetCurrentLineText()|Returns text of current line'''.replace('\r\n', '\n').split('\n')
 	for line in manuallyAdd:
 		featureId, sectionName, returnType, methodName, comment = line.split('|')
 		fakeFeatureId = 'SCI_FAKE_' + methodName
@@ -263,12 +261,12 @@ def writeScConstMethodsToFile(out):
 	addPythonDefinedConstants(currentList)
 	for constant in currentList:
 		# many are for SCN_ events which aren't useful to the python extension
-		if not (constant.startswith('SC_FOLDFLAG_') or constant.startswith('SC_MARKNUM_') \
-			or constant.startswith('SC_MOD_') or constant.startswith('SC_MARK_') or constant.startswith('SC_UPDATE_') \
-			or constant.startswith('SC_MODEVENTMASKALL') or constant.startswith('SC_PERFORMED_') \
-			or constant.startswith('SC_MULTISTEPUNDOREDO') or constant.startswith('SC_LASTSTEPINUNDOREDO') \
-			or constant.startswith('SC_MULTILINEUNDOREDO') or constant.startswith('SC_STARTACTION') \
-			or constant.startswith('SC_AC_')):
+		if not (constant.startswith('SC_FOLDFLAG_') or constant.startswith('SC_MARKNUM_') or
+			constant.startswith('SC_MOD_') or constant.startswith('SC_MARK_') or constant.startswith('SC_UPDATE_') or
+			constant.startswith('SC_MODEVENTMASKALL') or constant.startswith('SC_PERFORMED_') or
+			constant.startswith('SC_MULTISTEPUNDOREDO') or constant.startswith('SC_LASTSTEPINUNDOREDO') or
+			constant.startswith('SC_MULTILINEUNDOREDO') or constant.startswith('SC_STARTACTION') or
+			constant.startswith('SC_AC_')):
 			constant = 'ScConst.' + constant
 			out.write("<tr><td>%s</td></tr>\n" % escapeXml(constant))
 
@@ -381,7 +379,7 @@ def writeScEditorMethodsToFile(out):
 			
 			sections[sectionName].append(mapSymbolNameToExplanation[featureId])
 		elif featureId not in knownMissingFromGetScriptableInterface:
-			print('GetScriptableInterface said to skip featureID %s, ' + 
+			print('GetScriptableInterface said to skip featureID %s, ' +
 				'add to knownMissingFromGetScriptableInterface if this looks right.' % featureId)
 		
 	# within each section, sort by methodName
@@ -426,15 +424,15 @@ def writeScEditorMethodsToFile(out):
 startFile = """
 <?xml version="1.0"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <!--Generated by scite/scripts/%script% -->
 <style type="text/css">
-	body { font-family:verdana, Geneva, sans-serif; font-size: 80% }
-	table { border: 1px solid #1F1F1F; border-collapse: collapse; }
-	td { border: 1px solid; border-color: #E0E0E0 #000000; padding: 1px 5px 1px 5px; }
-	th { border: 1px solid #1F1F1F; padding: 1px 5px 1px 5px; }
-	thead { background-color: #000000; color: #FFFFFF; }
+body { font-family:verdana, Geneva, sans-serif; font-size: 80% }
+table { border: 1px solid #1F1F1F; border-collapse: collapse; }
+td { border: 1px solid; border-color: #E0E0E0 #000000; padding: 1px 5px 1px 5px; }
+th { border: 1px solid #1F1F1F; padding: 1px 5px 1px 5px; }
+thead { background-color: #000000; color: #FFFFFF; }
 </style>
 <body>
 """
@@ -470,5 +468,5 @@ def RegenerateAll():
 		writeScConstMethods(out)
 		out.write("</body>\n</html>\n")
 	
-if __name__=="__main__":
+if __name__ == "__main__":
 	RegenerateAll()

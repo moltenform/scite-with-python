@@ -470,7 +470,7 @@ Shift+Alt+Home|SCI_NULL|1|any|SciTEProps.cxx AssignKey
 End|SCI_SCROLLTOEND|1|any|SciTEProps.cxx AssignKey
 Shift+End|SCI_NULL|1|any|SciTEProps.cxx AssignKey'''
 	else:
-		if props.GetInt("wrap.aware.home.end.keys",0):
+		if props.GetInt("wrap.aware.home.end.keys", 0):
 			if props.GetInt("vc.home.key", 1):
 				bindings += '''Home|SCI_VCHOMEWRAP|1|any|SciTEProps.cxx AssignKey
 Shift+Home|SCI_VCHOMEWRAPEXTEND|1|any|SciTEProps.cxx AssignKey
@@ -570,7 +570,7 @@ def checkForAnyLogicChangesFile(path, watchFor, acceptedCode):
 			message = '''Warning: the keyboard shortcut-related term %s was newly seen in file \n%s\n
 We're checking for new key-handling logic.
 This is likely a false positive, though, in which case you can add a line acceptedCode.append to %s.
-Context: %s''' % (term, filename, __file__, context)
+Context: %s''' % (term, path, __file__, context)
 			warn(message)
 
 def checkForAnyLogicChanges():
@@ -637,7 +637,7 @@ def checkForAnyLogicChanges():
 		acceptedCode.append('\n'.join(retrieveCodeLines('../win32/Strips.cxx', start, '}')))
 	
 	for (path, dirs, files) in os.walk('..'):
-		for file in files:			
+		for file in files:
 			full = os.path.join(path, file)
 			checkForAnyLogicChangesFile(full, watchFor, acceptedCode)
 

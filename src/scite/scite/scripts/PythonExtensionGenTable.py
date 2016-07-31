@@ -1,19 +1,19 @@
 
-# use this script to generate the table of constants 
+# use this script to generate the table of constants
 # static IFaceConstant rgFriendlyNamedIDMConstants[]
 # in PythonExtension.cxx
 
-# the results will be printed to stdout, to update the table 
+# the results will be printed to stdout, to update the table
 # you'll have to manually paste into PythonExtension.cxx.
 
 # the goal is to map from symbol names like IDM_ABBREV
 # to method names like ScApp.CmdAbbrev()
 # 'currentNames' are constants that have already been assigned a method name
 # so, if the constants has been changed and this script is run,
-#		if "NOTSEENBEFORE" is seen in the output, this means new constants have been added.
-# 			please add the constant number and an appropriate method name to currentNames
-# 		if "assert False, 'was the constant name changed?" is seen, this means constants name was changed.
-#			please update currentNames to reflect the name change.
+# 		if "NOTSEENBEFORE" is seen in the output, this means new constants have been added.
+#  			please add the constant number and an appropriate method name to currentNames
+#  		if "assert False, 'was the constant name changed?" is seen, this means constants name was changed.
+# 			please update currentNames to reflect the name change.
 # PythonExtensionGenTable.py will then run cleanly after making these updates.
 
 currentNames = '''242|Abbrev
@@ -175,7 +175,7 @@ currentNames = '''242|Abbrev
 
 def getMap():
 	map = {}
-	for line in currentNames.replace('\r\n','\n').split('\n'):
+	for line in currentNames.replace('\r\n', '\n').split('\n'):
 		parts = line.split('|')
 		id = int(parts[0])
 		methodName = parts[1]
@@ -193,21 +193,20 @@ def go():
 			_, origname, val = line.split()
 			id = int(val)
 			if id not in map:
-				results.append('{"'+name+'", NOTSEENBEFORE '+id+'},')
+				results.append('{"' + id + '", NOTSEENBEFORE ' + id + '},')
 			else:
 				methodName, nameIntentionallyChanged = map[id]
 				nameLower = origname.replace('IDM_', '').lower().replace('_', '')
 				if not nameIntentionallyChanged and nameLower != methodName.lower():
 					assert False, 'was the constant name changed? expected %s and got %s' % (nameLower, methodName)
 				
-				results.append('{"'+methodName+'", '+origname+'},')
+				results.append('{"' + methodName + '", ' + origname + '},')
 					
 	# must be sorted, because we use the list for binary search.
 	results.sort()
 	for line in results:
-		print line
+		print(line)
 	
-if __name__=="__main__":
+if __name__ == "__main__":
 	pathToSciteH = '../src/Scite.h'
 	go()
-

@@ -6,7 +6,7 @@ from ShowBindingsReadProps import *
 
 def getGtkBindings(props):
 	results = []
-	detectCodeChanges('../gtk/SciTEGTK.cxx', gtkKeyHandlerMethodExpectedText, 
+	detectCodeChanges('../gtk/SciTEGTK.cxx', gtkKeyHandlerMethodExpectedText,
 		gtkKeyHandlerMethodExpectedTextMustInclude)
 	
 	# --- gint SciTEGTK::Key(GdkEventKey *event) {
@@ -319,8 +319,8 @@ def main():
 		bindings.sort(key=lambda obj: obj.getSortKey())
 		setsSeen = writeOutputFile(bindings, outputFile)
 		if set(expectedSets) != set(key for key in setsSeen):
-			warn('''Warning: nothing found in %s, or saw unexpected %s''' % \
-				(set(expectedSets) - set(key for key in setsSeen), 
+			warn('''Warning: nothing found in %s, or saw unexpected %s''' %
+				(set(expectedSets) - set(key for key in setsSeen),
 				set(key for key in setsSeen) - set(expectedSets)))
 
 def tests():
@@ -359,4 +359,3 @@ Left|SCI_CHARLEFT|0|any|Scintilla keymap'''
 if __name__ == '__main__':
 	tests()
 	main()
-	

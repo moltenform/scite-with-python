@@ -100,7 +100,8 @@ class PropSetFile(object):
 def getAllProperties(dir, platform):
 	props = PropSetFile(platform)
 	for (path, dirs, files) in os.walk(dir):
-		if not path.endswith(os.sep + 'disabled') and not 'tools_example' in path:
+		if not path.endswith(os.sep + 'disabled') and not path.endswith(os.sep + 'tools_personal') and \
+			'tools_example' not in path:
 			for file in files:
 				if file.endswith('.properties'):
 					full = os.path.join(path, file)
@@ -108,12 +109,12 @@ def getAllProperties(dir, platform):
 	return props
 
 def takeBatch(iterable, size):
-    import itertools
-    it = iter(iterable)
-    item = list(itertools.islice(it, size))
-    while item:
-        yield item
-        item = list(itertools.islice(it, size))
+	import itertools
+	it = iter(iterable)
+	item = list(itertools.islice(it, size))
+	while item:
+		yield item
+		item = list(itertools.islice(it, size))
 
 def warn(prompt):
 	print(prompt)
@@ -125,11 +126,11 @@ def warn(prompt):
 			raise RuntimeError('chose not to continue')
 
 def getInput(prompt):
-    import sys
-    if sys.version_info[0] <= 2:
-        return raw_input(prompt)
-    else:
-        return input(prompt)
+	import sys
+	if sys.version_info[0] <= 2:
+		return raw_input(prompt)
+	else:
+		return input(prompt)
 
 def readShortcutLanguageMenu(results, props, key):
 	value = props.GetString(key)
@@ -296,12 +297,11 @@ def retrieveCodeLines(filename, startingLine, endingLine, mustInclude=None):
 			break
 		elif allLines[lineNumber] == mustInclude:
 			seenMustInclude = True
-			
+
 	if endLine is None:
 		raise RuntimeError('Failure: ending line %s not found in file %s' % (endingLine, filename))
-	
-	return allLines[linesThatMatchStart[0]:endLine+1]
-		
+
+	return allLines[linesThatMatchStart[0]:endLine + 1]
 
 def readall(filename, mode='r'):
 	with open(filename, mode) as f:
@@ -313,14 +313,14 @@ def escapeXml(s):
 	return s.replace('"', '&quot;').replace("'", '&apos;')
 
 def assertEq(expected, received):
-    if expected != received:
-        raise AssertionError('expected %s but got %s' %(expected, received))
+	if expected != received:
+		raise AssertionError('expected %s but got %s' % (expected, received))
 
 def assertEqArray(expected, received):
 	assertEq(len(expected), len(received))
 	for i in range(len(expected)):
 		assertEq(repr(expected[i]), repr(received[i]))
-		
+
 def tests():
 	mockProperties = '''
 customcommand.test.name=Test Custom
