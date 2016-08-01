@@ -1,4 +1,13 @@
 
+# shows current keyboard bindings, includes
+# commands, languages, user.shortcuts, and menukey changes 
+# from properties files.
+# this script requires SciTE+Scintilla sources to be present.
+# place this script in the /scite/src/scripts directory
+# running it will produce the two files
+# CurrentBindingsGtk.html
+# CurrentBindingsWin32.html
+
 import os
 import re
 
@@ -16,23 +25,6 @@ class PropSetFile(object):
 	def GetInt(self, key, default=0):
 		s = self.Expanded(self.GetString(key))
 		return int(s) if s else default
-
-	def _expandOnce(self, s):
-		if s.startswith('$(') and s.endswith(')'):
-			propname = s[2:-1]
-			assert ' ' not in propname, "We don't yet support $(expand) etc."
-			return self.GetString(propname)
-		elif '$(' in s:
-			assert False, "We don't yet support expressions containing $() " + s
-		else:
-			return s
-
-	def Expanded(self, s):
-		i = 0
-		while '$(' in s and i < 200:
-			s = self._expandOnce(s)
-			i += 1
-		return s
 
 	def ReadFile(self, filename):
 		assert os.path.abspath(filename) not in self.filesSeen, 'cannot import a file twice'
@@ -52,7 +44,24 @@ class PropSetFile(object):
 				s = ''
 		
 		self._readLine(s)
-	
+
+	def Expanded(self, s):
+		i = 0
+		while '$(' in s and i < 200:
+			s = self._expandOnce(s)
+			i += 1
+		return s
+
+	def _expandOnce(self, s):
+		if s.startswith('$(') and s.endswith(')'):
+			propname = s[2:-1]
+			assert ' ' not in propname, "We don't yet support $(expand) etc."
+			return self.GetString(propname)
+		elif '$(' in s:
+			assert False, "We don't yet support expressions containing $() " + s
+		else:
+			return s
+
 	def _importStar(self):
 		assert not self.Expanded(self.GetString('imports.include')), 'imports.include not supported'
 		exclude = self.Expanded(self.GetString('imports.exclude')).split(' ')
@@ -261,16 +270,14 @@ def normalizeMenuPath(s, platform):
 def readFromSciTEItemFactoryEntry(parts, bindings, mapUserDefinedKeys):
 	path, accel, gcallback, command, itemType, whitespace = parts
 	accel = accel.lstrip(' "').rstrip('"')
-	if accel != 'NULL' and accel != '':
-		path = path.strip('"').lstrip('"{/')
-		name = path.split('/')[-1].replace('_', '')
-		userDefined = mapUserDefinedKeys.get(normalizeMenuPath(path, 'gtk'), '')
-		if userDefined == '""' or userDefined == 'none':
-			return
-		
+	path = path.strip('"').lstrip('"{/')
+	name = path.split('/')[-1].replace('_', '')
+	userDefined = mapUserDefinedKeys.get(normalizeMenuPath(path, 'gtk'), '')
+	if userDefined != '""' and userDefined != 'none':
 		accel = userDefined or accel
 		accel = accel.replace('>space', '>Space')
-		bindings.append(KeyBinding('SciTEItemFactoryEntry', name, accel, priority=80, platform='gtk'))
+		if accel and accel != 'NULL':
+			bindings.append(KeyBinding('SciTEItemFactoryEntry', name, accel, priority=80, platform='gtk'))
 
 def readFromSciTEResAccelTableEntry(parts, bindings):
 	key, command, modifiers = [part.strip() for part in parts]
@@ -353,7 +360,7 @@ def readFromScintillaKeyMap(bindings):
 				readFromScintillaKeyMapEntry(parts, bindings)
 
 def main(propertiesMain, propertiesUser):
-	assert not os.path.isfile('../src/PythonExtension.cxx'), 'Please run ShowBindingsDetectChanges.py instead.'
+	assert not os.path.isfile('../src/PythonExtension.cxx'), 'Please run ShowBindingsForSciTEPython.py instead.'
 	for platform in ('gtk', 'win32'):
 		props = getAllProperties(propertiesMain, propertiesUser, platform)
 		platformCapitalized = platform[0].upper() + platform[1:]
@@ -581,9 +588,13 @@ testfileendswithslash=test''' + '\\'
 	
 if __name__ == '__main__':
 	tests()
-	
-	
 	propertiesMain = '../bin/SciTEGlobal.properties'
 	propertiesUser = None
-	main(propertiesMain, propertiesUser)
-
+	
+	msg = 'keymap.cxx not found, please download both the scintilla and scite sources and place this script in the /scite/src/scripts directory'
+	if not os.path.isfile('../../scintilla/src/KeyMap.cxx'):
+		print(msg)
+	elif not os.path.isfile('../gtk/SciTEGTK.cxx'	):
+		print(msg)
+	else:
+		main(propertiesMain, propertiesUser)

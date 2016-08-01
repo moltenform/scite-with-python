@@ -1,8 +1,166 @@
 
-# include excerpts of ScITE code, and alert us when any of this code is updated.
+# shows current keyboard bindings, includes
+# commands, languages, user.shortcuts, and menukey changes 
+# from properties files.
+# 
+# also, performs many checks to see if keyhandling logic has changed
+# -- this script intentionally throws errors if keyhandling logic has been updated,
+# -- in most cases, the response is just to copy/paste the new code into one of the excerpts below.
+# 
+# this script requires SciTE+Scintilla sources to be present.
+# place this script in the /scite/src/scripts directory
+# running it will produce the two files
+# CurrentBindingsGtk.html
+# CurrentBindingsWin32.html
 
-import os
-from ShowBindingsReadProps import retrieveCodeLines, addBindingsManual, readall, warn
+
+from ShowBindings import *
+
+def readFromSciTEResMenuEntry(bindings, stack, parts, mapUserDefinedKeys):
+	nameAndAccel = parts[0].lstrip('"').rstrip('\t", ')
+	name, accel = nameAndAccel.split('\\t') if '\\t' in nameAndAccel else (nameAndAccel, '')
+	menupath = '/'.join(stack) + '/' + name
+	userDefined = mapUserDefinedKeys.get(normalizeMenuPath(menupath, 'win32'), '')
+	name = name.replace('&', '')
+	
+	if userDefined != '""' and userDefined != 'none':
+		accel = userDefined or accel
+		if accel:
+			bindings.append(KeyBinding(
+				'SciTERes from menu or user-defined', name, accel, priority=75, platform='win32'))
+			print 'adding ' + repr(bindings[-1])
+
+def readFromSciTEResMenus(bindings, mapUserDefinedKeys):
+	start = '''SciTE MENU'''
+	mustContain = '''	MENUITEM "&About SciTE",			IDM_ABOUT'''
+	stack = []
+	lines = retrieveCodeLines('../win32/SciTERes.rc', start, 'END', mustContain)
+	for line in lines:
+		line = line.strip()
+		if line.startswith('POPUP '):
+			stack.append(line.split()[1].strip('"'))
+		elif line and line.split()[0] == 'END':
+			stack.pop()
+		elif line.startswith('MENUITEM ') and not line.startswith('MENUITEM SEPARATOR'):
+			line = line[len('MENUITEM '):]
+			parts = line.split(',')
+			if len(parts) != 2:
+				raise RuntimeError('line started with MENUITEM but did not have 2 parts ' + line)
+			else:
+				readFromSciTEResMenuEntry(bindings, stack, parts, mapUserDefinedKeys)
+	
+	assert len(stack) == 0
+
+#~ assert that keymap - 
+#~ #if OS_X_KEYS
+    #~ {SCK_DOWN,		SCI_CTRL,	SCI_DOCUMENTEND},
+    #~ {SCK_DOWN,		SCI_CSHIFT,	SCI_DOCUMENTENDEXTEND},
+    #~ {SCK_UP,		SCI_CTRL,	SCI_DOCUMENTSTART},
+    #~ {SCK_UP,		SCI_CSHIFT,	SCI_DOCUMENTSTARTEXTEND},
+    #~ {SCK_LEFT,		SCI_CTRL,	SCI_VCHOME},
+    #~ {SCK_LEFT,		SCI_CSHIFT,	SCI_VCHOMEEXTEND},
+    #~ {SCK_RIGHT,		SCI_CTRL,	SCI_LINEEND},
+    #~ {SCK_RIGHT,		SCI_CSHIFT,	SCI_LINEENDEXTEND},
+#~ #endif
+#~ and
+
+#~ and #if OS_X_KEYS
+    #~ {'Z', 			SCI_CSHIFT,	SCI_REDO},
+#~ #else
+    #~ {'Y', 			SCI_CTRL,	SCI_REDO},
+#~ #endif
+
+def getGtkBindings(results, props, mapUserDefinedKeys):
+	detectCodeChanges('../gtk/SciTEGTK.cxx', gtkKeyHandlerMethodExpectedText,
+		gtkKeyHandlerMethodExpectedTextMustInclude)
+	
+	# --- gint SciTEGTK::Key(GdkEventKey *event) {
+	# --- send to extension 			extender->OnKey (priority=20)
+	# --- check the "kmap" list 	commandID = kmap[i].msg (priority=30)
+	addBindingsManual(results, gtkKmapBindings)
+	
+	# --- check the language menu	commandID = IDM_LANGUAGE + j (priority=40)
+	# --- check the tools menu			MenuCommand(IDM_TOOLS + tool_i) (priority=50)
+	# --- check user.shortcuts			shortCutItemList[cut_i].menuCommand (priority=60)
+	readFromProperties(results, props)
+	
+	# --- check UI strips			findStrip.KeyDown(event), replaceStrip, userStrip (priority=70)
+	# --- FindStrip: Alt-initial letter
+	# --- ReplaceStrip: Alt-initial letter
+	# --- UserStrip: Escape to close, Alt-initial letter of label to hit a button or set focus
+	detectCodeChanges('../gtk/SciTEGTK.cxx', gtkFindStripEscapeSignal)
+	detectCodeChanges('../gtk/SciTEGTK.cxx', gtkReplaceStripEscapeSignal)
+	detectCodeChanges('../gtk/SciTEGTK.cxx', gtkUserStripEscapeSignal)
+	detectCodeChanges('../gtk/SciTEGTK.cxx', gtkFindIncrementEscapeSignal)
+	detectCodeChanges('../gtk/Widget.cxx', gtkWidgetCxxStripKeyDown)
+	
+	# --- check menu items		SciTEItemFactoryEntry menuItems (priority=80)
+	readFromSciTEItemFactoryList(results, mapUserDefinedKeys)
+
+def getWindowsBindings(results, props, mapUserDefinedKeys):
+	detectCodeChanges('../win32/SciTEWin.cxx', win32KeyHandlerMethodExpectedText)
+	
+	# --- LRESULT SciTEWin::KeyDown(WPARAM wParam) {
+	# --- send to extension 			extender->OnKey (priority=20)
+	# --- check the language menu	commandID = IDM_LANGUAGE + j (priority=40)
+	# --- check the tools menu			MenuCommand(IDM_TOOLS + tool_i) (priority=50)
+	# --- check user.shortcuts			shortCutItemList[cut_i].menuCommand (priority=60)
+	readFromProperties(results, props)
+	
+	# --- check UI strips
+	# --- FindStrip::KeyDown
+	# --- ReplaceStrip::KeyDown
+	# --- UserStrip: Escape to close, Alt-initial letter of label to hit a button or set focus
+	detectCodeChanges('../win32/SciTEWinDlg.cxx', win32ModelessHandler)
+	detectCodeChanges('../win32/Strips.cxx', win32StripKeyDown)
+	
+	# --- std::vector<std::pair<int, int>>::iterator itAccels; (priority=75)
+	# --- SciteRes.rc gives menu items names like New\tCtrl+N
+	# --- previously the \tCtrl+N was purely decorational, but now code in 
+	# --- SciTEWin::LocaliseMenuAndReadAccelerators parses it out and makes it a real shortcut.
+	readFromSciTEResMenus(results, mapUserDefinedKeys)
+	
+	# --- accelerator table			SciTERes.rc accelerator (priority=80)
+	readFromSciTEResAccelTable(results)
+
+def getScintillaBindings(results, props):
+	detectCodeChanges('../../scintilla/src/Editor.cxx', scintillaKeyHandlerMethodExpectedText,
+		scintillaKeyHandlerMethodExpectedTextMustInclude)
+	detectCodeChanges('../src/SciTEProps.cxx', callsToAssignKey)
+	detectCodeChanges('../src/SciTEBase.cxx', sciteBaseCallAssignKey)
+	addCallsToAssignKeyBindings(results, props)
+	readFromScintillaKeyMap(results)
+
+def mainWithPython(propertiesMain, propertiesUser, rootDir):
+	#~ assert os.path.isfile('../src/PythonExtension.cxx'), 'Did not see PythonExtension, please run ShowBindings.py instead.'
+	checkForAnyLogicChanges()
+	for platform in ('gtk', 'win32'):
+		props = getAllProperties(propertiesMain, propertiesUser, platform, rootDir)
+		platformCapitalized = platform[0].upper() + platform[1:]
+		outputFile = 'CurrentBindings%s.html' % platformCapitalized
+		mapUserDefinedKeys = readUserDefinedKeys(props)
+		bindings = []
+		getScintillaBindings(bindings, props)
+		expectedSets = ['SciTEProps.cxx AssignKey', 'properties *language', 'properties user.shortcuts',
+			'properties command (implicit)', 'properties command', 'Scintilla keymap']
+		if platform == 'gtk':
+			getGtkBindings(bindings, props, mapUserDefinedKeys)
+			expectedSets.extend(['KeyToCommand kmap[]', 'SciTEItemFactoryEntry'])
+		else:
+			getWindowsBindings(bindings, props, mapUserDefinedKeys)
+			expectedSets.extend(['SciTERes accel'])
+		
+		bindings.sort(key=lambda obj: obj.getSortKey())
+		writeOutputFile(bindings, outputFile)
+		setsSeen = { item.setName:1 for item in bindings }
+		if set(expectedSets) != set(key for key in setsSeen):
+			if str(set(expectedSets) - set(key for key in setsSeen)) == "set(['properties command'])":
+				pass
+			else:
+				warn('''Warning: nothing found in %s, or saw unexpected %s''' %
+					(set(expectedSets) - set(key for key in setsSeen),
+					set(key for key in setsSeen) - set(expectedSets)))
+
 
 gtkKeyHandlerMethodExpectedText = r'''class KeyToCommand {
 public:
@@ -459,44 +617,6 @@ Control+K|IDM_NEXTMATCHPPC|30|gtk|KeyToCommand kmap[]
 Control+Shift+K|IDM_SELECTTONEXTMATCHPPC|30|gtk|KeyToCommand kmap[]
 Control+*|IDM_EXPAND|30|gtk|KeyToCommand kmap[]'''
 
-# instead of writing code to parse a few lines, write the bindings manually here,
-# and verify in ShowKeyboardBindingsDetectCodeChange.py that the table hasn't changed.
-def addCallsToAssignKeyBindings(props, allBindings):
-	bindings = '''Control+Shift+L|SCI_LINEDELETE|1|any|SciTEProps.cxx AssignKey\n'''
-	if props.GetInt("os.x.home.end.keys"):
-		bindings += '''Home|SCI_SCROLLTOSTART|1|any|SciTEProps.cxx AssignKey
-Shift+Home|SCI_NULL|1|any|SciTEProps.cxx AssignKey
-Shift+Alt+Home|SCI_NULL|1|any|SciTEProps.cxx AssignKey
-End|SCI_SCROLLTOEND|1|any|SciTEProps.cxx AssignKey
-Shift+End|SCI_NULL|1|any|SciTEProps.cxx AssignKey'''
-	else:
-		if props.GetInt("wrap.aware.home.end.keys", 0):
-			if props.GetInt("vc.home.key", 1):
-				bindings += '''Home|SCI_VCHOMEWRAP|1|any|SciTEProps.cxx AssignKey
-Shift+Home|SCI_VCHOMEWRAPEXTEND|1|any|SciTEProps.cxx AssignKey
-Shift+Alt+Home|SCI_VCHOMERECTEXTEND|1|any|SciTEProps.cxx AssignKey
-End|SCI_LINEENDWRAP|1|any|SciTEProps.cxx AssignKey
-Shift+End|SCI_LINEENDWRAPEXTEND|1|any|SciTEProps.cxx AssignKey'''
-			else:
-				bindings += '''Home|SCI_HOMEWRAP|1|any|SciTEProps.cxx AssignKey
-Shift+Home|SCI_HOMEWRAPEXTEND|1|any|SciTEProps.cxx AssignKey
-Shift+Alt+Home|SCI_HOMERECTEXTEND|1|any|SciTEProps.cxx AssignKey
-End|SCI_LINEENDWRAP|1|any|SciTEProps.cxx AssignKey
-Shift+End|SCI_LINEENDWRAPEXTEND|1|any|SciTEProps.cxx AssignKey'''
-		else:
-			if props.GetInt("vc.home.key", 1):
-				bindings += '''Home|SCI_VCHOME|1|any|SciTEProps.cxx AssignKey
-Shift+Home|SCI_VCHOMEEXTEND|1|any|SciTEProps.cxx AssignKey
-Shift+Alt+Home|SCI_VCHOMERECTEXTEND|1|any|SciTEProps.cxx AssignKey
-End|SCI_LINEEND|1|any|SciTEProps.cxx AssignKey
-Shift+End|SCI_LINEENDEXTEND|1|any|SciTEProps.cxx AssignKey'''
-			else:
-				bindings += '''Home|SCI_HOME|1|any|SciTEProps.cxx AssignKey
-Shift+Home|SCI_HOMEEXTEND|1|any|SciTEProps.cxx AssignKey
-Shift+Alt+Home|SCI_HOMERECTEXTEND|1|any|SciTEProps.cxx AssignKey
-End|SCI_LINEEND|1|any|SciTEProps.cxx AssignKey
-Shift+End|SCI_LINEENDEXTEND|1|any|SciTEProps.cxx AssignKey'''
-	addBindingsManual(allBindings, bindings)
 
 callsToAssignKey = r'''	if (props.GetInt("os.x.home.end.keys")) {
 		AssignKey(SCK_HOME, 0, SCI_SCROLLTOSTART);
@@ -641,5 +761,51 @@ def checkForAnyLogicChanges():
 			full = os.path.join(path, file)
 			checkForAnyLogicChangesFile(full, watchFor, acceptedCode)
 
+def tests():
+	entriesRead = []
+	line = '''{"/Edit/Make Selection _Lowercase", "<control>U", menuSig, IDM_LWRCASE, 0},'''
+	readFromSciTEItemFactoryEntry(line.split(','), entriesRead, dict())
+	line = '''{"/View/_Parameters", NULL, menuSig, IDM_TOGGLEPARAMETERS, "<CheckItem>"},'''
+	readFromSciTEItemFactoryEntry(line.split(','), entriesRead, dict())
+	line = '''{"/Edit/S_how Calltip", "<control><shift>space", menuSig, IDM_SHOWCALLTIP, 0},'''
+	readFromSciTEItemFactoryEntry(line.split(','), entriesRead, dict())
+	line = '''	"N", IDM_NEW,   VIRTKEY, CONTROL'''
+	readFromSciTEResAccelTableEntry(line.split(',', 2), entriesRead)
+	line = '''	VK_F8, IDM_TOGGLEOUTPUT, VIRTKEY'''
+	readFromSciTEResAccelTableEntry(line.split(',', 2), entriesRead)
+	line = r'''    VK_SPACE, IDM_SHOWCALLTIP, VIRTKEY, CONTROL, SHIFT'''
+	readFromSciTEResAccelTableEntry(line.split(',', 2), entriesRead)
+	line = r'''{'[',			SCI_CSHIFT,	SCI_PARAUPEXTEND},'''
+	readFromScintillaKeyMapEntry(line.split(','), entriesRead)
+	line = r'''{SCK_UP,			SCI_CTRL_META,	SCI_LINESCROLLUP},'''
+	readFromScintillaKeyMapEntry(line.split(','), entriesRead)
+	line = r'''{SCK_LEFT,		SCI_NORM,	SCI_CHARLEFT},'''
+	readFromScintillaKeyMapEntry(line.split(','), entriesRead)
+	expected = '''Ctrl+U|Make Selection Lowercase|80|gtk|SciTEItemFactoryEntry
+Ctrl+Shift+Space|Show Calltip|80|gtk|SciTEItemFactoryEntry
+Ctrl+N|IDM_NEW|80|win32|SciTERes accel
+F8|IDM_TOGGLEOUTPUT|80|win32|SciTERes accel
+Ctrl+Shift+Space|IDM_SHOWCALLTIP|80|win32|SciTERes accel
+Ctrl+Shift+[|SCI_PARAUPEXTEND|0|any|Scintilla keymap
+Ctrl+Up|SCI_LINESCROLLUP|0|any|Scintilla keymap
+Left|SCI_CHARLEFT|0|any|Scintilla keymap'''
+	expectedArr = []
+	addBindingsManual(expectedArr, expected)
+	assertEqArray(expectedArr, entriesRead)
+
+
+
 if __name__ == '__main__':
-	checkForAnyLogicChanges()
+	tests()
+	# propertiesMain = '../bin/properties/SciTEGlobal.properties'
+	propertiesMain = '../bin/SciTEGlobal.properties'
+	propertiesUser = None
+	rootDir = '../bin'
+	
+	msg = 'keymap.cxx not found, please download both the scintilla and scite sources and place this script in the /scite/src/scripts directory'
+	if not os.path.isfile('../../scintilla/src/KeyMap.cxx'):
+		print(msg)
+	elif not os.path.isfile('../gtk/SciTEGTK.cxx'	):
+		print(msg)
+	else:
+		mainWithPython(propertiesMain, propertiesUser, rootDir)
