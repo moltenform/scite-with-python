@@ -55,12 +55,12 @@ inline bool IFacePropertyIsScriptable(const IFaceProperty &p) {
 	                (p.paramType == iface_bool)) && (p.getter || p.setter));
 }
 
-// simply a more intuitive name for SptrFromPointer
+// same as SptrFromPointer
 inline sptr_t CastPtrToSptr(void *p) {
 	return SptrFromPointer(p);
 }
 
-// simply a more intuitive name for SptrFromString
+// same as SptrFromString
 inline sptr_t CastSzToSptr(const char *cp) {
 	return SptrFromString(cp);
 }
@@ -1375,145 +1375,6 @@ PyObject* pyfun_app_UserStripGetValue(PyObject*, PyObject* args)
 	}
 }
 
-void PrintSupportedCallsAppMethods()
-{
-	trace("SupportedCallsAppMethods\n");
-	ReusableStringStream strm;
-	for (size_t i = 0; i < PythonExtension::constantsTableLen; i++)
-	{
-		strm.Write(PythonExtension::constantsTable[i].name);
-		strm.Write("|");
-		strm.Write(PythonExtension::constantsTable[i].value);
-		strm.Write("\n");
-		trace(strm.Get().c_str());
-		strm.Reset();
-	}
-}
-
-void PrintSupportedCallsConstants()
-{
-	trace("SupportedCallsConstants\n");
-	ReusableStringStream strm;
-	for (int i = 0; i < IFaceTable::constantCount; i++)
-	{
-		strm.Write(IFaceTable::constants[i].name);
-		strm.Write("|");
-		strm.Write(IFaceTable::constants[i].value);
-		strm.Write("\n");
-		trace(strm.Get().c_str());
-		strm.Reset();
-	}
-}
-
-void PrintIFaceFunction(const IFaceFunction& fn, ReusableStringStream& strm, 
-	const char* prefix, const char* nameOverride, bool showActualParamsVsCallingUsage)
-{
-	if (showActualParamsVsCallingUsage)
-	{
-		strm.Write(IFaceTypeToString(fn.returnType));
-		strm.Write("|");
-		strm.Write(IFaceTypeToString(fn.paramType[0]));
-		strm.Write("|");
-		strm.Write(IFaceTypeToString(fn.paramType[1]));
-		strm.Write("|");
-		strm.Write(prefix);
-		strm.Write(nameOverride);
-		strm.Write("\n");
-	}
-	else
-	{
-		strm.Write(IFaceTypeToString(fn.returnType));
-		strm.Write(" ");
-		strm.Write(prefix);
-		strm.Write(nameOverride);
-		strm.Write("(");
-		if (fn.paramType[0] == iface_length && fn.paramType[1] == iface_string)
-		{
-			// logic in sendpanefunction adds length automatically
-			strm.Write("string");
-		}
-		else 
-		{
-			if (fn.paramType[0] && fn.paramType[0] != iface_void)
-			{
-				strm.Write(IFaceTypeToString(fn.paramType[0]));
-			}
-			if (fn.paramType[1] && fn.paramType[1] != iface_void)
-			{
-				strm.Write(", ");
-				strm.Write(IFaceTypeToString(fn.paramType[1]));
-			}
-		}
-		strm.Write(")\n");
-	}
-	
-	trace(strm.Get().c_str());
-	strm.Reset();
-}
-
-void PrintSupportedCallsPaneMethods_IFaceFunction(bool wantEnabled, bool showActualParamsVsCallingUsage)
-{
-	trace("---PrintSupportedCallsPaneMethods_IFaceFunction---\n",
-		wantEnabled ? "---Enabled---\n" : "---Disabled---\n");
-	
-	ReusableStringStream strm;
-	for (int i = 0; i < IFaceTable::functionCount; i++)
-	{
-		if (wantEnabled == IFaceFunctionIsScriptable(IFaceTable::functions[i]))
-		{
-			PrintIFaceFunction(IFaceTable::functions[i], strm,
-				"", IFaceTable::functions[i].name, showActualParamsVsCallingUsage);
-		}
-	}
-}
-void PrintSupportedCallsPaneMethods_IFaceProperties(bool wantEnabled, bool showActualParamsVsCallingUsage)
-{
-	trace("---PrintSupportedCallsPaneMethods_IFaceProperties---\n",
-		wantEnabled ? "---Enabled---\n" : "---Disabled---\n");
-	
-	ReusableStringStream strm;
-	for (int i = 0; i < IFaceTable::propertyCount; i++)
-	{
-		if (wantEnabled == IFacePropertyIsScriptable(IFaceTable::properties[i]))
-		{
-			if (IFaceTable::properties[i].getter)
-				PrintIFaceFunction(IFaceTable::properties[i].GetterFunction(), strm,
-					"Get", IFaceTable::properties[i].name, showActualParamsVsCallingUsage);
-			if (IFaceTable::properties[i].setter)
-				PrintIFaceFunction(IFaceTable::properties[i].SetterFunction(), strm,
-					"Set", IFaceTable::properties[i].name, showActualParamsVsCallingUsage);
-		}
-	}
-}
-
-void PrintSupportedCallsPaneMethods(bool showActualParamsVsCallingUsage)
-{
-	PrintSupportedCallsPaneMethods_IFaceFunction(true, showActualParamsVsCallingUsage);
-	PrintSupportedCallsPaneMethods_IFaceProperties(true, showActualParamsVsCallingUsage);
-	PrintSupportedCallsPaneMethods_IFaceFunction(false, showActualParamsVsCallingUsage);
-	PrintSupportedCallsPaneMethods_IFaceProperties(false, showActualParamsVsCallingUsage);
-}
-
-PyObject* pyfun_app_PrintSupportedCalls(PyObject*, PyObject* args)
-{
-	int whatToPrint = 0;
-	if (!PyArg_ParseTuple(args, "i", &whatToPrint))
-	{
-		return NULL;
-	}
-	
-	if (whatToPrint == 1)
-		PrintSupportedCallsConstants();
-	else if (whatToPrint == 2)
-		PrintSupportedCallsAppMethods();
-	else if (whatToPrint == 3)
-		PrintSupportedCallsPaneMethods(false);
-	else if (whatToPrint == 4)
-		PrintSupportedCallsPaneMethods(true);
-	
-	return IncrefAndReturnNone();
-}
-
 // when recording location, the same filename will appear very often.
 // let's save memory usage by using a set to de-dupe strings.
 // references to elements in the unordered_set container remain valid in all cases, even after a rehash.
@@ -1785,7 +1646,6 @@ static PyMethodDef methodsExportedToPython[] =
 	{"app_UserStripSetList", pyfun_app_UserStripSetList, METH_VARARGS, ""},
 	{"app_UserStripGetValue", pyfun_app_UserStripGetValue, METH_VARARGS, ""},
 	{"app_GetNextOrPreviousLocation", pyfun_app_GetNextOrPreviousLocation, METH_VARARGS, ""},
-	{"app_PrintSupportedCalls", pyfun_app_PrintSupportedCalls, METH_VARARGS, ""},
 	{"app_SciteCommand", pyfun_app_SciteCommand, METH_VARARGS, ""},
 	{"pane_Append", pyfun_pane_Append, METH_VARARGS, ""},
 	{"pane_Insert", pyfun_pane_Insert, METH_VARARGS, ""},

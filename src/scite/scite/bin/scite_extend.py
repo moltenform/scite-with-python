@@ -60,12 +60,6 @@ class ScAppClass(object):
     def LocationPrev(self):
         '''Go to previous location'''
         return SciTEModule.app_GetNextOrPreviousLocation(0)
-        
-    def _printSupportedCalls(self, whatToPrint=2):
-        '''1=constants, 2=app methods, 3=pane methods (as called), 4=pane methods (as defined)'''
-        ScOutput.BeginUndoAction()
-        SciTEModule.app_PrintSupportedCalls(whatToPrint)
-        ScOutput.EndUndoAction()
     
     def GetFilePath(self, cannotBeUntitled=True):
         '''Returns full file path'''
