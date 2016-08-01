@@ -154,12 +154,8 @@ def readFromSciTEItemFactoryEntry(parts, bindings):
 	
 		shortcut = shortcut.replace('>', '+').replace('<', '')
 		shortcut = shortcut.replace('+space', '+Space')
-		binding = KeyBinding()
+		binding = KeyBinding('SciTEItemFactoryEntry', name, priority=80, platform='gtk')
 		binding.setKeyFromString(shortcut)
-		binding.command = name # currently, prefer rendered name
-		binding.priority = 80
-		binding.platform = 'gtk'
-		binding.setName = 'SciTEItemFactoryEntry'
 		bindings.append(binding)
 
 def readFromSciTEResAccelTableEntry(parts, bindings):
@@ -172,7 +168,7 @@ def readFromSciTEResAccelTableEntry(parts, bindings):
 	elif key == '187':
 		return
 	
-	binding = KeyBinding()
+	binding = KeyBinding('SciTERes accel', command, priority=80, platform='win32')
 	binding.keyChar = key
 	modparts = [m.strip() for m in modifiers.split(',')]
 	for modpart in modparts:
@@ -184,11 +180,7 @@ def readFromSciTEResAccelTableEntry(parts, bindings):
 			binding.shift = True
 		elif modpart != 'VIRTKEY':
 			raise RuntimeError('unknown modifier ' + modifiers)
-			
-	binding.command = command
-	binding.priority = 80
-	binding.platform = 'win32'
-	binding.setName = 'SciTERes accel'
+	
 	bindings.append(binding)
 
 def readFromScintillaKeyMapEntry(parts, bindings):
@@ -204,7 +196,7 @@ def readFromScintillaKeyMapEntry(parts, bindings):
 		key = key[len('SCK_'):]
 		key = key[0] + key[1:].lower()
 		
-	binding = KeyBinding()
+	binding = KeyBinding('Scintilla keymap', command, priority=0, platform='any')
 	binding.keyChar = key
 	if modifiers == 'SCI_SHIFT':
 		binding.shift = True
@@ -225,10 +217,6 @@ def readFromScintillaKeyMapEntry(parts, bindings):
 	elif modifiers != 'SCI_NORM':
 		raise RuntimeError('unknown modifier ' + modifiers)
 			
-	binding.command = command
-	binding.priority = 0
-	binding.platform = 'any'
-	binding.setName = 'Scintilla keymap'
 	bindings.append(binding)
 
 def readFromSciTEResMenuEntry(parts):

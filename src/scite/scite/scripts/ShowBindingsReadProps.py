@@ -138,33 +138,19 @@ def readShortcutLanguageMenu(results, props, key):
 		languageName, languageShort, keyPress, _ = value.split('|')
 		keyPress = props.Expanded(keyPress)
 		if keyPress.strip():
-			binding = KeyBinding()
+			command = 'set language ' + languageName.replace('&', '')
+			binding = KeyBinding('properties *language', command, priority=40, platform='any')
 			binding.setKeyFromString(keyPress)
-			binding.command = 'set language ' + languageName.replace('&', '')
-			binding.priority = 40
-			binding.platform = 'unknown'
-			binding.setName = 'properties *language'
 			results.append(binding)
 
-def readCommandShortcutGeneral(results, props, key, keyCommandName, platform):
-	commandName = props.GetString(keyCommandName)
-	if commandName:
+def addBindingFromCommand(results, props, key, keyCommandName, platform):
+	command = props.GetString(keyCommandName)
+	if command:
 		shortcut = props.GetString(key)
 		if shortcut.strip():
-			binding = KeyBinding()
+			binding = KeyBinding('properties command', command, priority=50, platform=platform)
 			binding.setKeyFromString(shortcut)
-			binding.command = commandName
-			binding.priority = 50
-			binding.platform = platform
-			binding.setName = 'properties command'
 			results.append(binding)
-
-def readCommandShortcut(results, props, key):
-	cmd, shtcut, number, filetypes = key.split('.', 3)
-	platform = props.Expanded(filetypes)
-	platform = 'any' if platform in ('*', '*.*') else platform
-	keyCommandName = 'command.name.' + number + '.' + filetypes
-	readCommandShortcutGeneral(results, props, key, keyCommandName, platform=platform)
 
 def readImplicitShortcutFromCommand(results, props, key):
 	matchObj = re.match(r'^command\.name\.([0-9])\.([^=]+)', key)
@@ -174,20 +160,24 @@ def readImplicitShortcutFromCommand(results, props, key):
 		name = props.Expanded(props.GetString(key))
 		setShortcutKey = 'command.shortcut.' + number + '.' + filetypes
 		if name and not props.GetString(setShortcutKey):
-			binding = KeyBinding()
+			platform = props.Expanded(filetypes)
+			platform = 'any' if platform in ('*', '*.*') else platform
+			binding = KeyBinding('properties command (implicit)', name, priority=50, platform=platform)
 			binding.keyChar = number
 			binding.control = True
-			binding.command = name
-			binding.priority = 50
-			binding.platform = props.Expanded(filetypes)
-			binding.platform = 'any' if binding.platform in ('*', '*.*') else binding.platform
-			binding.setName = 'properties command (implicit)'
 			results.append(binding)
+
+def readCommandShortcut(results, props, key):
+	cmd, shtcut, number, filetypes = key.split('.', 3)
+	platform = props.Expanded(filetypes)
+	platform = 'any' if platform in ('*', '*.*') else platform
+	keyCommandName = 'command.name.' + number + '.' + filetypes
+	addBindingFromCommand(results, props, key, keyCommandName, platform=platform)
 
 def readCustomCommandShortcut(results, props, key):
 	keyParts = key.split('.')
 	keyCommandName = '.'.join(keyParts[0:-1]) + '.name'
-	readCommandShortcutGeneral(results, props, key, keyCommandName, platform='any')
+	addBindingFromCommand(results, props, key, keyCommandName, platform='any')
 
 def readPropertiesUserShortcuts(results, props, key):
 	value = props.GetString(key)
@@ -195,12 +185,8 @@ def readPropertiesUserShortcuts(results, props, key):
 	for pair in takeBatch(parts, 2):
 		if pair and len(pair) == 2:
 			shortcut, command = pair
-			binding = KeyBinding()
+			binding = KeyBinding('properties user.shortcuts', command, priority=60, platform='any')
 			binding.setKeyFromString(shortcut)
-			binding.command = command
-			binding.priority = 60
-			binding.platform = 'unknown'
-			binding.setName = 'properties user.shortcuts'
 			results.append(binding)
 
 def readFromProperties(props):
@@ -219,14 +205,15 @@ def readFromProperties(props):
 	return results
 
 class KeyBinding(object):
-	shift = False
-	control = False
-	alt = False
-	keyChar = None
-	command = None
-	priority = 0
-	platform = 'all'
-	setName = None
+	def __init__(self, setName, command, priority, platform):
+		self.control = False
+		self.alt = False
+		self.shift = False
+		self.keyChar = None
+		self.command = command
+		self.priority = priority
+		self.platform = platform
+		self.setName = setName
 	
 	def setKeyFromString(self, s):
 		self.keyChar = s.split('+')[-1]
@@ -259,7 +246,7 @@ class KeyBinding(object):
 		return s
 		
 	def getSortKey(self):
-		return (self.keyChar, self.shift, self.control, self.alt, self.priority, self.command)
+		return (self.keyChar, self.control, self.alt, self.shift, self.priority, self.command)
 	
 	def __repr__(self):
 		return '|'.join((self.getKeyString(), self.command, str(self.priority), self.platform, self.setName))
@@ -269,10 +256,9 @@ def addBindingsManual(bindings, s):
 	for line in lines:
 		if line.strip():
 			try:
-				binding = KeyBinding()
-				modifiersAndKey, binding.command, binding.priority, binding.platform, binding.setName = line.split('|')
+				modifiersAndKey, command, priority, platform, setName = line.split('|')
+				binding = KeyBinding(setName, command, priority=int(priority), platform=platform)
 				binding.setKeyFromString(modifiersAndKey)
-				binding.priority = int(binding.priority)
 				bindings.append(binding)
 			except ValueError:
 				print(line)
@@ -362,15 +348,15 @@ command.shortcut.5.*.y=Shift+Tab'''
 	results = readFromProperties(props)
 	results.sort(key=lambda obj: obj.getSortKey())
 
-	expected = '''Alt+Shift+/|set language XML|40|unknown|properties *language
+	expected = '''Alt+Shift+/|set language XML|40|any|properties *language
 Ctrl+4|Test Ddd|50|any|properties command (implicit)
 Ctrl+Aaa|Test Aaa|50|any|properties command
 Ctrl+Bbb|Test Bbb|50|any|properties command
-Ctrl+Alt+Shift+F11|set language HTML|40|unknown|properties *language
+Ctrl+Alt+Shift+F11|set language HTML|40|any|properties *language
 Shift+F12|Test Custom|50|any|properties command
-Ctrl+PageDown|IDM_NEXTFILE|60|unknown|properties user.shortcuts
+Ctrl+PageDown|IDM_NEXTFILE|60|any|properties user.shortcuts
 Shift+Tab|Test Ccc|50|*.y|properties command
-Ctrl+Shift+V|IDM_PASTEANDDOWN|60|unknown|properties user.shortcuts'''
+Ctrl+Shift+V|IDM_PASTEANDDOWN|60|any|properties user.shortcuts'''
 	expectedArr = []
 	addBindingsManual(expectedArr, expected)
 	assertEqArray(expectedArr, results)

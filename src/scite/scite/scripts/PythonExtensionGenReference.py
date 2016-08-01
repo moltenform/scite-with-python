@@ -411,11 +411,11 @@ def writeScEditorMethodsToFile(out):
 	out.write('<tr><td align="right"><i><br /><br /><br />%s</i></td><td></td></tr>\n' %
 		'Commands typically bound to key presses')
 	remaining.sort()
-	reFindShortcuts = re.compile(re.escape('$link1$#') + r'[^$]+\$')
+	reFindLinks = re.compile(re.escape('$link1$#') + r'[^$]+\$')
 	replaceWith = '$link1$#KeyboardCommands$'
 	for parts in remaining:
 		# these don't have specific anchor tags, so rewrite the link to point at #KeyboardCommands
-		replaced = reFindShortcuts.sub(replaceWith, parts[1])
+		replaced = reFindLinks.sub(replaceWith, parts[1])
 		assert parts[1] != replaced, parts
 		parts[1] = replaced
 		writeScEditorOutput(parts, out)
