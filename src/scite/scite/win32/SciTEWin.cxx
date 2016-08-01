@@ -119,6 +119,10 @@ long SciTEKeys::ParseKeyCode(const char *mnemonic) {
 				keyval = VK_ESCAPE;
 			} else if (sKey == "Delete") {
 				keyval = VK_DELETE;
+			} else if (sKey == "Del") {
+				keyval = VK_DELETE;
+			} else if (sKey == "Break") {
+				keyval = VK_CANCEL;
 			} else if (sKey == "PageUp") {
 				keyval = VK_PRIOR;
 			} else if (sKey == "PageDown") {
@@ -1762,6 +1766,16 @@ LRESULT SciTEWin::KeyDown(WPARAM wParam) {
 				}
 				return 1l;
 			}
+		}
+	}
+	
+	std::vector<std::pair<int, int>>::iterator itAccels;
+	for (itAccels = acceleratorKeys.begin(); itAccels != acceleratorKeys.end(); ++itAccels) {
+		int parsedKeys = itAccels->first;
+		int command = itAccels->second;
+		if (SciTEKeys::MatchKeyCode(parsedKeys, static_cast<int>(wParam), modifiers)) {
+			SciTEBase::MenuCommand(command);
+			return 1l;
 		}
 	}
 

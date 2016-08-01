@@ -215,6 +215,8 @@ protected:
 
 	/// Preserve focus during deactivation
 	HWND wFocus;
+	
+	std::vector<std::pair<int, int>> acceleratorKeys;
 
 	GUI::Window wFindInFiles;
 	GUI::Window wFindReplace;
@@ -252,8 +254,11 @@ protected:
 	virtual void CheckAMenuItem(int wIDCheckItem, bool val);
 	virtual void EnableAMenuItem(int wIDCheckItem, bool val);
 	virtual void CheckMenus();
+	
+	GUI::gui_string GetUserDefinedAccel(const GUI::gui_char *path, const GUI::gui_char *current);
+	void RegisterAccelerator(const GUI::gui_char *accel, int id);
 
-	void LocaliseMenu(HMENU hmenu);
+	void LocaliseMenuAndReadAccelerators(HMENU hmenu, GUI::gui_string menupath);
 	void LocaliseMenus();
 	void LocaliseControl(HWND w);
 	void LocaliseDialog(HWND wDialog);

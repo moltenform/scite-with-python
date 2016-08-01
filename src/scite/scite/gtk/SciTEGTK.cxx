@@ -3622,6 +3622,13 @@ std::string SciTEGTK::TranslatePath(const char *path) {
 	}
 }
 
+static void AccelStringWindowsToGtkIfNeeded(std::string &accelKey) {
+	Substitute(accelKey, "Ctrl+", "<control>");
+	Substitute(accelKey, "Shift+", "<shift>");
+	Substitute(accelKey, "Alt+", "<alt>");
+	Substitute(accelKey, "Super+", "<super>");
+}
+
 static std::string WithoutUnderscore(const char *s) {
 	std::string ret;
 	while (*s) {
@@ -3661,6 +3668,8 @@ void SciTEGTK::CreateTranslatedMenu(int n, SciTEItemFactoryEntry items[],
 			if (accelKey == "\"\"" || accelKey == "none") {
 				accelKey.clear();	// Allow user to clear accelerator key
 			}
+			
+			AccelStringWindowsToGtkIfNeeded(accelKey);
 			userDefinedAccels[i] = new char[accLength + 1];
 			strncpy(userDefinedAccels[i], accelKey.c_str(), accLength + 1);
 			items[i].accelerator = userDefinedAccels[i];

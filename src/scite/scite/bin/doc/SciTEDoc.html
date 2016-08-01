@@ -4111,7 +4111,7 @@ groupundo - yes or no
           There must be a multiple of 3 '|' characters in the setting.
         </td>
       </tr>
-      <tr class="gtkonly" id='property-menukey.*'>
+      <tr id='property-menukey.*'>
         <td>
         menukey.*
         </td>
@@ -4119,19 +4119,19 @@ groupundo - yes or no
                 The menukey.* settings allow the user to redefine accelerator keys for menus
 		without having to resort to modifying the SciTE source code.  The syntax for the setting is:
 		<div class="example">
-		menukey.menu_title.menu_name=&lt;modifier&gt;key
+		menukey.menu_title.menu_name=Modifier+Key
 		</div>
 		For example, the File | Exit command accelerator could be specified as follows:
 		<div class="example">
-		menukey.file.exit=&lt;control&gt;Q
+		menukey.file.exit=Ctrl+Q
 		</div>
 		Note that spaces in menu titles and names must be converted to underscores,
 		and trailing ellipses removed.  For example, "File | Save As...." is referenced as "menukey.file.save_as".
 		<br /><br />
-		Multiple modifiers may be specified, though each must be surrounded by angle brackets.  The
+		Multiple modifiers may be specified, such as in the accelerator Control+Shift+Q.  The
 		recognised modifiers are the same as for the user.shortcuts setting described above.  The recognised named
 		keys are also the same as for user.shortcuts, with the addition of "none" to indicate that no accelerator
-		key should be defined for a particular menu.
+		key should be defined for a particular menu. GTK syntax in the form of &lt;control&gt;Q may also be used.
         </td>
       </tr>
       <tr class="windowsonly" id='property-source.default.extensions'>

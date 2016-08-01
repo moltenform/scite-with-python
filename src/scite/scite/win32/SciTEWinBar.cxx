@@ -542,7 +542,47 @@ void SciTEWin::CheckMenus() {
 	                   CurrentBuffer()->unicodeMode + IDM_ENCODING_DEFAULT, 0);
 }
 
-void SciTEWin::LocaliseMenu(HMENU hmenu) {
+static void AccelStringGtkToWindowsIfNeeded(std::string &accelKey) {
+	Substitute(accelKey, "<control>", "Ctrl+");
+	Substitute(accelKey, "<shift>", "Shift+");
+	Substitute(accelKey, "<alt>", "Alt+");
+}
+
+GUI::gui_string SciTEWin::GetUserDefinedAccel(
+	const GUI::gui_char *path, const GUI::gui_char *current) {
+	// Try to find user-defined accelerator key
+	std::string menuPath = "menukey";			// menupath="menukey"
+	menuPath += GUI::UTF8FromString(path);		// menupath="menukey/File/Save &As..."
+	Substitute(menuPath, "&", "");		// menupath="menukey/File/Save As..."
+	Substitute(menuPath, ".", "");		// menupath="menukey/File/Save As"
+	Substitute(menuPath, "/", ".");		// menupath="menukey.File.Save As"
+	Substitute(menuPath, " ", "_");	// menupath="menukey.File.Save_As"
+	LowerCaseAZ(menuPath);		// menupath="menukey.file.save_as"
+
+	GUI::gui_string ret(current);
+	std::string fromProps = props.GetString(menuPath.c_str());
+	if (fromProps.length() > 0) {
+		if (fromProps == "\"\"" || fromProps == "none") {
+			fromProps = "";
+		}
+		
+		AccelStringGtkToWindowsIfNeeded(fromProps);
+		ret = GUI::StringFromUTF8(fromProps);
+	}
+	return ret;
+}
+
+void SciTEWin::RegisterAccelerator(const GUI::gui_char *accel, int id) {
+	if (accel && accel[0]) {
+		std::string keys(GUI::UTF8FromString(accel));
+		long parsedKeys = SciTEKeys::ParseKeyCode(keys.c_str());
+		if (parsedKeys) {
+			acceleratorKeys.push_back(std::pair<int, int>(parsedKeys, id));
+		}
+	}
+}
+
+void SciTEWin::LocaliseMenuAndReadAccelerators(HMENU hmenu, GUI::gui_string path) {
 	for (int i = 0; i <= ::GetMenuItemCount(hmenu); i++) {
 		GUI::gui_char buff[200];
 		buff[0] = '\0';
@@ -554,12 +594,14 @@ void SciTEWin::LocaliseMenu(HMENU hmenu) {
 		mii.cch = sizeof(buff) - 1;
 		if (::GetMenuItemInfoW(hmenu, i, TRUE, &mii)) {
 			if (mii.hSubMenu) {
-				LocaliseMenu(mii.hSubMenu);
+				LocaliseMenuAndReadAccelerators(
+					mii.hSubMenu, path + GUI_TEXT("/") + mii.dwTypeData);
 			}
 			if (mii.fType == MFT_STRING || mii.fType == MFT_RADIOCHECK) {
 				if (mii.dwTypeData) {
 					GUI::gui_string text(mii.dwTypeData);
 					GUI::gui_string accel(mii.dwTypeData);
+					GUI::gui_string translated;
 					size_t len = text.length();
 					size_t tab = text.find(GUI_TEXT("\t"));
 					if (tab != GUI::gui_string::npos) {
@@ -568,16 +610,22 @@ void SciTEWin::LocaliseMenu(HMENU hmenu) {
 					} else {
 						accel = GUI_TEXT("");
 					}
-					text = localiser.Text(GUI::UTF8FromString(text.c_str()).c_str(), true);
-					if (text.length()) {
-						if (accel != GUI_TEXT("")) {
-							text += GUI_TEXT("\t");
-							text += accel;
-						}
-						text.append(1, 0);
-						mii.dwTypeData = &text[0];
-						::SetMenuItemInfoW(hmenu, i, TRUE, &mii);
+					
+					GUI::gui_string menupath(path + GUI_TEXT("/") + text);
+					accel = GetUserDefinedAccel(menupath.c_str(), accel.c_str());
+					RegisterAccelerator(accel.c_str(), mii.wID);
+					translated = localiser.Text(GUI::UTF8FromString(text.c_str()).c_str(), true);
+					if (!translated.length()) {
+						translated = text;
 					}
+					
+					if (accel != GUI_TEXT("")) {
+						translated += GUI_TEXT("\t");
+						translated += accel;
+					}
+					translated.append(1, 0);
+					mii.dwTypeData = &translated[0];
+					::SetMenuItemInfoW(hmenu, i, TRUE, &mii);
 				}
 			}
 		}
@@ -585,7 +633,7 @@ void SciTEWin::LocaliseMenu(HMENU hmenu) {
 }
 
 void SciTEWin::LocaliseMenus() {
-	LocaliseMenu(::GetMenu(MainHWND()));
+	LocaliseMenuAndReadAccelerators(::GetMenu(MainHWND()), GUI_TEXT(""));
 	::DrawMenuBar(MainHWND());
 }
 
