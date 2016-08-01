@@ -3,10 +3,12 @@ import os
 import re
 
 class PropSetFile(object):
-	def __init__(self, platform):
+	def __init__(self, platform, root):
 		self.props = dict()
-		self.condition = None
 		self.platform = platform
+		self.root = root
+		self.condition = None
+		self.filesSeen = dict()
 
 	def GetString(self, key):
 		return self.props.get(key, '')
@@ -32,6 +34,12 @@ class PropSetFile(object):
 			i += 1
 		return s
 
+	def ReadFile(self, filename):
+		assert os.path.abspath(filename) not in self.filesSeen, 'cannot import a file twice'
+		self.filesSeen[os.path.abspath(filename)] = 1
+		if os.path.isfile(filename):
+			self.ReadString(readall(filename))
+
 	def ReadString(self, contents):
 		contents = contents.replace('\r\n', '\n').split('\n')
 		s = ''
@@ -44,9 +52,28 @@ class PropSetFile(object):
 				s = ''
 		
 		self._readLine(s)
+	
+	def _importStar(self):
+		assert not self.Expanded(self.GetString('imports.include')), 'imports.include not supported'
+		exclude = self.Expanded(self.GetString('imports.exclude')).split(' ')
+		filesList = [os.path.splitext(name)[0] for name in os.listdir(self.root) if name.endswith('.properties')]
+		for name in filesList:
+			if name not in exclude:
+				name = os.path.join(self.root, name + '.properties')
+				if os.path.abspath(name) not in self.filesSeen:
+					self.ReadFile(name)
 
 	def _readLine(self, s):
 		if s.startswith('#') or not s.strip():
+			return
+		elif s.startswith('module '):
+			assert False, 'Sc1.properties not supported'
+		elif s.startswith('import '):
+			filename = s[len('import '):]
+			if filename == '*':
+				self._importStar()
+			else:
+				self.ReadFile(os.path.join(self.root, filename + '.properties'))
 			return
 		elif s.startswith('if PLAT_WIN'):
 			self.condition = 'win32'
@@ -56,6 +83,9 @@ class PropSetFile(object):
 			return
 		elif s.startswith('if PLAT_GTK'):
 			self.condition = 'gtk'
+			return
+		elif s.startswith('if PLAT_UNIX'):
+			self.condition = 'gtk' # ok because this script isn't supported for mac.
 			return
 		elif s.startswith('if '):
 			raise RuntimeError("Unsupported conditional " + s)
@@ -69,19 +99,20 @@ class PropSetFile(object):
 			else:
 				self.condition = None
 		
-		# we don't yet support sections or import
-		if s[0] != '[' and not s.startswith('import '):
-			key, val = s.split('=', 1)
-			self.props[key] = val
+		if s[0] != '[': # we don't yet support sections
+			parts = s.split('=', 1)
+			if len(parts) == 0:
+				warn('unrecognized line in properties: ' + s)
+			else:
+				self.props[parts[0]] = parts[1]
 
-def getAllProperties(dir, platform, fnCheckPath=None):
-	props = PropSetFile(platform)
-	for (path, dirs, files) in os.walk(dir):
-		if not fnCheckPath or fnCheckPath(path):
-			for file in files:
-				if file.endswith('.properties'):
-					full = os.path.join(path, file)
-					props.ReadString(readall(full))
+def getAllProperties(propertiesMain, propertiesUser, platform, rootDir=None):
+	rootDir = rootDir or os.path.split(propertiesMain)[0]
+	props = PropSetFile(platform, rootDir)
+	if propertiesMain:
+		props.ReadFile(propertiesMain)
+	if propertiesUser:
+		props.ReadFile(propertiesUser)
 	return props
 
 def readShortcutLanguageMenu(results, props, key):
@@ -118,16 +149,23 @@ def readPropertiesUserShortcuts(results, props, key):
 		if pair and len(pair) == 2:
 			results.append(KeyBinding('properties user.shortcuts', pair[1], pair[0], priority=60, platform='any'))
 
-def readFromProperties(props):
-	results = []
+def readFromProperties(bindings, props):
 	for key in props.props:
 		if key.startswith('*language.'):
-			readShortcutLanguageMenu(results, props, key)
+			readShortcutLanguageMenu(bindings, props, key)
 		elif key == 'user.shortcuts':
-			readPropertiesUserShortcuts(results, props, key)
+			readPropertiesUserShortcuts(bindings, props, key)
 		elif key.startswith('command.name.'):
-			readShortcutFromCommand(results, props, key)
-	return results
+			readShortcutFromCommand(bindings, props, key)
+
+def readUserDefinedKeys(props):
+	mapMenuPathToNewAccel = dict()
+	for key in props.props:
+		if key.startswith('menukey.'):
+			val = props.Expanded(props.GetString(key))
+			if val:
+				mapMenuPathToNewAccel[key[len('menukey.'):]] = val
+	return mapMenuPathToNewAccel
 
 def getMapFromIdmToMenuText():
 	map = dict()
@@ -213,20 +251,26 @@ def getMapScintillaToString():
 	
 	return mapScintillaToString
 
-def readFromSciTEItemFactoryEntry(parts, bindings):
-	path, shortcut, gcallback, command, itemType, whitespace = parts
-	shortcut = shortcut.lstrip(' "').rstrip('"')
-	if shortcut != 'NULL' and shortcut != '':
-		name = path.split('/')[-1].replace('_', '').rstrip('"')
-		command = command.lstrip(' "').rstrip('"')
-		if command.startswith('bufferCmdID + '):
-			command = command.replace('bufferCmdID + ', 'open buffer ')
-		elif not command.startswith('IDM_'):
-			warn('unknown command ' + command)
-	
-		shortcut = shortcut.replace('>', '+').replace('<', '')
-		shortcut = shortcut.replace('+space', '+Space')
-		bindings.append(KeyBinding('SciTEItemFactoryEntry', name, shortcut, priority=80, platform='gtk'))
+def normalizeMenuPath(s, platform):
+	s = s.replace('&' if platform == 'win32' else '_', '')		# menupath='menukey/File/Save As...'
+	s = s.replace('.', '')		# menupath='menukey/File/Save As'
+	s = s.replace('/', '.')		# menupath='menukey.File.Save As'
+	s = s.replace(' ', '_')	# menupath='menukey.File.Save_As'
+	return s.lower()	# menupath='menukey.file.save_as'
+
+def readFromSciTEItemFactoryEntry(parts, bindings, mapUserDefinedKeys):
+	path, accel, gcallback, command, itemType, whitespace = parts
+	accel = accel.lstrip(' "').rstrip('"')
+	if accel != 'NULL' and accel != '':
+		path = path.strip('"').lstrip('"{/')
+		name = path.split('/')[-1].replace('_', '')
+		userDefined = mapUserDefinedKeys.get(normalizeMenuPath(path, 'gtk'), '')
+		if userDefined == '""' or userDefined == 'none':
+			return
+		
+		accel = userDefined or accel
+		accel = accel.replace('>space', '>Space')
+		bindings.append(KeyBinding('SciTEItemFactoryEntry', name, accel, priority=80, platform='gtk'))
 
 def readFromSciTEResAccelTableEntry(parts, bindings):
 	key, command, modifiers = [part.strip() for part in parts]
@@ -259,20 +303,11 @@ def readFromScintillaKeyMapEntry(parts, bindings):
 		SCMOD_META=(True, False, False), SCI_CSHIFT=(True, False, True), SCI_ASHIFT=(False, True, True),
 		SCI_SCTRL_META=(True, False, True), SCI_CTRL_META=(True, False, False), SCI_NORM=(False, False, False))
 	binding = KeyBinding('Scintilla keymap', command, priority=0, platform='any')
-	binding.ctrl, binding.alt, binding.shift = map[modifiers]
+	binding.control, binding.alt, binding.shift = map[modifiers]
 	binding.keyChar = key
 	bindings.append(binding)
 
-def readFromSciTEResMenuEntry(parts):
-	nameAndShortcut, command = parts
-	if '\\t' in nameAndShortcut:
-		nameAndShortcut = nameAndShortcut.lstrip('"').rstrip('\t", ')
-		name, shortcutShownToUI = nameAndShortcut.split('\\t')
-		name = name.replace('&', '')
-		# shortcutShownToUI is just shown in the UI,
-		# it doesn't have real effect -- see accelerator table.
-
-def readFromSciTEItemFactoryList(bindings):
+def readFromSciTEItemFactoryList(bindings, mapUserDefinedKeys):
 	start = '''void SciTEGTK::CreateMenu() {'''
 	end = '''	gtk_window_add_accel_group(GTK_WINDOW(PWidget(wSciTE)), accelGroup);'''
 	lines = retrieveCodeLines('../gtk/SciTEGTK.cxx', start, end)
@@ -283,7 +318,7 @@ def readFromSciTEItemFactoryList(bindings):
 			if len(parts) != 6:
 				raise RuntimeError('line started with { but did not have 6 parts ' + line)
 			else:
-				readFromSciTEItemFactoryEntry(parts, bindings)
+				readFromSciTEItemFactoryEntry(parts, bindings, mapUserDefinedKeys)
 
 def readFromSciTEResAccelTable(bindings):
 	start = '''ACCELS ACCELERATORS'''
@@ -298,20 +333,6 @@ def readFromSciTEResAccelTable(bindings):
 				else:
 					readFromSciTEResAccelTableEntry(parts, bindings)
 
-def readFromSciTEResMenus():
-	start = '''SciTE MENU'''
-	mustContain = '''	MENUITEM "&About SciTE",			IDM_ABOUT'''
-	lines = retrieveCodeLines('../win32/SciTERes.rc', start, 'END', mustContain)
-	for line in lines:
-		line = line.strip()
-		if line.startswith('MENUITEM ') and not line.startswith('MENUITEM SEPARATOR'):
-			line = line[len('MENUITEM '):]
-			parts = line.split(',')
-			if len(parts) != 2:
-				raise RuntimeError('line started with MENUITEM but did not have 2 parts ' + line)
-			else:
-				readFromSciTEResMenuEntry(parts)
-
 def readFromScintillaKeyMap(bindings):
 	start = '''const KeyToCommand KeyMap::MapDefault[] = {'''
 	lines = retrieveCodeLines('../../scintilla/src/KeyMap.cxx', start, '};')
@@ -320,7 +341,7 @@ def readFromScintillaKeyMap(bindings):
 		line = line.strip()
 		if line == '#if OS_X_KEYS':
 			insideMac = True
-		elif line == '#endif':
+		elif line == '#endif' or line == '#else':
 			insideMac = False
 		elif line.startswith('#if '):
 			raise RuntimeError('unknown preprocessor condition in keymap.cxx ' + line)
@@ -331,17 +352,20 @@ def readFromScintillaKeyMap(bindings):
 			else:
 				readFromScintillaKeyMapEntry(parts, bindings)
 
-def main(propsDir):
+def main(propertiesMain, propertiesUser):
+	assert not os.path.isfile('../src/PythonExtension.cxx'), 'Please run ShowBindingsDetectChanges.py instead.'
 	for platform in ('gtk', 'win32'):
-		props = getAllProperties(propsDir, platform)
+		props = getAllProperties(propertiesMain, propertiesUser, platform)
 		platformCapitalized = platform[0].upper() + platform[1:]
 		outputFile = 'CurrentBindings%s.html' % platformCapitalized
 		bindings = []
 		readFromScintillaKeyMap(bindings)
-		bindings.extend(readFromProperties(props))
+		addCallsToAssignKeyBindings(bindings, props)
+		readFromProperties(bindings, props)
+		mapUserDefinedKeys = readUserDefinedKeys(props)
 		if platform == 'gtk':
 			addBindingsManual(bindings, gtkKmapBindings)
-			readFromSciTEItemFactoryList(bindings)
+			readFromSciTEItemFactoryList(bindings, mapUserDefinedKeys)
 		else:
 			readFromSciTEResAccelTable(bindings)
 		
@@ -379,7 +403,7 @@ class KeyBinding(object):
 				raise ValueError('unrecognized modifier')
 		
 		if self.keyChar[0] != self.keyChar[0].upper():
-			raise ValueError('key should be upper case')
+			raise ValueError('key should be upper case ' + s)
 			
 	def getKeyString(self):
 		s = 'Ctrl+' if self.control else ''
@@ -467,6 +491,44 @@ def assertEqArray(expected, received):
 	for i in range(len(expected)):
 		assertEq(repr(expected[i]), repr(received[i]))
 
+def addCallsToAssignKeyBindings(bindings, props):
+	# from SciTEBase::ReadProperties
+	s = '''Control+Shift+L|SCI_LINEDELETE|1|any|SciTEProps.cxx AssignKey\n'''
+	if props.GetInt("os.x.home.end.keys"):
+		s += '''Home|SCI_SCROLLTOSTART|1|any|SciTEProps.cxx AssignKey
+Shift+Home|SCI_NULL|1|any|SciTEProps.cxx AssignKey
+Shift+Alt+Home|SCI_NULL|1|any|SciTEProps.cxx AssignKey
+End|SCI_SCROLLTOEND|1|any|SciTEProps.cxx AssignKey
+Shift+End|SCI_NULL|1|any|SciTEProps.cxx AssignKey'''
+	else:
+		if props.GetInt("wrap.aware.home.end.keys", 0):
+			if props.GetInt("vc.home.key", 1):
+				s += '''Home|SCI_VCHOMEWRAP|1|any|SciTEProps.cxx AssignKey
+Shift+Home|SCI_VCHOMEWRAPEXTEND|1|any|SciTEProps.cxx AssignKey
+Shift+Alt+Home|SCI_VCHOMERECTEXTEND|1|any|SciTEProps.cxx AssignKey
+End|SCI_LINEENDWRAP|1|any|SciTEProps.cxx AssignKey
+Shift+End|SCI_LINEENDWRAPEXTEND|1|any|SciTEProps.cxx AssignKey'''
+			else:
+				s += '''Home|SCI_HOMEWRAP|1|any|SciTEProps.cxx AssignKey
+Shift+Home|SCI_HOMEWRAPEXTEND|1|any|SciTEProps.cxx AssignKey
+Shift+Alt+Home|SCI_HOMERECTEXTEND|1|any|SciTEProps.cxx AssignKey
+End|SCI_LINEENDWRAP|1|any|SciTEProps.cxx AssignKey
+Shift+End|SCI_LINEENDWRAPEXTEND|1|any|SciTEProps.cxx AssignKey'''
+		else:
+			if props.GetInt("vc.home.key", 1):
+				s += '''Home|SCI_VCHOME|1|any|SciTEProps.cxx AssignKey
+Shift+Home|SCI_VCHOMEEXTEND|1|any|SciTEProps.cxx AssignKey
+Shift+Alt+Home|SCI_VCHOMERECTEXTEND|1|any|SciTEProps.cxx AssignKey
+End|SCI_LINEEND|1|any|SciTEProps.cxx AssignKey
+Shift+End|SCI_LINEENDEXTEND|1|any|SciTEProps.cxx AssignKey'''
+			else:
+				s += '''Home|SCI_HOME|1|any|SciTEProps.cxx AssignKey
+Shift+Home|SCI_HOMEEXTEND|1|any|SciTEProps.cxx AssignKey
+Shift+Alt+Home|SCI_HOMERECTEXTEND|1|any|SciTEProps.cxx AssignKey
+End|SCI_LINEEND|1|any|SciTEProps.cxx AssignKey
+Shift+End|SCI_LINEENDEXTEND|1|any|SciTEProps.cxx AssignKey'''
+	addBindingsManual(bindings, s)
+
 # from KeyToCommand kmap[] in SciTEGTK.cxx
 gtkKmapBindings = r'''Control+Tab|IDM_NEXTFILESTACK|30|gtk|KeyToCommand kmap[]
 Shift+Control+Tab|IDM_PREVFILESTACK|30|gtk|KeyToCommand kmap[]
@@ -509,7 +571,7 @@ span=a\
 b\
 c
 testfileendswithslash=test''' + '\\'
-	props = PropSetFile('gtk')
+	props = PropSetFile('gtk', '.')
 	props.ReadString(propstring)
 	assertEq('b=c', props.GetString('a'))
 	assertEq('abc', props.GetString('span'))
@@ -519,3 +581,9 @@ testfileendswithslash=test''' + '\\'
 	
 if __name__ == '__main__':
 	tests()
+	
+	
+	propertiesMain = '../bin/SciTEGlobal.properties'
+	propertiesUser = None
+	main(propertiesMain, propertiesUser)
+
