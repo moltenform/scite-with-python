@@ -72,7 +72,7 @@ class PropSetFile(object):
 		# we don't yet support sections or import
 		if s[0] != '[' and not s.startswith('import '):
 			key, val = s.split('=', 1)
-			self.Set(key, val)
+			self.props[key] = val
 
 def getAllProperties(dir, platform, fnCheckPath=None):
 	props = PropSetFile(platform)
@@ -81,32 +81,8 @@ def getAllProperties(dir, platform, fnCheckPath=None):
 			for file in files:
 				if file.endswith('.properties'):
 					full = os.path.join(path, file)
-					props.ReadOneFile(full)
+					props.ReadString(readall(full))
 	return props
-
-def takePairs(iterable):
-	import itertools
-	it = iter(iterable)
-	item = list(itertools.islice(it, 2))
-	while item:
-		yield item
-		item = list(itertools.islice(it, 2))
-
-def warn(prompt):
-	print(prompt)
-	while True:
-		s = getInput('Continue? y/n')
-		if s == 'y':
-			break
-		elif s == 'n':
-			raise RuntimeError('chose not to continue')
-
-def getInput(prompt):
-	import sys
-	if sys.version_info[0] <= 2:
-		return raw_input(prompt)
-	else:
-		return input(prompt)
 
 def readShortcutLanguageMenu(results, props, key):
 	value = props.GetString(key)
@@ -115,55 +91,32 @@ def readShortcutLanguageMenu(results, props, key):
 		keyPress = props.Expanded(keyPress)
 		if keyPress.strip():
 			command = 'set language ' + languageName.replace('&', '')
-			binding = KeyBinding('properties *language', command, priority=40, platform='any')
-			binding.setKeyFromString(keyPress)
-			results.append(binding)
+			results.append(KeyBinding('properties *language', command, keyPress, priority=40, platform='any'))
 
-def addBindingFromCommand(results, props, key, keyCommandName, platform):
-	command = props.GetString(keyCommandName)
-	if command:
-		shortcut = props.GetString(key)
-		if shortcut.strip():
-			binding = KeyBinding('properties command', command, priority=50, platform=platform)
-			binding.setKeyFromString(shortcut)
-			results.append(binding)
-
-def readImplicitShortcutFromCommand(results, props, key):
-	matchObj = re.match(r'^command\.name\.([0-9])\.([^=]+)', key)
+def readShortcutFromCommand(results, props, key):
+	matchObj = re.match(r'^command\.name\.([0-9]+)\.([^=]+)', key)
 	if matchObj:
 		number = matchObj.group(1)
 		filetypes = matchObj.group(2)
 		name = props.Expanded(props.GetString(key))
+		platform = props.Expanded(filetypes)
+		platform = 'any' if platform == '*' else platform
 		setShortcutKey = 'command.shortcut.' + number + '.' + filetypes
-		if name and not props.GetString(setShortcutKey):
-			platform = props.Expanded(filetypes)
-			platform = 'any' if platform in ('*', '*.*') else platform
+		setShortcutValue = props.GetString(setShortcutKey)
+		if name and len(number) == 1 and not setShortcutValue:
 			binding = KeyBinding('properties command (implicit)', name, priority=50, platform=platform)
 			binding.keyChar = number
 			binding.control = True
 			results.append(binding)
-
-def readCommandShortcut(results, props, key):
-	cmd, shtcut, number, filetypes = key.split('.', 3)
-	platform = props.Expanded(filetypes)
-	platform = 'any' if platform in ('*', '*.*') else platform
-	keyCommandName = 'command.name.' + number + '.' + filetypes
-	addBindingFromCommand(results, props, key, keyCommandName, platform=platform)
-
-def readCustomCommandShortcut(results, props, key):
-	keyParts = key.split('.')
-	keyCommandName = '.'.join(keyParts[0:-1]) + '.name'
-	addBindingFromCommand(results, props, key, keyCommandName, platform='any')
+		elif name and setShortcutValue:
+			results.append(KeyBinding('properties command', name, setShortcutValue, priority=50, platform=platform))
 
 def readPropertiesUserShortcuts(results, props, key):
 	value = props.GetString(key)
 	parts = value.split('|')
 	for pair in takePairs(parts):
 		if pair and len(pair) == 2:
-			shortcut, command = pair
-			binding = KeyBinding('properties user.shortcuts', command, priority=60, platform='any')
-			binding.setKeyFromString(shortcut)
-			results.append(binding)
+			results.append(KeyBinding('properties user.shortcuts', pair[1], pair[0], priority=60, platform='any'))
 
 def readFromProperties(props):
 	results = []
@@ -172,16 +125,231 @@ def readFromProperties(props):
 			readShortcutLanguageMenu(results, props, key)
 		elif key == 'user.shortcuts':
 			readPropertiesUserShortcuts(results, props, key)
-		elif key.startswith('command.shortcut.'):
-			readCommandShortcut(results, props, key)
 		elif key.startswith('command.name.'):
-			readImplicitShortcutFromCommand(results, props, key)
-		elif key.startswith('customcommand.') and key.endswith('.shortcut'):
-			readCustomCommandShortcut(results, props, key)
+			readShortcutFromCommand(results, props, key)
 	return results
 
+def getMapFromIdmToMenuText():
+	map = dict()
+	with open(os.path.join("..", "win32", "SciTERes.rc"), "rt") as f:
+		for l in f:
+			l = l.strip()
+			if l.startswith("MENUITEM") and "SEPARATOR" not in l:
+				l = l.replace("MENUITEM", "").strip()
+				text, symbol = l.split('",', 1)
+				symbol = symbol.strip()
+				text = text[1:].replace("&", "").replace("...", "")
+				if "\\t" in text:
+					text = text.split("\\t", 1)[0]
+				map[symbol] = text
+	return map
+
+def writeOutputFile(bindings, outputFile):
+	mapSciteToString = getMapFromIdmToMenuText()
+	mapScintillaToString = getMapScintillaToString()
+	with open(outputFile, 'w') as out:
+		out.write(startFile.replace('%script%', __file__))
+		out.write("<h2>Current key bindings</h2>\n")
+		out.write("<table><tr><th> </th><th> </th><th> </th><th> </th></tr>\n")
+		for binding in bindings:
+			writeOutputBinding(out, binding, mapSciteToString, mapScintillaToString)
+			
+		out.write("</table>\n")
+		out.write("</body>\n</html>\n")
+
+def renderCommand(command, mapSciteToString, mapScintillaToString):
+	if command.startswith('IDM_BUFFER+'):
+		num = command[len('IDM_BUFFER+'):]
+		command = 'buffer' + num
+	elif command in mapSciteToString:
+		command = mapSciteToString[command]
+	elif command in mapScintillaToString:
+		command = mapScintillaToString[command]
+		command = command.replace('V C ', 'Visual Studio-style ')
+	elif command.startswith('IDM_'):
+		command = command.replace('IDM_', '').lower().replace('_', ' ')
+		command = command.replace('matchppc', ' match ppc')
+		
+	command = command[0].upper() + command[1:].lower()
+	command = command.replace('...', '')
+	command = command.replace('Buffer', 'Buffer ')
+	return command
+
+def writeOutputBinding(out, binding, mapSciteToString, mapScintillaToString):
+	out.write('<tr><td>%s</td>' % escapeXml(binding.keyChar))
+	out.write('<td>%s</td>' % escapeXml(binding.getKeyString()))
+	out.write('<td>%s</td>' % escapeXml(
+		renderCommand(binding.command, mapSciteToString, mapScintillaToString)))
+	notes = ''
+	if '*' in binding.platform:
+		notes += 'only %s' % binding.platform
+	elif 'properties' in binding.setName:
+		notes += 'props'
+	
+	out.write('<td>%s</td></tr>\n' % escapeXml(notes))
+
+def getMapScintillaToString():
+	import re
+	mapScintillaToString = dict()
+	mapNumberToSciConstant = dict()
+	with open('../../scintilla/include/Scintilla.h', 'r') as f:
+		for line in f:
+			if line.startswith('#define SCI_'):
+				poundDefine, constantName, number = line.split()
+				mapNumberToSciConstant[number] = constantName
+	
+	r = re.compile(r'(get|set|fun) ([^=]+)=([0-9]+)\(')
+	rSpaceBeforeCapital = re.compile(r'([A-Z])')
+	with open('../../scintilla/include/Scintilla.iface', 'r') as f:
+		for line in f:
+			matchObj = r.match(line)
+			if matchObj:
+				number = matchObj.group(3)
+				sciConst = mapNumberToSciConstant.get(number, None)
+				if sciConst is not None:
+					name = matchObj.group(2).split(' ')[-1]
+					name = rSpaceBeforeCapital.sub(r' \1', name)
+					mapScintillaToString[sciConst] = name.lstrip(' ')
+	
+	return mapScintillaToString
+
+def readFromSciTEItemFactoryEntry(parts, bindings):
+	path, shortcut, gcallback, command, itemType, whitespace = parts
+	shortcut = shortcut.lstrip(' "').rstrip('"')
+	if shortcut != 'NULL' and shortcut != '':
+		name = path.split('/')[-1].replace('_', '').rstrip('"')
+		command = command.lstrip(' "').rstrip('"')
+		if command.startswith('bufferCmdID + '):
+			command = command.replace('bufferCmdID + ', 'open buffer ')
+		elif not command.startswith('IDM_'):
+			warn('unknown command ' + command)
+	
+		shortcut = shortcut.replace('>', '+').replace('<', '')
+		shortcut = shortcut.replace('+space', '+Space')
+		bindings.append(KeyBinding('SciTEItemFactoryEntry', name, shortcut, priority=80, platform='gtk'))
+
+def readFromSciTEResAccelTableEntry(parts, bindings):
+	key, command, modifiers = [part.strip() for part in parts]
+	if key.startswith('"'):
+		key = key.replace('"', '')
+	elif key.startswith('VK_'):
+		key = key[len('VK_'):].replace('MULTIPLY', '*')
+		key = key[0] + key[1:].lower()
+	elif key == '187':
+		return
+	
+	modparts = [m.strip() for m in modifiers.split(',') if m.strip() != 'VIRTKEY']
+	modifiers = ('+'.join(modparts) + '+') if modparts else ''
+	bindings.append(KeyBinding('SciTERes accel', command, modifiers + key, priority=80, platform='win32'))
+
+def readFromScintillaKeyMapEntry(parts, bindings):
+	key, modifiers, command, whitespace = [part.strip() for part in parts]
+	command = command.rstrip('} ')
+	key = key.lstrip('{ ')
+	if key == '0':
+		return
+	elif key.startswith("'"):
+		key = key.replace("'", '')
+		key = key.replace('\\\\', '\\')
+	elif key.startswith('SCK_'):
+		key = key[len('SCK_'):]
+		key = key[0] + key[1:].lower()
+		
+	map=dict(SCI_CTRL=(True, False, False), SCI_ALT=(False, True, False), SCI_SHIFT=(False, False, True), 
+		SCMOD_META=(True, False, False), SCI_CSHIFT=(True, False, True), SCI_ASHIFT=(False, True, True),
+		SCI_SCTRL_META=(True, False, True), SCI_CTRL_META=(True, False, False), SCI_NORM=(False, False, False))
+	binding = KeyBinding('Scintilla keymap', command, priority=0, platform='any')
+	binding.ctrl, binding.alt, binding.shift = map[modifiers]
+	binding.keyChar = key
+	bindings.append(binding)
+
+def readFromSciTEResMenuEntry(parts):
+	nameAndShortcut, command = parts
+	if '\\t' in nameAndShortcut:
+		nameAndShortcut = nameAndShortcut.lstrip('"').rstrip('\t", ')
+		name, shortcutShownToUI = nameAndShortcut.split('\\t')
+		name = name.replace('&', '')
+		# shortcutShownToUI is just shown in the UI,
+		# it doesn't have real effect -- see accelerator table.
+
+def readFromSciTEItemFactoryList(bindings):
+	start = '''void SciTEGTK::CreateMenu() {'''
+	end = '''	gtk_window_add_accel_group(GTK_WINDOW(PWidget(wSciTE)), accelGroup);'''
+	lines = retrieveCodeLines('../gtk/SciTEGTK.cxx', start, end)
+	for line in lines:
+		line = line.strip()
+		if line.startswith('{'):
+			parts = line.split(',')
+			if len(parts) != 6:
+				raise RuntimeError('line started with { but did not have 6 parts ' + line)
+			else:
+				readFromSciTEItemFactoryEntry(parts, bindings)
+
+def readFromSciTEResAccelTable(bindings):
+	start = '''ACCELS ACCELERATORS'''
+	lines = retrieveCodeLines('../win32/SciTERes.rc', start, 'END')
+	for line in lines:
+		if line.startswith('\t'):
+			line = line.strip()
+			if line and 'IDM_TOOLS+' not in line and not line.startswith('//'):
+				parts = line.split(',', 2)
+				if len(parts) != 3:
+					raise RuntimeError('accelerator item did not have 3 parts ' + line)
+				else:
+					readFromSciTEResAccelTableEntry(parts, bindings)
+
+def readFromSciTEResMenus():
+	start = '''SciTE MENU'''
+	mustContain = '''	MENUITEM "&About SciTE",			IDM_ABOUT'''
+	lines = retrieveCodeLines('../win32/SciTERes.rc', start, 'END', mustContain)
+	for line in lines:
+		line = line.strip()
+		if line.startswith('MENUITEM ') and not line.startswith('MENUITEM SEPARATOR'):
+			line = line[len('MENUITEM '):]
+			parts = line.split(',')
+			if len(parts) != 2:
+				raise RuntimeError('line started with MENUITEM but did not have 2 parts ' + line)
+			else:
+				readFromSciTEResMenuEntry(parts)
+
+def readFromScintillaKeyMap(bindings):
+	start = '''const KeyToCommand KeyMap::MapDefault[] = {'''
+	lines = retrieveCodeLines('../../scintilla/src/KeyMap.cxx', start, '};')
+	insideMac = False
+	for line in lines:
+		line = line.strip()
+		if line == '#if OS_X_KEYS':
+			insideMac = True
+		elif line == '#endif':
+			insideMac = False
+		elif line.startswith('#if '):
+			raise RuntimeError('unknown preprocessor condition in keymap.cxx ' + line)
+		elif not insideMac and line.startswith('{'):
+			parts = line.split(',')
+			if len(parts) != 4:
+				raise RuntimeError('line started with { but did not have 4 parts ' + line)
+			else:
+				readFromScintillaKeyMapEntry(parts, bindings)
+
+def main(propsDir):
+	for platform in ('gtk', 'win32'):
+		props = getAllProperties(propsDir, platform)
+		platformCapitalized = platform[0].upper() + platform[1:]
+		outputFile = 'CurrentBindings%s.html' % platformCapitalized
+		bindings = []
+		readFromScintillaKeyMap(bindings)
+		bindings.extend(readFromProperties(props))
+		if platform == 'gtk':
+			addBindingsManual(bindings, gtkKmapBindings)
+			readFromSciTEItemFactoryList(bindings)
+		else:
+			readFromSciTEResAccelTable(bindings)
+		
+		bindings.sort(key=lambda obj: obj.getSortKey())
+		writeOutputFile(bindings, outputFile)
+
 class KeyBinding(object):
-	def __init__(self, setName, command, priority, platform):
+	def __init__(self, setName, command, shortcut=None, priority=0, platform='all'):
 		self.control = False
 		self.alt = False
 		self.shift = False
@@ -190,8 +358,11 @@ class KeyBinding(object):
 		self.priority = priority
 		self.platform = platform
 		self.setName = setName
+		if shortcut:
+			self.setKeyFromString(shortcut)
 	
 	def setKeyFromString(self, s):
+		s = s.replace('<control>', 'Ctrl+').replace('<alt>', 'Alt+').replace('<shift>', 'Shift+')
 		self.keyChar = s.split('+')[-1]
 		modifiers = s.split('+')[0:-1]
 		for item in modifiers:
@@ -211,15 +382,10 @@ class KeyBinding(object):
 			raise ValueError('key should be upper case')
 			
 	def getKeyString(self):
-		s = ''
-		if self.control:
-			s += 'Ctrl+'
-		if self.alt:
-			s += 'Alt+'
-		if self.shift:
-			s += 'Shift+'
-		s += self.keyChar
-		return s
+		s = 'Ctrl+' if self.control else ''
+		s += 'Alt+' if self.alt else ''
+		s += 'Shift+' if self.shift else ''
+		return s + self.keyChar
 		
 	def getSortKey(self):
 		return (self.keyChar, self.control, self.alt, self.shift, self.priority, self.command)
@@ -231,14 +397,8 @@ def addBindingsManual(bindings, s):
 	lines = s.replace('\r\n', '\n').split('\n')
 	for line in lines:
 		if line.strip():
-			try:
-				modifiersAndKey, command, priority, platform, setName = line.split('|')
-				binding = KeyBinding(setName, command, priority=int(priority), platform=platform)
-				binding.setKeyFromString(modifiersAndKey)
-				bindings.append(binding)
-			except ValueError:
-				print(line)
-				raise
+			keys, command, priority, platform, setName = line.split('|')
+			bindings.append(KeyBinding(setName, command, keys, priority=int(priority), platform=platform))
 
 def retrieveCodeLines(filename, startingLine, endingLine, mustInclude=None):
 	allLines = readall(filename, 'rb').replace('\r\n', '\n').split('\n')
@@ -265,7 +425,31 @@ def retrieveCodeLines(filename, startingLine, endingLine, mustInclude=None):
 
 	return allLines[linesThatMatchStart[0]:endLine + 1]
 
-def readall(filename, mode='r'):
+def takePairs(iterable):
+	import itertools
+	it = iter(iterable)
+	item = list(itertools.islice(it, 2))
+	while item:
+		yield item
+		item = list(itertools.islice(it, 2))
+
+def warn(prompt):
+	print(prompt)
+	while True:
+		s = getInput('Continue? y/n')
+		if s == 'y':
+			break
+		elif s == 'n':
+			raise RuntimeError('chose not to continue')
+
+def getInput(prompt):
+	import sys
+	if sys.version_info[0] <= 2:
+		return raw_input(prompt)
+	else:
+		return input(prompt)
+
+def readall(filename, mode='rb'):
 	with open(filename, mode) as f:
 		return f.read()
 
@@ -283,60 +467,55 @@ def assertEqArray(expected, received):
 	for i in range(len(expected)):
 		assertEq(repr(expected[i]), repr(received[i]))
 
+# from KeyToCommand kmap[] in SciTEGTK.cxx
+gtkKmapBindings = r'''Control+Tab|IDM_NEXTFILESTACK|30|gtk|KeyToCommand kmap[]
+Shift+Control+Tab|IDM_PREVFILESTACK|30|gtk|KeyToCommand kmap[]
+Control+Enter|IDM_COMPLETEWORD|30|gtk|KeyToCommand kmap[]
+Alt+F2|IDM_BOOKMARK_NEXT_SELECT|30|gtk|KeyToCommand kmap[]
+Alt+Shift+F2|IDM_BOOKMARK_PREV_SELECT|30|gtk|KeyToCommand kmap[]
+Control+F3|IDM_FINDNEXTSEL|30|gtk|KeyToCommand kmap[]
+Control+Shift+F3|IDM_FINDNEXTBACKSEL|30|gtk|KeyToCommand kmap[]
+Control+F4|IDM_CLOSE|30|gtk|KeyToCommand kmap[]
+Control+J|IDM_PREVMATCHPPC|30|gtk|KeyToCommand kmap[]
+Control+Shift+J|IDM_SELECTTOPREVMATCHPPC|30|gtk|KeyToCommand kmap[]
+Control+K|IDM_NEXTMATCHPPC|30|gtk|KeyToCommand kmap[]
+Control+Shift+K|IDM_SELECTTONEXTMATCHPPC|30|gtk|KeyToCommand kmap[]
+Control+*|IDM_EXPAND|30|gtk|KeyToCommand kmap[]'''
+
+startFile = """<?xml version="1.0"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<!--Generated by scite/scripts/%script% -->
+<style type="text/css">
+body { font-family:verdana, Geneva, sans-serif; font-size: 80% }
+table { border: 1px solid #1F1F1F; border-collapse: collapse; }
+td { border: 1px solid; border-color: #E0E0E0 #000000; padding: 1px 5px 1px 5px; }
+th { border: 1px solid #1F1F1F; padding: 1px 5px 1px 5px; }
+thead { background-color: #000000; color: #FFFFFF; }
+</style>
+<body>
+"""
+
 def tests():
-	mockProperties = '''
-customcommand.test.name=Test Custom
-customcommand.test.shortcut=Shift+F12
-
-#customcommand.commented.name=Test cmtd
-#customcommand.commented.shortcut=F1
-
-user.shortcuts=\
-Ctrl+Shift+V|IDM_PASTEANDDOWN|\
-Ctrl+PageDown|IDM_NEXTFILE|
-
+	propstring = r'''
+a=b=c
+test.expand=$(span)
 if PLAT_GTK
-	*language.sql=S&QL|sql||
-	*language.html=H&TML|html|Control+Alt+Shift+F11|
-	*language.php=P&HP|php|$(keyMissing)|
-	*language.xml=&XML|xml|$(keyXML)|
-	keyXML=Alt+Shift+/
+	plat=gtk
 if PLAT_WIN
-	user.shortcuts=
-	*language.xml=&XML|xml|Ctrl+O|
-
-fff=*
-command.name.11.$(fff)=Test Aaa
-command.11.$(fff)=dostuff(x,y,z)
-command.shortcut.11.$(fff)=Ctrl+Aaa
-
-command.name.12.*=Test Bbb
-command.12.*=dostuff(x,y,z)
-command.shortcut.12.*=Ctrl+Bbb
-
-command.name.4.$(fff)=Test Ddd
-
-command.name.5.*.y=Test Ccc
-command.shortcut.5.*.y=Shift+Tab'''
-
+	plat=win
+span=a\
+b\
+c
+testfileendswithslash=test''' + '\\'
 	props = PropSetFile('gtk')
-	props.ReadString(mockProperties)
-	results = readFromProperties(props)
-	results.sort(key=lambda obj: obj.getSortKey())
-
-	expected = '''Alt+Shift+/|set language XML|40|any|properties *language
-Ctrl+4|Test Ddd|50|any|properties command (implicit)
-Ctrl+Aaa|Test Aaa|50|any|properties command
-Ctrl+Bbb|Test Bbb|50|any|properties command
-Ctrl+Alt+Shift+F11|set language HTML|40|any|properties *language
-Shift+F12|Test Custom|50|any|properties command
-Ctrl+PageDown|IDM_NEXTFILE|60|any|properties user.shortcuts
-Shift+Tab|Test Ccc|50|*.y|properties command
-Ctrl+Shift+V|IDM_PASTEANDDOWN|60|any|properties user.shortcuts'''
-	expectedArr = []
-	addBindingsManual(expectedArr, expected)
-	assertEqArray(expectedArr, results)
-	
+	props.ReadString(propstring)
+	assertEq('b=c', props.GetString('a'))
+	assertEq('abc', props.GetString('span'))
+	assertEq('abc', props.Expanded(props.GetString('test.expand')))
+	assertEq('gtk', props.GetString('plat'))
+	assertEq('test', props.GetString('testfileendswithslash'))
 	
 if __name__ == '__main__':
 	tests()
