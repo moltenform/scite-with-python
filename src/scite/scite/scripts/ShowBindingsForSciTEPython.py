@@ -27,7 +27,7 @@ def readFromSciTEResMenuEntry(bindings, stack, parts, mapUserDefinedKeys):
 		accel = userDefined or accel
 		if accel:
 			bindings.append(KeyBinding(
-				'SciTERes from menu or user-defined', name, accel, priority=75, platform='win32'))
+				'menu text or user-defined', name, accel, priority=75, platform='win32'))
 
 def readFromSciTEResMenus(bindings, mapUserDefinedKeys):
 	start = '''SciTE MENU'''
@@ -50,25 +50,16 @@ def readFromSciTEResMenus(bindings, mapUserDefinedKeys):
 	
 	assert len(stack) == 0
 
-def checkForNewIfDefsInKeyMap():
-	start = '''const KeyToCommand KeyMap::MapDefault[] = {'''
-	txt = '\n'.join(retrieveCodeLines('../../scintilla/src/KeyMap.cxx', start, '};'))
-	txt = txt.replace('''#if OS_X_KEYS
-	{SCK_DOWN,		SCI_CTRL,	SCI_DOCUMENTEND},
-	{SCK_DOWN,		SCI_CSHIFT,	SCI_DOCUMENTENDEXTEND},
-	{SCK_UP,		SCI_CTRL,	SCI_DOCUMENTSTART},
-	{SCK_UP,		SCI_CSHIFT,	SCI_DOCUMENTSTARTEXTEND},
-	{SCK_LEFT,		SCI_CTRL,	SCI_VCHOME},
-	{SCK_LEFT,		SCI_CSHIFT,	SCI_VCHOMEEXTEND},
-	{SCK_RIGHT,		SCI_CTRL,	SCI_LINEEND},
-	{SCK_RIGHT,		SCI_CSHIFT,	SCI_LINEENDEXTEND},
-#endif'''.replace('\r\n', '\n').replace('\n\t', '\n    '), '')
-	txt = txt.replace('''#if OS_X_KEYS
-	{'Z', 			SCI_CSHIFT,	SCI_REDO},
-#else
-	{'Y', 			SCI_CTRL,	SCI_REDO},
-#endif'''.replace('\r\n', '\n').replace('\n\t', '\n    '), '')
-	warnIfTermsSeen('../../scintilla/src/KeyMap.cxx', txt, ['#ifdef', '#else', '#endif'])
+def readNewCommandsFromProperties(results, props):
+	for key in props.props:
+		matchObj = re.match(r'^customcommand\.([^.]+)\.name', key)
+		if matchObj:
+			name = props.Expanded(props.GetString(key))
+			commandId = matchObj.group(1)
+			setShortcutKey = 'customcommand.' + commandId + '.shortcut'
+			setShortcutValue = props.Expanded(props.GetString(setShortcutKey))
+			if name and setShortcutValue:
+				results.append(KeyBinding('properties command', name, setShortcutValue, priority=50, platform='any'))
 
 def getGtkBindings(results, props, mapUserDefinedKeys):
 	detectCodeChanges('../gtk/SciTEGTK.cxx', getFragment('SciTEGTK::Key'),
@@ -83,6 +74,7 @@ def getGtkBindings(results, props, mapUserDefinedKeys):
 	# --- check the tools menu			MenuCommand(IDM_TOOLS + tool_i) (priority=50)
 	# --- check user.shortcuts			shortCutItemList[cut_i].menuCommand (priority=60)
 	readFromProperties(results, props)
+	readNewCommandsFromProperties(results, props)
 	
 	# --- check UI strips			findStrip.KeyDown(event), replaceStrip, userStrip (priority=70)
 	# --- FindStrip: Alt-initial letter
@@ -106,6 +98,7 @@ def getWindowsBindings(results, props, mapUserDefinedKeys):
 	# --- check the tools menu			MenuCommand(IDM_TOOLS + tool_i) (priority=50)
 	# --- check user.shortcuts			shortCutItemList[cut_i].menuCommand (priority=60)
 	readFromProperties(results, props)
+	readNewCommandsFromProperties(results, props)
 	
 	# --- check UI strips
 	# --- FindStrip::KeyDown
@@ -132,8 +125,41 @@ def getScintillaBindings(results, props):
 	addCallsToAssignKeyBindings(results, props)
 	readFromScintillaKeyMap(results)
 
+def adjustScintillaPriority(bindings):
+	# in Windows, scintilla has low priority
+	for binding in bindings:
+		if binding.priority <= 1:
+			binding.priority += 100
+
+def processDuplicatesInOutputFile(filepath):
+	newContents = []
+	overridden = []
+	lastRowCells = []
+	for line in readall(filepath).replace('\r\n', '\n').split('\n'):
+		if line.startswith('<tr><td>'):
+			lineCells = line.split('</td><td>')
+			if lineCells == lastRowCells:
+				# accels and description are the same, so remove the duplicate row
+				newContents.append('')
+			elif lineCells[0:2] == lastRowCells[0:2] and '*' not in lineCells[3]:
+				# accels are the same and it's not scoped to a file type, so move it to overrides.
+				overridden.append(line)
+			else:
+				newContents.append(line)
+			lastRowCells = line.split('</td><td>')
+		elif overridden and line == '</table>':
+			newContents.append('<tr><td colspan="4" align="center"><br />Bindings that were overridden<br /><br /></td></tr>')
+			for override in overridden:
+				newContents.append(override)
+			newContents.append(line)
+		else:
+			newContents.append(line)
+
+	with open(filepath, 'w') as out:
+		out.write('\n'.join(newContents))
+
 def mainWithPython(propertiesMain, propertiesUser, rootDir):
-	#~ assert os.path.isfile('../src/PythonExtension.cxx'), 'Did not see PythonExtension, please run ShowBindings.py instead.'
+	assert os.path.isfile('../src/PythonExtension.cxx'), 'Did not see PythonExtension, please run ShowBindings.py instead.'
 	checkForAnyLogicChanges()
 	for platform in ('gtk', 'win32'):
 		props = getAllProperties(propertiesMain, propertiesUser, platform, rootDir)
@@ -149,19 +175,37 @@ def mainWithPython(propertiesMain, propertiesUser, rootDir):
 			expectedSets.extend(['KeyToCommand kmap[]', 'SciTEItemFactoryEntry'])
 		else:
 			getWindowsBindings(bindings, props, mapUserDefinedKeys)
-			expectedSets.extend(['SciTERes accel'])
+			adjustScintillaPriority(bindings)
+			expectedSets.extend(['SciTERes accel', 'menu text or user-defined'])
 		
 		bindings.sort(key=lambda obj: obj.getSortKey())
 		writeOutputFile(bindings, outputFile)
+		processDuplicatesInOutputFile(outputFile)
 		setsSeen = { item.setName:1 for item in bindings }
 		if set(expectedSets) != set(key for key in setsSeen):
-			if str(set(expectedSets) - set(key for key in setsSeen)) == "set(['properties command'])":
-				pass
-			else:
-				warn('''Warning: nothing found in %s, or saw unexpected %s''' %
-					(set(expectedSets) - set(key for key in setsSeen),
-					set(key for key in setsSeen) - set(expectedSets)))
+			warn('''Warning: nothing found in %s, or saw unexpected %s''' %
+				(set(expectedSets) - set(key for key in setsSeen),
+				set(key for key in setsSeen) - set(expectedSets)))
 
+def checkForNewIfDefsInKeyMap():
+	start = '''const KeyToCommand KeyMap::MapDefault[] = {'''
+	txt = '\n'.join(retrieveCodeLines('../../scintilla/src/KeyMap.cxx', start, '};'))
+	txt = txt.replace('''#if OS_X_KEYS
+	{SCK_DOWN,		SCI_CTRL,	SCI_DOCUMENTEND},
+	{SCK_DOWN,		SCI_CSHIFT,	SCI_DOCUMENTENDEXTEND},
+	{SCK_UP,		SCI_CTRL,	SCI_DOCUMENTSTART},
+	{SCK_UP,		SCI_CSHIFT,	SCI_DOCUMENTSTARTEXTEND},
+	{SCK_LEFT,		SCI_CTRL,	SCI_VCHOME},
+	{SCK_LEFT,		SCI_CSHIFT,	SCI_VCHOMEEXTEND},
+	{SCK_RIGHT,		SCI_CTRL,	SCI_LINEEND},
+	{SCK_RIGHT,		SCI_CSHIFT,	SCI_LINEENDEXTEND},
+#endif'''.replace('\r\n', '\n').replace('\n\t', '\n    '), '')
+	txt = txt.replace('''#if OS_X_KEYS
+	{'Z', 			SCI_CSHIFT,	SCI_REDO},
+#else
+	{'Y', 			SCI_CTRL,	SCI_REDO},
+#endif'''.replace('\r\n', '\n').replace('\n\t', '\n    '), '')
+	warnIfTermsSeen('../../scintilla/src/KeyMap.cxx', txt, ['#ifdef', '#else', '#endif'])
 
 fragments = []
 fragments.append(['SciTEGTK::Key', 'gtk/SciTEGTK.cxx', r'''class KeyToCommand {

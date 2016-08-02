@@ -142,7 +142,7 @@ def readShortcutFromCommand(results, props, key):
 		platform = props.Expanded(filetypes)
 		platform = 'any' if platform == '*' else platform
 		setShortcutKey = 'command.shortcut.' + number + '.' + filetypes
-		setShortcutValue = props.GetString(setShortcutKey)
+		setShortcutValue = props.Expanded(props.GetString(setShortcutKey))
 		if name and len(number) == 1 and not setShortcutValue:
 			binding = KeyBinding('properties command (implicit)', name, priority=50, platform=platform)
 			binding.keyChar = number
@@ -156,6 +156,8 @@ def readPropertiesUserShortcuts(results, props, key):
 	parts = value.split('|')
 	for pair in takePairs(parts):
 		if pair and len(pair) == 2:
+			pair[0] = props.Expanded(pair[0])
+			pair[1] = props.Expanded(pair[1])
 			results.append(KeyBinding('properties user.shortcuts', pair[1], pair[0], priority=60, platform='any'))
 
 def readFromProperties(bindings, props):
@@ -231,7 +233,7 @@ def writeOutputBinding(out, binding, mapSciteToString, mapScintillaToString):
 	if '*' in binding.platform:
 		notes += 'only %s' % binding.platform
 	elif 'properties' in binding.setName:
-		notes += 'props'
+		notes += 'from properties'
 	
 	out.write('<td>%s</td></tr>\n' % escapeXml(notes))
 
