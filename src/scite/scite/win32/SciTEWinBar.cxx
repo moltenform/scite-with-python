@@ -134,15 +134,17 @@ void SciTEWin::Notify(const SCNotification *notification) {
 			AddToPopUp("");
 
 			bool bAddSeparator = false;
-			for (int item = 0; item < toolMax; item++) {
-				int itemID = IDM_TOOLS + item;
-				std::string prefix = "command.name.";
-				prefix += StdStringFromInteger(item);
-				prefix += ".";
-				std::string commandName = props.GetNewExpandString(prefix.c_str(), filePath.AsUTF8().c_str());
-				if (commandName.length()) {
-					AddToPopUp(commandName.c_str(), itemID, true);
-					bAddSeparator = true;
+			if (props.GetInt("context.menu.show.tools", 1)) {
+				for (int item = 0; item < toolMax; item++) {
+					int itemID = IDM_TOOLS + item;
+					std::string prefix = "command.name.";
+					prefix += StdStringFromInteger(item);
+					prefix += ".";
+					std::string commandName = props.GetNewExpandString(prefix.c_str(), filePath.AsUTF8().c_str());
+					if (commandName.length()) {
+						AddToPopUp(commandName.c_str(), itemID, true);
+						bAddSeparator = true;
+					}
 				}
 			}
 
