@@ -56,6 +56,7 @@ Modifications to SciTE source code include
 	New feature: SciTEWindowID property
 	New feature: internal grep supports regex search
 	New feature: user.shortcuts supports SCI_ constants
+	New feature: menukey customization supported on windows, was previously gtk-only.
 
 
 	
