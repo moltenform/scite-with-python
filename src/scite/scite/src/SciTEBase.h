@@ -306,6 +306,11 @@ public:
 	bool wrapFind;
 	bool reverseFind;
 
+	bool findInFilesSharesStateWithFindReplace;
+	bool findInFilesWholeWord;
+	bool findInFilesMatchCase;
+	bool findInFilesRegExp;
+
 	int searchStartPosition;
 	bool replacing;
 	bool havefound;

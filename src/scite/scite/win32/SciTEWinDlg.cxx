@@ -1153,11 +1153,14 @@ void SciTEWin::PerformGrep() {
 		// searchParams is "(w|~)(c|~)(d|~)(b|~)(r|~)\0files\0text"
 		// A "w" indicates whole word, "c" case sensitive, "d" dot directories, "b" binary files, "r" regex
 		std::string searchParams;
-		searchParams.append(wholeWord ? "w" : "~");
-		searchParams.append(matchCase ? "c" : "~");
+		bool searchWholeWord = findInFilesSharesStateWithFindReplace ? wholeWord : findInFilesWholeWord;
+		bool searchMatchCase = findInFilesSharesStateWithFindReplace ? matchCase : findInFilesMatchCase;
+		bool searchRegexp = findInFilesSharesStateWithFindReplace ? regExp : findInFilesRegExp;
+		searchParams.append(searchWholeWord ? "w" : "~");
+		searchParams.append(searchMatchCase ? "c" : "~");
 		searchParams.append(props.GetInt("find.in.dot") ? "d" : "~");
 		searchParams.append(props.GetInt("find.in.binary") ? "b" : "~");
-		searchParams.append(regExp ? "r" : "~");
+		searchParams.append(searchRegexp ? "r" : "~");
 		searchParams.append("\0", 1);
 		searchParams.append(props.GetString("find.files"));
 		searchParams.append("\0", 1);
@@ -1193,9 +1196,9 @@ BOOL SciTEWin::GrepMessage(HWND hDlg, UINT message, WPARAM wParam) {
 		dlg.SetItemTextU(IDDIRECTORY, props.GetString("find.directory"));
 		if (props.GetNewExpandString("find.command") == "") {
 			// Empty means use internal that can respond to flags
-			dlg.SetCheck(IDWHOLEWORD, wholeWord);
-			dlg.SetCheck(IDMATCHCASE, matchCase);
-			dlg.SetCheck(IDREGEXP, regExp);
+			dlg.SetCheck(IDWHOLEWORD, findInFilesSharesStateWithFindReplace ? wholeWord : findInFilesWholeWord);
+			dlg.SetCheck(IDMATCHCASE, findInFilesSharesStateWithFindReplace ? matchCase : findInFilesMatchCase);
+			dlg.SetCheck(IDREGEXP, findInFilesSharesStateWithFindReplace ? regExp : findInFilesRegExp);
 		} else {
 			dlg.Enable(IDWHOLEWORD, false);
 			dlg.Enable(IDMATCHCASE, false);
@@ -1240,9 +1243,15 @@ BOOL SciTEWin::GrepMessage(HWND hDlg, UINT message, WPARAM wParam) {
 			props.Set("find.directory", directory.c_str());
 			memDirectory.Insert(directory);
 
-			wholeWord = dlg.Checked(IDWHOLEWORD);
-			matchCase = dlg.Checked(IDMATCHCASE);
-			regExp = dlg.Checked(IDREGEXP);
+			if (findInFilesSharesStateWithFindReplace) {
+				wholeWord = dlg.Checked(IDWHOLEWORD);
+				matchCase = dlg.Checked(IDMATCHCASE);
+				regExp = dlg.Checked(IDREGEXP);
+			} else {
+				findInFilesWholeWord = dlg.Checked(IDWHOLEWORD);
+				findInFilesMatchCase = dlg.Checked(IDMATCHCASE);
+				findInFilesRegExp = dlg.Checked(IDREGEXP);
+			}
 
 			FillCombos(dlg);
 

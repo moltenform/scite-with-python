@@ -50,6 +50,11 @@ Searcher::Searcher() {
 	unSlash = false;
 	wrapFind = true;
 	reverseFind = false;
+	
+	findInFilesSharesStateWithFindReplace = false;
+	findInFilesWholeWord = false;
+	findInFilesMatchCase = false;
+	findInFilesRegExp = false;
 
 	searchStartPosition = 0;
 	replacing = false;

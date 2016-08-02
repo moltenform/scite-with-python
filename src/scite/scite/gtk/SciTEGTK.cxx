@@ -2087,18 +2087,32 @@ void SciTEGTK::FRMarkAllCmd() {
 
 void DialogFindInFiles::GrabFields() {
 	pSearcher->SetFind(wComboFindInFiles.Text());
-	if (toggleWord.Sensitive())
-		pSearcher->wholeWord = toggleWord.Active();
-	if (toggleCase.Sensitive())
-		pSearcher->matchCase = toggleCase.Active();
+	if (pSearcher->findInFilesSharesStateWithFindReplace) {
+		if (toggleWord.Sensitive())
+			pSearcher->wholeWord = toggleWord.Active();
+		if (toggleCase.Sensitive())
+			pSearcher->matchCase = toggleCase.Active();
+	} else {
+		if (toggleWord.Sensitive())
+			pSearcher->findInFilesWholeWord = toggleWord.Active();
+		if (toggleCase.Sensitive())
+			pSearcher->findInFilesMatchCase = toggleCase.Active();
+	}
 }
 
 void DialogFindInFiles::FillFields() {
 	wComboFindInFiles.FillFromMemory(pSearcher->memFinds.AsVector());
-	if (toggleWord.Sensitive())
-		toggleWord.SetActive(pSearcher->wholeWord);
-	if (toggleCase.Sensitive())
-		toggleCase.SetActive(pSearcher->matchCase);
+	if (pSearcher->findInFilesSharesStateWithFindReplace) {
+		if (toggleWord.Sensitive())
+			toggleWord.SetActive(pSearcher->wholeWord);
+		if (toggleCase.Sensitive())
+			toggleCase.SetActive(pSearcher->matchCase);
+	} else {
+		if (toggleWord.Sensitive())
+			toggleWord.SetActive(pSearcher->findInFilesWholeWord);
+		if (toggleCase.Sensitive())
+			toggleCase.SetActive(pSearcher->findInFilesMatchCase);
+	}
 }
 
 void SciTEGTK::FindInFilesCmd() {

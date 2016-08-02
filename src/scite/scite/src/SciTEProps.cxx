@@ -1573,6 +1573,8 @@ void SciTEBase::ReadPropertiesInitial() {
 	props.Set("SciteDefaultHome", homepath.AsUTF8().c_str());
 	homepath = GetSciteUserHome();
 	props.Set("SciteUserHome", homepath.AsUTF8().c_str());
+	
+	findInFilesSharesStateWithFindReplace = props.GetInt("find.in.files.settings.shared.state", 1);
 }
 
 FilePath SciTEBase::GetDefaultPropertiesFileName() {
