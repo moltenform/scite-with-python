@@ -86,7 +86,7 @@ def go(filepath, searchTerm, dirDepthString, stringWindowId, action):
         print('No word selected')
         return
     
-    if not re.match(r'^[a-zA-Z0-9_]+$', searchTerm):
+    if action != 'any_whole_word' and not re.match(r'^[a-zA-Z0-9_]+$', searchTerm):
         print('Search term should be consist of only alphanumeric characters.')
         return
     
