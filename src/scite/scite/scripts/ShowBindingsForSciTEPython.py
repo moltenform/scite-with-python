@@ -10,8 +10,8 @@
 # this script requires SciTE+Scintilla sources to be present.
 # place this script in the /scite/src/scripts directory
 # running it will produce the two files
-# CurrentBindingsGtk.html
-# CurrentBindingsWin32.html
+# ../bin/doc/CurrentBindingsGtk.html
+# ../bin/doc/CurrentBindingsWin32.html
 
 
 from ShowBindings import *
@@ -28,7 +28,6 @@ def readFromSciTEResMenuEntry(bindings, stack, parts, mapUserDefinedKeys):
 		if accel:
 			bindings.append(KeyBinding(
 				'SciTERes from menu or user-defined', name, accel, priority=75, platform='win32'))
-			print 'adding ' + repr(bindings[-1])
 
 def readFromSciTEResMenus(bindings, mapUserDefinedKeys):
 	start = '''SciTE MENU'''
@@ -51,28 +50,29 @@ def readFromSciTEResMenus(bindings, mapUserDefinedKeys):
 	
 	assert len(stack) == 0
 
-#~ assert that keymap - 
-#~ #if OS_X_KEYS
-    #~ {SCK_DOWN,		SCI_CTRL,	SCI_DOCUMENTEND},
-    #~ {SCK_DOWN,		SCI_CSHIFT,	SCI_DOCUMENTENDEXTEND},
-    #~ {SCK_UP,		SCI_CTRL,	SCI_DOCUMENTSTART},
-    #~ {SCK_UP,		SCI_CSHIFT,	SCI_DOCUMENTSTARTEXTEND},
-    #~ {SCK_LEFT,		SCI_CTRL,	SCI_VCHOME},
-    #~ {SCK_LEFT,		SCI_CSHIFT,	SCI_VCHOMEEXTEND},
-    #~ {SCK_RIGHT,		SCI_CTRL,	SCI_LINEEND},
-    #~ {SCK_RIGHT,		SCI_CSHIFT,	SCI_LINEENDEXTEND},
-#~ #endif
-#~ and
-
-#~ and #if OS_X_KEYS
-    #~ {'Z', 			SCI_CSHIFT,	SCI_REDO},
-#~ #else
-    #~ {'Y', 			SCI_CTRL,	SCI_REDO},
-#~ #endif
+def checkForNewIfDefsInKeyMap():
+	start = '''const KeyToCommand KeyMap::MapDefault[] = {'''
+	txt = '\n'.join(retrieveCodeLines('../../scintilla/src/KeyMap.cxx', start, '};'))
+	txt = txt.replace('''#if OS_X_KEYS
+	{SCK_DOWN,		SCI_CTRL,	SCI_DOCUMENTEND},
+	{SCK_DOWN,		SCI_CSHIFT,	SCI_DOCUMENTENDEXTEND},
+	{SCK_UP,		SCI_CTRL,	SCI_DOCUMENTSTART},
+	{SCK_UP,		SCI_CSHIFT,	SCI_DOCUMENTSTARTEXTEND},
+	{SCK_LEFT,		SCI_CTRL,	SCI_VCHOME},
+	{SCK_LEFT,		SCI_CSHIFT,	SCI_VCHOMEEXTEND},
+	{SCK_RIGHT,		SCI_CTRL,	SCI_LINEEND},
+	{SCK_RIGHT,		SCI_CSHIFT,	SCI_LINEENDEXTEND},
+#endif'''.replace('\r\n', '\n').replace('\n\t', '\n    '), '')
+	txt = txt.replace('''#if OS_X_KEYS
+	{'Z', 			SCI_CSHIFT,	SCI_REDO},
+#else
+	{'Y', 			SCI_CTRL,	SCI_REDO},
+#endif'''.replace('\r\n', '\n').replace('\n\t', '\n    '), '')
+	warnIfTermsSeen('../../scintilla/src/KeyMap.cxx', txt, ['#ifdef', '#else', '#endif'])
 
 def getGtkBindings(results, props, mapUserDefinedKeys):
-	detectCodeChanges('../gtk/SciTEGTK.cxx', gtkKeyHandlerMethodExpectedText,
-		gtkKeyHandlerMethodExpectedTextMustInclude)
+	detectCodeChanges('../gtk/SciTEGTK.cxx', getFragment('SciTEGTK::Key'),
+		SciTEGTK_Key_MustInclude)
 	
 	# --- gint SciTEGTK::Key(GdkEventKey *event) {
 	# --- send to extension 			extender->OnKey (priority=20)
@@ -88,17 +88,17 @@ def getGtkBindings(results, props, mapUserDefinedKeys):
 	# --- FindStrip: Alt-initial letter
 	# --- ReplaceStrip: Alt-initial letter
 	# --- UserStrip: Escape to close, Alt-initial letter of label to hit a button or set focus
-	detectCodeChanges('../gtk/SciTEGTK.cxx', gtkFindStripEscapeSignal)
-	detectCodeChanges('../gtk/SciTEGTK.cxx', gtkReplaceStripEscapeSignal)
-	detectCodeChanges('../gtk/SciTEGTK.cxx', gtkUserStripEscapeSignal)
-	detectCodeChanges('../gtk/SciTEGTK.cxx', gtkFindIncrementEscapeSignal)
-	detectCodeChanges('../gtk/Widget.cxx', gtkWidgetCxxStripKeyDown)
+	detectCodeChanges('../gtk/SciTEGTK.cxx', getFragment('FindStrip::EscapeSignal'))
+	detectCodeChanges('../gtk/SciTEGTK.cxx', getFragment('ReplaceStrip::EscapeSignal'))
+	detectCodeChanges('../gtk/SciTEGTK.cxx', getFragment('UserStrip::EscapeSignal'))
+	detectCodeChanges('../gtk/SciTEGTK.cxx', getFragment('SciTEGTK::FindIncrementEscapeSignal'))
+	detectCodeChanges('../gtk/Widget.cxx', getFragment('gtkStrip::KeyDown'))
 	
 	# --- check menu items		SciTEItemFactoryEntry menuItems (priority=80)
 	readFromSciTEItemFactoryList(results, mapUserDefinedKeys)
 
 def getWindowsBindings(results, props, mapUserDefinedKeys):
-	detectCodeChanges('../win32/SciTEWin.cxx', win32KeyHandlerMethodExpectedText)
+	detectCodeChanges('../win32/SciTEWin.cxx', getFragment('SciTEWin::KeyDown'))
 	
 	# --- LRESULT SciTEWin::KeyDown(WPARAM wParam) {
 	# --- send to extension 			extender->OnKey (priority=20)
@@ -111,8 +111,8 @@ def getWindowsBindings(results, props, mapUserDefinedKeys):
 	# --- FindStrip::KeyDown
 	# --- ReplaceStrip::KeyDown
 	# --- UserStrip: Escape to close, Alt-initial letter of label to hit a button or set focus
-	detectCodeChanges('../win32/SciTEWinDlg.cxx', win32ModelessHandler)
-	detectCodeChanges('../win32/Strips.cxx', win32StripKeyDown)
+	detectCodeChanges('../win32/SciTEWinDlg.cxx', getFragment('SciTEWin::ModelessHandler'))
+	detectCodeChanges('../win32/Strips.cxx', getFragment('win32Strip::KeyDown'))
 	
 	# --- std::vector<std::pair<int, int>>::iterator itAccels; (priority=75)
 	# --- SciteRes.rc gives menu items names like New\tCtrl+N
@@ -124,10 +124,11 @@ def getWindowsBindings(results, props, mapUserDefinedKeys):
 	readFromSciTEResAccelTable(results)
 
 def getScintillaBindings(results, props):
-	detectCodeChanges('../../scintilla/src/Editor.cxx', scintillaKeyHandlerMethodExpectedText,
+	detectCodeChanges('../../scintilla/src/Editor.cxx', getFragment('scintillaKeyHandlerMethodExpectedText'),
 		scintillaKeyHandlerMethodExpectedTextMustInclude)
-	detectCodeChanges('../src/SciTEProps.cxx', callsToAssignKey)
-	detectCodeChanges('../src/SciTEBase.cxx', sciteBaseCallAssignKey)
+	detectCodeChanges('../src/SciTEProps.cxx', getFragment('callsToAssignKey'))
+	detectCodeChanges('../src/SciTEBase.cxx', getFragment('sciteBaseCallAssignKey'))
+	checkForNewIfDefsInKeyMap()
 	addCallsToAssignKeyBindings(results, props)
 	readFromScintillaKeyMap(results)
 
@@ -137,7 +138,7 @@ def mainWithPython(propertiesMain, propertiesUser, rootDir):
 	for platform in ('gtk', 'win32'):
 		props = getAllProperties(propertiesMain, propertiesUser, platform, rootDir)
 		platformCapitalized = platform[0].upper() + platform[1:]
-		outputFile = 'CurrentBindings%s.html' % platformCapitalized
+		outputFile = '../bin/doc/CurrentBindings%s.html' % platformCapitalized
 		mapUserDefinedKeys = readUserDefinedKeys(props)
 		bindings = []
 		getScintillaBindings(bindings, props)
@@ -162,7 +163,8 @@ def mainWithPython(propertiesMain, propertiesUser, rootDir):
 					set(key for key in setsSeen) - set(expectedSets)))
 
 
-gtkKeyHandlerMethodExpectedText = r'''class KeyToCommand {
+fragments = []
+fragments.append(['SciTEGTK::Key', 'gtk/SciTEGTK.cxx', r'''class KeyToCommand {
 public:
 	int modifiers;
 	unsigned int key;	// For alphabetic keys has to match the shift modifier.
@@ -281,10 +283,10 @@ gint SciTEGTK::Key(GdkEventKey *event) {
 	}
 
 	return 0;
-}'''
-gtkKeyHandlerMethodExpectedTextMustInclude = r'''	if (findStrip.KeyDown(event) || replaceStrip.KeyDown(event) || userStrip.KeyDown(event)) {'''
+}'''])
+SciTEGTK_Key_MustInclude = r'''	if (findStrip.KeyDown(event) || replaceStrip.KeyDown(event) || userStrip.KeyDown(event)) {'''
 
-win32KeyHandlerMethodExpectedText = r'''LRESULT SciTEWin::KeyDown(WPARAM wParam) {
+fragments.append(['SciTEWin::KeyDown', 'win32/SciTEWin.cxx', r'''LRESULT SciTEWin::KeyDown(WPARAM wParam) {
 	// Look through lexer menu
 	int modifiers =
 	    (IsKeyDown(VK_SHIFT) ? SCMOD_SHIFT : 0) |
@@ -333,11 +335,21 @@ win32KeyHandlerMethodExpectedText = r'''LRESULT SciTEWin::KeyDown(WPARAM wParam)
 			}
 		}
 	}
+	
+	std::vector<std::pair<int, int>>::iterator itAccels;
+	for (itAccels = acceleratorKeys.begin(); itAccels != acceleratorKeys.end(); ++itAccels) {
+		int parsedKeys = itAccels->first;
+		int command = itAccels->second;
+		if (SciTEKeys::MatchKeyCode(parsedKeys, static_cast<int>(wParam), modifiers)) {
+			SciTEBase::MenuCommand(command);
+			return 1l;
+		}
+	}
 
 	return 0l;
-}'''
+}'''])
 
-gtkSetMenuItem = r'''void SciTEGTK::SetMenuItem(int, int, int itemID, const char *text, const char *mnemonic) {
+fragments.append(['SciTEGTK::SetMenuItem', 'gtk/SciTEGTK.cxx', r'''void SciTEGTK::SetMenuItem(int, int, int itemID, const char *text, const char *mnemonic) {
 	DestroyMenuItem(0, itemID);
 
 	// On GTK+ the menuNumber and position are ignored as the menu item already exists and is in the right
@@ -358,50 +370,50 @@ gtkSetMenuItem = r'''void SciTEGTK::SetMenuItem(int, int, int itemID, const char
 	}
 
 	// Reorder shift and ctrl indicators for compatibility with other menus
-	Substitute(itemText, "Ctrl+Shift+", "Shift+Ctrl+");'''
+	Substitute(itemText, "Ctrl+Shift+", "Shift+Ctrl+");'''])
 
-gtkFindStripEscapeSignal = r'''gboolean FindStrip::EscapeSignal(GtkWidget *w, GdkEventKey *event, FindStrip *pStrip) {
+fragments.append(['FindStrip::EscapeSignal', 'gtk/SciTEGTK.cxx', r'''gboolean FindStrip::EscapeSignal(GtkWidget *w, GdkEventKey *event, FindStrip *pStrip) {
 	if (event->keyval == GKEY_Escape) {
 		g_signal_stop_emission_by_name(G_OBJECT(w), "key-press-event");
 		pStrip->Close();
 	}
 	return FALSE;
-}'''
+}'''])
 
-gtkReplaceStripEscapeSignal = r'''gboolean ReplaceStrip::EscapeSignal(GtkWidget *w, GdkEventKey *event, ReplaceStrip *pStrip) {
+fragments.append(['ReplaceStrip::EscapeSignal', 'gtk/SciTEGTK.cxx', r'''gboolean ReplaceStrip::EscapeSignal(GtkWidget *w, GdkEventKey *event, ReplaceStrip *pStrip) {
 	if (event->keyval == GKEY_Escape) {
 		g_signal_stop_emission_by_name(G_OBJECT(w), "key-press-event");
 		pStrip->Close();
 	}
 	return FALSE;
-}'''
+}'''])
 
-gtkUserStripEscapeSignal = r'''gboolean UserStrip::EscapeSignal(GtkWidget *w, GdkEventKey *event, UserStrip *pStrip) {
+fragments.append(['UserStrip::EscapeSignal', 'gtk/SciTEGTK.cxx', r'''gboolean UserStrip::EscapeSignal(GtkWidget *w, GdkEventKey *event, UserStrip *pStrip) {
 	if (event->keyval == GKEY_Escape) {
 		g_signal_stop_emission_by_name(G_OBJECT(w), "key-press-event");
 		pStrip->Close();
 	}
 	return FALSE;
-}'''
+}'''])
 
-gtkFindIncrementEscapeSignal = r'''gboolean SciTEGTK::FindIncrementEscapeSignal(GtkWidget *w, GdkEventKey *event, SciTEGTK *scitew) {
+fragments.append(['SciTEGTK::FindIncrementEscapeSignal', 'gtk/SciTEGTK.cxx', r'''gboolean SciTEGTK::FindIncrementEscapeSignal(GtkWidget *w, GdkEventKey *event, SciTEGTK *scitew) {
 	if (event->keyval == GKEY_Escape) {
 		g_signal_stop_emission_by_name(G_OBJECT(w), "key-press-event");
 		gtk_widget_hide(scitew->wIncrementPanel);
 		SetFocus(scitew->wEditor);
 	}
 	return FALSE;
-}'''
+}'''])
 
-gtkWidgetCxxKeyDefines = r'''#if GTK_CHECK_VERSION(3,0,0)
+fragments.append(['Gtk key defines', 'gtk/Widget.cxx', r'''#if GTK_CHECK_VERSION(3,0,0)
 #define GKEY_Escape GDK_KEY_Escape
 #define GKEY_Void GDK_KEY_VoidSymbol
 #else
 #define GKEY_Escape GDK_Escape
 #define GKEY_Void GDK_VoidSymbol
-#endif'''
+#endif'''])
 
-gtkWidgetCxxStripKeyDown = r'''bool Strip::KeyDown(GdkEventKey *event) {
+fragments.append(['gtkStrip::KeyDown', 'gtk/Widget.cxx', r'''bool Strip::KeyDown(GdkEventKey *event) {
 	bool retVal = false;
 
 	if (visible) {
@@ -441,9 +453,9 @@ gtkWidgetCxxStripKeyDown = r'''bool Strip::KeyDown(GdkEventKey *event) {
 		}
 	}
 	return retVal;
-}'''
+}'''])
 
-win32StripKeyDown = r'''bool Strip::KeyDown(WPARAM key) {
+fragments.append(['win32Strip::KeyDown', 'win32/strips.cxx', r'''bool Strip::KeyDown(WPARAM key) {
 	if (!visible)
 		return false;
 	switch (key) {
@@ -489,9 +501,9 @@ win32StripKeyDown = r'''bool Strip::KeyDown(WPARAM key) {
 		}
 	}
 	return false;
-}'''
+}'''])
 
-win32SomeKeyHandling = r'''#ifndef VK_OEM_2
+fragments.append(['bool KeyMatch', 'win32/SciTEWin.cxx', r'''#ifndef VK_OEM_2
 static const int VK_OEM_2=0xbf;
 static const int VK_OEM_3=0xc0;
 static const int VK_OEM_4=0xdb;
@@ -505,18 +517,17 @@ static const int VK_OEM_PLUS=0xbb;
 inline bool KeyMatch(const std::string &sKey, int keyval, int modifiers) {
 	return SciTEKeys::MatchKeyCode(
 		SciTEKeys::ParseKeyCode(sKey.c_str()), keyval, modifiers);
-}
+}'''])
 
 
-
-LRESULT SciTEWin::KeyUp(WPARAM wParam) {
+fragments.append(['SciTEWin::KeyUp', 'win32/SciTEWin.cxx', r'''LRESULT SciTEWin::KeyUp(WPARAM wParam) {
 	if (wParam == VK_CONTROL) {
 		EndStackedTabbing();
 	}
 	return 0l;
-}'''
+}'''])
 
-win32KeyPressWhileDraggingTab = r'''	case WM_KEYDOWN: {
+fragments.append(['key while dragging tab', 'win32/SciTEWinBar.cxx', r'''	case WM_KEYDOWN: {
 			if (wParam == VK_ESCAPE) {
 				if (st_bDragBegin == TRUE) {
 					if (st_hwndLastFocus != NULL) ::SetFocus(st_hwndLastFocus);
@@ -529,9 +540,9 @@ win32KeyPressWhileDraggingTab = r'''	case WM_KEYDOWN: {
 				}
 			}
 		}
-		break;'''
+		break;'''])
 
-win32ModelessHandler = r'''bool SciTEWin::ModelessHandler(MSG *pmsg) {
+fragments.append(['SciTEWin::ModelessHandler', 'win32/SciTEWinDlg.cxx', r'''bool SciTEWin::ModelessHandler(MSG *pmsg) {
 	if (DialogHandled(wFindReplace.GetID(), pmsg)) {
 		return true;
 	}
@@ -569,15 +580,15 @@ win32ModelessHandler = r'''bool SciTEWin::ModelessHandler(MSG *pmsg) {
 	}
 
 	return false;
-}'''
+}'''])
 
-sciteBaseCallAssignKey = r'''void SciTEBase::AssignKey(int key, int mods, int cmd) {
+fragments.append(['sciteBaseCallAssignKey', 'src/SciTEBase.cxx', r'''void SciTEBase::AssignKey(int key, int mods, int cmd) {
 	wEditor.Call(SCI_ASSIGNCMDKEY,
 	        LongFromTwoShorts(static_cast<short>(key),
 	                static_cast<short>(mods)), cmd);
-}'''
+}'''])
 
-scintillaKeyHandlerMethodExpectedText = r'''int Editor::KeyDefault(int, int) {
+fragments.append(['scintillaKeyHandlerMethodExpectedText', '../scintilla/src/Editor.cxx', r'''int Editor::KeyDefault(int, int) {
 	return 0;
 }
 
@@ -597,28 +608,34 @@ int Editor::KeyDownWithModifiers(int key, int modifiers, bool *consumed) {
 
 int Editor::KeyDown(int key, bool shift, bool ctrl, bool alt, bool *consumed) {
 	return KeyDownWithModifiers(key, ModifierFlags(shift, ctrl, alt), consumed);
-}'''
+}'''])
 
 scintillaKeyHandlerMethodExpectedTextMustInclude = r'''	return KeyDownWithModifiers(key, ModifierFlags(shift, ctrl, alt), consumed);'''
 
-# instead of writing code to parse a few lines, write the bindings manually here,
-# and verify in ShowKeyboardBindingsDetectCodeChange.py that the table hasn't changed.
-gtkKmapBindings = r'''Control+Tab|IDM_NEXTFILESTACK|30|gtk|KeyToCommand kmap[]
-Shift+Control+Tab|IDM_PREVFILESTACK|30|gtk|KeyToCommand kmap[]
-Control+Enter|IDM_COMPLETEWORD|30|gtk|KeyToCommand kmap[]
-Alt+F2|IDM_BOOKMARK_NEXT_SELECT|30|gtk|KeyToCommand kmap[]
-Alt+Shift+F2|IDM_BOOKMARK_PREV_SELECT|30|gtk|KeyToCommand kmap[]
-Control+F3|IDM_FINDNEXTSEL|30|gtk|KeyToCommand kmap[]
-Control+Shift+F3|IDM_FINDNEXTBACKSEL|30|gtk|KeyToCommand kmap[]
-Control+F4|IDM_CLOSE|30|gtk|KeyToCommand kmap[]
-Control+J|IDM_PREVMATCHPPC|30|gtk|KeyToCommand kmap[]
-Control+Shift+J|IDM_SELECTTOPREVMATCHPPC|30|gtk|KeyToCommand kmap[]
-Control+K|IDM_NEXTMATCHPPC|30|gtk|KeyToCommand kmap[]
-Control+Shift+K|IDM_SELECTTONEXTMATCHPPC|30|gtk|KeyToCommand kmap[]
-Control+*|IDM_EXPAND|30|gtk|KeyToCommand kmap[]'''
+fragments.append(['accelStringWindowsToGtkIfNeeded', 'gtk/SciTEGTK.cxx', r'''static void AccelStringWindowsToGtkIfNeeded(std::string &accelKey) {
+	Substitute(accelKey, "Ctrl+", "<control>");
+	Substitute(accelKey, "Shift+", "<shift>");
+	Substitute(accelKey, "Alt+", "<alt>");
+	Substitute(accelKey, "Super+", "<super>");
+}'''])
 
+fragments.append(['accelStringGtkToWindowsIfNeeded', 'win32/SciTEWinBar.cxx', r'''static void AccelStringGtkToWindowsIfNeeded(std::string &accelKey) {
+	Substitute(accelKey, "<control>", "Ctrl+");
+	Substitute(accelKey, "<shift>", "Shift+");
+	Substitute(accelKey, "<alt>", "Alt+");
+}'''])
 
-callsToAssignKey = r'''	if (props.GetInt("os.x.home.end.keys")) {
+fragments.append(['sciteWinRegisterAccelerator', 'win32/SciTEWinBar.cxx', r'''void SciTEWin::RegisterAccelerator(const GUI::gui_char *accel, int id) {
+	if (accel && accel[0]) {
+		std::string keys(GUI::UTF8FromString(accel));
+		long parsedKeys = SciTEKeys::ParseKeyCode(keys.c_str());
+		if (parsedKeys) {
+			acceleratorKeys.push_back(std::pair<int, int>(parsedKeys, id));
+		}
+	}
+}'''])
+
+fragments.append(['callsToAssignKey', 'src/SciTEProps.cxx', r'''	if (props.GetInt("os.x.home.end.keys")) {
 		AssignKey(SCK_HOME, 0, SCI_SCROLLTOSTART);
 		AssignKey(SCK_HOME, SCMOD_SHIFT, SCI_NULL);
 		AssignKey(SCK_HOME, SCMOD_SHIFT | SCMOD_ALT, SCI_NULL);
@@ -655,8 +672,13 @@ callsToAssignKey = r'''	if (props.GetInt("os.x.home.end.keys")) {
 	AssignKey('L', SCMOD_SHIFT | SCMOD_CTRL, SCI_LINEDELETE);
 
 
-	scrollOutput = props.GetInt("output.scroll", 1);'''
+	scrollOutput = props.GetInt("output.scroll", 1);'''])
 
+def getFragment(fragmentName):
+	for arr in fragments:
+		if arr[0] == fragmentName:
+			return arr[2]
+	assert False, 'not found ' + fragmentName
 
 def detectCodeChanges(filename, expectedText, mustInclude=None):
 	expectedLines = expectedText.replace('\r\n', '\n').split('\n')
@@ -672,21 +694,29 @@ besides updating %s. Changed logic, though, might require updating ShowKeyboardB
 Here's a diff of the changes: \n%s''' % (filename, first, __file__, '\n'.join(list(diff)))
 		warn(message)
 
-def checkForAnyLogicChangesFile(path, watchFor, acceptedCode):
+def checkForAnyLogicChangesFile(allFragments, watchFor, path):
 	if not (path.endswith('.cxx') or path.endswith('.c') or path.endswith('.cpp') or path.endswith('.h')):
 		return
 		
 	if os.path.split(path)[1] == 'IFaceTable.cxx':
 		return
 	
-	codeFound = readall(path, 'rb').replace('\r\n', '\n')
-	for codeExcerpt in acceptedCode:
-		codeFound = codeFound.replace(codeExcerpt, '')
+	contents = readall(path, 'rb').replace('\r\n', '\n')
+	for fragment in allFragments:
+		fragmentFilename = fragment[1]
+		if path.lower().replace('\\', '/').endswith('/' + fragmentFilename.lower()):
+			contentsLenBefore = len(contents)
+			contents = contents.replace(fragment[2], '')
+			if len(contents) == contentsLenBefore:
+				warn('Warning: in the file %s expected to see the code %s'%(path, fragment[2]))
 	
+	warnIfTermsSeen(path, contents, watchFor)
+	
+def warnIfTermsSeen(path, codeFound, watchFor):
 	for term in watchFor:
 		if term in codeFound:
 			index = codeFound.find(term)
-			context = codeFound[index - 200:index + 200]
+			context = codeFound[index - 200 : index + 200]
 			message = '''Warning: the keyboard shortcut-related term %s was newly seen in file \n%s\n
 We're checking for new key-handling logic.
 This is likely a false positive, though, in which case you can add a line acceptedCode.append to %s.
@@ -696,70 +726,59 @@ Context: %s''' % (term, path, __file__, context)
 def checkForAnyLogicChanges():
 	watchFor = ['GDK_KEY', 'GKEY_', 'GDK_CONTROL_MASK', 'MatchKeyCode', 'ParseKeyCode', 'KeyMatch', 'KeyDown',
 		'VK_', 'SCK_', 'AssignKey', 'WM_KEYDOWN', 'kmap', 'AssignCmdKey', 'SCI_ASSIGNCMDKEY', '<control>']
-	acceptedCode = []
-	acceptedCode.append('''	static long ParseKeyCode(const char *mnemonic);''')
-	acceptedCode.append('''	static bool MatchKeyCode(long parsedKeyCode, int key, int modifiers);''')
-	acceptedCode.append('''void AssignKey(int key, int mods, int cmd);''')
-	acceptedCode.append('''bool SciTEKeys::MatchKeyCode(long parsedKeyCode, int keyval, int modifiers) {''')
-	acceptedCode.append('''virtual bool KeyDown(GdkEventKey *event);''')
-	acceptedCode.append('''	static gboolean KeyDown(GtkWidget *widget, GdkEventKey *event, WCheckDraw *pcd);''')
-	acceptedCode.append('''	return gtk_label_get_mnemonic_keyval(GTK_LABEL(Pointer())) != GKEY_Void;''')
-	acceptedCode.append('''	g_signal_connect(G_OBJECT(da), "key-press-event", G_CALLBACK(KeyDown), this);''')
-	acceptedCode.append('''gboolean WCheckDraw::KeyDown(GtkWidget */*widget*/, GdkEventKey *event, WCheckDraw *pcd) {''')
-	acceptedCode.append('''case WM_KEYDOWN:\n			return KeyDown(wParam);''')
-	acceptedCode.append('''	LRESULT KeyDown(WPARAM wParam);''')
-	acceptedCode.append('''inline bool IsKeyDown(int key) {''')
-	acceptedCode.append('''// code) as KeyMatch uses in SciTEWin.cxx.''')
-	acceptedCode.append('''FindNext(reverseFind ^ IsKeyDown(VK_SHIFT));''')
-	acceptedCode.append('''return HandleReplaceCommand(ControlIDOfWParam(wParam), IsKeyDown(VK_SHIFT));''')
-	acceptedCode.append('''	virtual bool KeyDown(WPARAM key);''')
-	acceptedCode.append(gtkSetMenuItem.replace('\r\n', '\n'))
-	acceptedCode.append(gtkWidgetCxxKeyDefines.replace('\r\n', '\n'))
-	acceptedCode.append(gtkWidgetCxxStripKeyDown.replace('\r\n', '\n'))
-	acceptedCode.append(sciteBaseCallAssignKey.replace('\r\n', '\n'))
-	acceptedCode.append(gtkKeyHandlerMethodExpectedText.replace('\r\n', '\n'))
-	acceptedCode.append(win32KeyHandlerMethodExpectedText.replace('\r\n', '\n'))
-	acceptedCode.append(win32SomeKeyHandling.replace('\r\n', '\n'))
-	acceptedCode.append(win32KeyPressWhileDraggingTab.replace('\r\n', '\n'))
-	acceptedCode.append(win32ModelessHandler.replace('\r\n', '\n'))
-	acceptedCode.append(win32StripKeyDown.replace('\r\n', '\n'))
-	acceptedCode.append(scintillaKeyHandlerMethodExpectedText.replace('\r\n', '\n'))
-	acceptedCode.append(callsToAssignKey.replace('\r\n', '\n'))
-	acceptedCode.append(gtkFindStripEscapeSignal.replace('\r\n', '\n'))
-	acceptedCode.append(gtkReplaceStripEscapeSignal.replace('\r\n', '\n'))
-	acceptedCode.append(gtkUserStripEscapeSignal.replace('\r\n', '\n'))
-	acceptedCode.append(gtkFindIncrementEscapeSignal.replace('\r\n', '\n'))
-	
+
+	allFragments = list(fragments)
+	allFragments.append(['', 'src/SciTEKeys.h', r'''	static long ParseKeyCode(const char *mnemonic);'''])
+	allFragments.append(['', 'src/SciTEKeys.h', r'''	static bool MatchKeyCode(long parsedKeyCode, int key, int modifiers);'''])
+	allFragments.append(['', 'src/SciTEBase.h', r'''void AssignKey(int key, int mods, int cmd);'''])
+	allFragments.append(['', 'win32/SciTEWin.cxx', r'''bool SciTEKeys::MatchKeyCode(long parsedKeyCode, int keyval, int modifiers) {'''])
+	allFragments.append(['', 'gtk/SciTEGTK.cxx', r'''bool SciTEKeys::MatchKeyCode(long parsedKeyCode, int keyval, int modifiers) {'''])
+	allFragments.append(['', 'gtk/Widget.h', r'''virtual bool KeyDown(GdkEventKey *event);'''])
+	allFragments.append(['', 'gtk/SciTEGTK.cxx', r'''virtual bool KeyDown(GdkEventKey *event);'''])
+	allFragments.append(['', 'gtk/Widget.h', r'''	static gboolean KeyDown(GtkWidget *widget, GdkEventKey *event, WCheckDraw *pcd);'''])
+	allFragments.append(['', 'gtk/Widget.cxx', r'''	return gtk_label_get_mnemonic_keyval(GTK_LABEL(Pointer())) != GKEY_Void;'''])
+	allFragments.append(['', 'gtk/Widget.cxx', r'''	g_signal_connect(G_OBJECT(da), "key-press-event", G_CALLBACK(KeyDown), this);'''])
+	allFragments.append(['', 'gtk/Widget.cxx', r'''gboolean WCheckDraw::KeyDown(GtkWidget */*widget*/, GdkEventKey *event, WCheckDraw *pcd) {'''])
+	allFragments.append(['', 'win32/SciTEWin.cxx', '''case WM_KEYDOWN:\n			return KeyDown(wParam);'''])
+	allFragments.append(['', 'win32/SciTEWin.h', r'''	LRESULT KeyDown(WPARAM wParam);'''])
+	allFragments.append(['', 'win32/SciTEWin.h', r'''inline bool IsKeyDown(int key) {'''])
+	allFragments.append(['', 'win32/SciTEWinBar.cxx', r'''// code) as KeyMatch uses in SciTEWin.cxx.'''])
+	allFragments.append(['', 'win32/SciTEWinDlg.cxx', r'''FindNext(reverseFind ^ IsKeyDown(VK_SHIFT));'''])
+	allFragments.append(['', 'win32/SciTEWinDlg.cxx', r'''return HandleReplaceCommand(ControlIDOfWParam(wParam), IsKeyDown(VK_SHIFT));'''])
+	allFragments.append(['', 'win32/Strips.h', r'''	virtual bool KeyDown(WPARAM key);'''])
+
 	start = '''void SciTEGTK::CreateMenu() {'''
 	end = '''	gtk_window_add_accel_group(GTK_WINDOW(PWidget(wSciTE)), accelGroup);'''
-	acceptedCode.append('\n'.join(retrieveCodeLines('../gtk/SciTEGTK.cxx', start, end)))
+	allFragments.append(['', 'gtk/SciTEGTK.cxx', '\n'.join(retrieveCodeLines('../gtk/SciTEGTK.cxx', start, end))])
 	start = '''#define GKEY_Escape GDK_KEY_Escape'''
 	end = '''#define GKEY_F4 GDK_F4'''
-	acceptedCode.append('\n'.join(retrieveCodeLines('../gtk/SciTEGTK.cxx', start, end)))
-	
+	allFragments.append(['', 'gtk/SciTEGTK.cxx', '\n'.join(retrieveCodeLines('../gtk/SciTEGTK.cxx', start, end))])
 	start = '''const KeyToCommand KeyMap::MapDefault[] = {'''
-	acceptedCode.append('\n'.join(retrieveCodeLines('../../scintilla/src/KeyMap.cxx', start, '};')))
+	allFragments.append(['', '../scintilla/src/KeyMap.cxx', '\n'.join(retrieveCodeLines('../../scintilla/src/KeyMap.cxx', start, '};'))])
 	start = '''static gint messageBoxKey(GtkWidget *w, GdkEventKey *event, gpointer p) {'''
-	acceptedCode.append('\n'.join(retrieveCodeLines('../gtk/SciTEGTK.cxx', start, '}')))
+	allFragments.append(['', 'gtk/SciTEGTK.cxx', '\n'.join(retrieveCodeLines('../gtk/SciTEGTK.cxx', start, '}'))])
 	start = '''long SciTEKeys::ParseKeyCode(const char *mnemonic) {'''
-	acceptedCode.append('\n'.join(retrieveCodeLines('../gtk/SciTEGTK.cxx', start, '}')))
+	allFragments.append(['', 'gtk/SciTEGTK.cxx', '\n'.join(retrieveCodeLines('../gtk/SciTEGTK.cxx', start, '}'))])
 	start = '''long SciTEKeys::ParseKeyCode(const char *mnemonic) {'''
-	acceptedCode.append('\n'.join(retrieveCodeLines('../win32/SciTEWin.cxx', start, '}')))
+	allFragments.append(['', 'win32/SciTEWin.cxx', '\n'.join(retrieveCodeLines('../win32/SciTEWin.cxx', start, '}'))])
 	start = '''void SciTEWin::SetMenuItem(int menuNumber, int position, int itemID,'''
-	acceptedCode.append('\n'.join(retrieveCodeLines('../win32/SciTEWinBar.cxx', start, '}')))
+	allFragments.append(['', 'win32/SciTEWinBar.cxx', '\n'.join(retrieveCodeLines('../win32/SciTEWinBar.cxx', start, '}'))])
 	
 	for stripType in ('FindStrip', 'ReplaceStrip', 'UserStrip'):
 		start = '''bool %s::KeyDown(GdkEventKey *event) {''' % stripType
-		acceptedCode.append('\n'.join(retrieveCodeLines('../gtk/SciTEGTK.cxx', start, '}')))
+		allFragments.append(['', 'gtk/SciTEGTK.cxx','\n'.join(retrieveCodeLines('../gtk/SciTEGTK.cxx', start, '}'))])
 		
 	for stripType in ('BackgroundStrip', 'SearchStrip', 'FindStrip', 'ReplaceStrip', 'UserStrip'):
 		start = '''bool %s::KeyDown(WPARAM key) {''' % stripType
-		acceptedCode.append('\n'.join(retrieveCodeLines('../win32/Strips.cxx', start, '}')))
+		allFragments.append(['', 'win32/Strips.cxx','\n'.join(retrieveCodeLines('../win32/Strips.cxx', start, '}'))])
+
+	for arr in fragments:
+		assert os.path.isfile(os.path.join('..', arr[1]))
 	
 	for (path, dirs, files) in os.walk('..'):
 		for file in files:
 			full = os.path.join(path, file)
-			checkForAnyLogicChangesFile(full, watchFor, acceptedCode)
+			checkForAnyLogicChangesFile(allFragments, watchFor, full)
 
 def tests():
 	entriesRead = []
@@ -794,11 +813,9 @@ Left|SCI_CHARLEFT|0|any|Scintilla keymap'''
 	assertEqArray(expectedArr, entriesRead)
 
 
-
 if __name__ == '__main__':
 	tests()
-	# propertiesMain = '../bin/properties/SciTEGlobal.properties'
-	propertiesMain = '../bin/SciTEGlobal.properties'
+	propertiesMain = '../bin/properties/SciTEGlobal.properties'
 	propertiesUser = None
 	rootDir = '../bin'
 	
