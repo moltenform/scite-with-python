@@ -47,16 +47,26 @@ Trim languages menu
 
 ------------------------------------------------------------------
 Modifications to SciTE source code include
-	look for props in properties\
-	python extension
+	Removing C++11 =delete; in order to compile
+	Adding Python extension.
+		Python and lua can coexist because Python defers messages that do not begin with 'py:'
+		Removing lua extension in this build, though, since the python extension is sufficient
+	
+	New feature: scite/bin is cleaner because properties are in their own directory
 	New feature: user can hide specified menu items via properties files (menu.hidemenuitems)
 	New feature: user can limit number of menuitems shown for properties files (menu.limitpropertiesmenuitems)
 	New feature: warn if the max number of buffers has been opened. (buffers.warn.limitreached)
+	New feature: tools can be hidden from context menu. (context.menu.show.tools)
+	New feature: on Windows, moved Tools to a submenu
 	New feature: on Windows, increased number of slots for mru items
-	New feature: SciTEWindowID property
-	New feature: internal grep supports regex search
+	New feature: internal grep supports regex search (find.in.files.enable.regexp), UI only updated for Windows
+	New feature: expose SciTEWindowID property for plugins to communicate with SciTE
 	New feature: user.shortcuts supports SCI_ constants
 	New feature: menukey customization supported on windows, was previously gtk-only.
+	New feature: "Find" and "Find in Files" can be configured to not have shared state for settings like case sensitivity (find.in.files.settings.shared.state)
+	New feature: if parameters are set from the dialog, they can be automatically added to every Go command. (command.go.use.parameters.from.dialog)
+	New feature: after typing text in the parameters dialog, the property is automatically set when the dialog loses focus (i.e. property is updated faster, no need to click Set).
+	Fix minor issue when parsing command.mode strings from properties.
 
 
 	
