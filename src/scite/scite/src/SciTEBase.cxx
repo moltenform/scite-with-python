@@ -3519,8 +3519,25 @@ void SciTEBase::MenuCommand(int cmdID, int source) {
 						flags |= jobForceQueue;
 					}
 				}
-				AddCommand(props.GetWild("command.go.", FileNameExt().AsUTF8().c_str()), "",
-				        SubsystemType("command.go.subsystem."), "", flags);
+				
+				std::string cmd(props.GetWild("command.go.", FileNameExt().AsUTF8().c_str()));
+				if (props.GetInt("command.go.use.parameters.from.dialog")) {
+					std::string arg1(props.GetString("1"));
+					std::string arg2(props.GetString("2"));
+					std::string arg3(props.GetString("3"));
+					std::string arg4(props.GetString("4"));
+					
+					if (arg1.length())
+						cmd += " \"" + arg1 + "\"";
+					if (arg2.length())
+						cmd += " \"" + arg2 + "\"";
+					if (arg3.length())
+						cmd += " \"" + arg3 + "\"";
+					if (arg4.length())
+						cmd += " \"" + arg4 + "\"";
+				}
+				
+				AddCommand(cmd, "", SubsystemType("command.go.subsystem."), "", flags);
 				if (jobQueue.HasCommandToRun())
 					Execute();
 			}

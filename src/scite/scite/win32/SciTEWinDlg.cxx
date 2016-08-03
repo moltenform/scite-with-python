@@ -1618,6 +1618,12 @@ BOOL SciTEWin::ParametersMessage(HWND hDlg, UINT message, WPARAM wParam) {
 			}
 			return TRUE;
 		}
+		
+	case WM_ACTIVATE:
+		// set properties when window is deactivated, e.g. user switches focus to the editor.
+		if (!modalParameters && LOWORD(wParam) == WA_INACTIVE) {
+			ParamGrab();
+		}
 	}
 
 	return FALSE;
