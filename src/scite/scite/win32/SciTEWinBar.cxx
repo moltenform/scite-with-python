@@ -574,6 +574,19 @@ GUI::gui_string SciTEWin::GetUserDefinedAccel(
 	return ret;
 }
 
+static bool CanAcceleratorBeRegistered(const GUI::gui_string &accel)
+{
+	// Ctrl+C shouldn't be handled by acceleratorKeys, because we 
+	// shouldn't send a IDM_COPY event if say, a user strip control is focused.
+	if (accel == GUI_TEXT("Ctrl+C") || 
+		accel == GUI_TEXT("Ctrl+X") || 
+		accel == GUI_TEXT("Ctrl+V")) {
+		return false;
+	}
+	
+	return true;
+}
+
 void SciTEWin::RegisterAccelerator(const GUI::gui_char *accel, int id) {
 	if (accel && accel[0]) {
 		std::string keys(GUI::UTF8FromString(accel));
@@ -615,7 +628,10 @@ void SciTEWin::LocaliseMenuAndReadAccelerators(HMENU hmenu, GUI::gui_string path
 					
 					GUI::gui_string menupath(path + GUI_TEXT("/") + text);
 					accel = GetUserDefinedAccel(menupath.c_str(), accel.c_str());
-					RegisterAccelerator(accel.c_str(), mii.wID);
+					if (CanAcceleratorBeRegistered(accel)) {
+						RegisterAccelerator(accel.c_str(), mii.wID);
+					}
+					
 					translated = localiser.Text(GUI::UTF8FromString(text.c_str()).c_str(), true);
 					if (!translated.length()) {
 						translated = text;
