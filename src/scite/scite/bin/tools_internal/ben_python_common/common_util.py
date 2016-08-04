@@ -166,7 +166,36 @@ class TakeBatch(object):
         # if exiting normally (not by exception), run the callback
         if not exc_type:
             self.callback(self.batch)
+
+class RecentlyUsedList(object):
+    '''Keep a list of items without storing duplicates'''
+    def __init__(self, maxSize=None, startList=None):
+        self.list = startList or []
+        self.maxSize = maxSize
+    
+    def getList(self):
+        return self.list
         
+    def indexOf(self, s):
+        try:
+            return self.list.index(s)
+        except:
+            return -1
+    
+    def add(self, s):
+        # if it's also elsewhere in the list, remove that one
+        index = self.indexOf(s)
+        if index != -1:
+            self.list.pop(index)
+        
+        # insert new entry at the top
+        self.list.insert(0, s)
+
+        # if we've reached the limit, cut out the extra ones
+        if self.maxSize:
+            while len(self.list) > self.maxSize:
+                self.list.pop()
+
 def startThread(fn, args=None):
     import threading
     if args is None:
@@ -237,6 +266,14 @@ def assertFloatEq(expected, received, *messageArgs):
         messageArgs.append('expected %f, got %f, difference of %f' % (
             expected, received, difference))
         assertTrue(False, *messageArgs)
+
+def assertEqArray(expected, received):
+    if isinstance(expected, basestring):
+        expected = expected.split('|')
+
+    assertEq(len(expected), len(received))
+    for i in range(len(expected)):
+        assertEq(repr(expected[i]), repr(received[i]))
 
 def assertException(fn, excType, excTypeExpectedString=None, msg='', regexp=False):
     import pprint

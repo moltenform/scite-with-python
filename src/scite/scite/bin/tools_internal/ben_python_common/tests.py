@@ -128,6 +128,31 @@ def common_util_tests():
     assertEq(4, addTwoNumbers(2, 2))
     assertEq(2, countCalls.count)
     
+    # test RecentlyUsedList
+    mruTest = RecentlyUsedList(maxSize=5)
+    mruTest.add('abc')
+    mruTest.add('def')
+    mruTest.add('ghi')
+    assertEqArray('ghi|def|abc', mruTest.getList())
+    
+    # redundant entries should not be added, but still moved to top
+    mruTest.add('abc')
+    assertEqArray('abc|ghi|def', mruTest.getList())
+    mruTest.add('def')
+    assertEqArray('def|abc|ghi', mruTest.getList())
+    mruTest.add('ghi')
+    assertEqArray('ghi|def|abc', mruTest.getList())
+    
+    # size should be capped
+    mruTest.add('1')
+    assertEqArray('1|ghi|def|abc', mruTest.getList())
+    mruTest.add('2')
+    assertEqArray('2|1|ghi|def|abc', mruTest.getList())
+    mruTest.add('3')
+    assertEqArray('3|2|1|ghi|def', mruTest.getList())
+    mruTest.add('4')
+    assertEqArray('4|3|2|1|ghi', mruTest.getList())
+    
 def files_tests():
     from files import (readall, writeall, exists, copy, move, sep, run, isemptydir, listchildren, makedir,
         getname, listfiles, recursedirs, recursefiles, delete, runWithoutWaitUnicode)

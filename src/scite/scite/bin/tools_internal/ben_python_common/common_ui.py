@@ -7,7 +7,7 @@ import files
 def getInputBool(sPrompt):
     sPrompt += ' '
     while True:
-        s = raw_input(getPrintable(sPrompt)).strip()
+        s = getRawInput(sPrompt).strip()
         if s == 'y':
             return True
         if s == 'n':
@@ -22,7 +22,7 @@ def getInputBool(sPrompt):
 def getInputYesNoCancel(sPrompt):
     sPrompt += ' y/n/cancel '
     while True:
-        s = raw_input(getPrintable(sPrompt)).strip()
+        s = getRawInput(sPrompt).strip()
         if s == 'y':
             return 'Yes'
         if s == 'n':
@@ -35,7 +35,7 @@ def getInputYesNoCancel(sPrompt):
 def getInputInt(sPrompt, min=0, max=0xffffffff):
     sPrompt += ' between %d and %d ' % (min, max)
     while True:
-        s = raw_input(getPrintable(sPrompt)).strip()
+        s = getRawInput(sPrompt).strip()
         if s.isdigit() and min <= int(s) <= max:
             return int(s)
         if s == 'BRK':
@@ -44,7 +44,7 @@ def getInputInt(sPrompt, min=0, max=0xffffffff):
 def getInputString(sPrompt, bConfirm=True):
     sPrompt += ' '
     while True:
-        s = raw_input(getPrintable(sPrompt)).strip()
+        s = getRawInput(sPrompt).strip()
         if s == 'BRK':
             raise KeyboardInterrupt()
         if s:
@@ -57,7 +57,7 @@ def getInputFromChoices(sPrompt, arrChoices, fnOtherCommands=None, otherCommands
     for i, choice in enumerate(arrChoices):
         trace('%d) %s'%(i + 1, choice))
     while True:
-        s = raw_input(getPrintable(sPrompt)).strip()
+        s = getRawInput(sPrompt).strip()
         if s == '0':
             return -1, 'Cancel'
         if s == 'BRK':
@@ -73,13 +73,20 @@ def getInputFromChoices(sPrompt, arrChoices, fnOtherCommands=None, otherCommands
             breakLoop = fnOtherCommands(s, arrChoices, otherCommandsContext)
             if breakLoop:
                 return (-1, breakLoop)
-    
+
+def getRawInput(prompt):
+    import sys
+    if sys.version_info[0] <= 2:
+        return raw_input(getPrintable(prompt))
+    else:
+        return input(getPrintable(prompt))
+
 def err(s=''):
     raise RuntimeError('fatal error\n' + getPrintable(s))
     
 def alert(s):
     trace(s)
-    raw_input('press Enter to continue')
+    getRawInput('press Enter to continue')
     
 def warn(s):
     trace('warning\n' + getPrintable(s))
@@ -255,4 +262,3 @@ def softDeleteFile(s):
             '. is this directory full of files, or was the random seed reused?')
     files.move(s, newname, False)
     return newname
-
