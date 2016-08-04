@@ -197,9 +197,11 @@ def getFilterObject(action, extension, searchTerm):
     
     return filterObj, filetypes
 
+def assertEq(expected, received):
+    if expected != received:
+        raise AssertionError('expected %s but got %s' % (expected, received))
+
 def tests():
-    from ben_python_common import assertEq
-    
     assertEq('abc', killAllWithinMatching('abc'))
     assertEq('abc', killAllWithinMatching('abc('))
     assertEq('ab', killAllWithinMatching('ab(c'))

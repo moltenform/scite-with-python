@@ -115,7 +115,7 @@ def go(filepath, searchTerm, dirDepthString, stringWindowId, action):
     
 
 def tests():
-    from ben_python_common import assertEq
+    from code_search_definition_filters import assertEq
     assertEq(r'C:\d1\d2\d3', applyDirDepth(r'C:\d1\d2\d3', 0))
     assertEq(r'C:\d1\d2', applyDirDepth(r'C:\d1\d2\d3', 1))
     assertEq(r'C:\d1', applyDirDepth(r'C:\d1\d2\d3', 2))
