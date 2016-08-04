@@ -1,19 +1,23 @@
 
 # UI for searching filenames
-# the actual work is done by search_filenames.py
+# The actual work is done by search_filenames.py
+# While __init__.py is run by SciTE's embedded Python, 
+# search_filenames.py runs in a different context in an external Python process,
+# so that searches can run smoothly in the background while the user does other work.
 
 from scite_extend_ui import ScToolUIBase, ScApp, ScConst
+from ben_python_common import RecentlyUsedList
 
-sessionHistoryQueries = []
-sessionHistoryDirs = []
+sessionHistoryQueries = RecentlyUsedList(maxSize=50)
+sessionHistoryDirs = RecentlyUsedList(maxSize=50)
 childProcess = None
 
 class SearchFilenames(ScToolUIBase):
     currentFocus = None
     def AddControls(self):
-        self.searchTypes = {'Filename contains':'contains',
+        self.searchTypes = {'Filename contains': 'contains',
             'Wildcard expansion': 'wildcard', 
-            'Regular expression':'regex'}
+            'Regular expression': 'regex'}
         
         self.AddLabel('Search for files named:')
         self.cmbQuery = self.AddCombo()
@@ -31,29 +35,25 @@ class SearchFilenames(ScToolUIBase):
         self.SetList(self.cmbType, '\n'.join(key for key in self.searchTypes))
         self.Set(self.cmbType, 'Wildcard expansion')
         
-        queries = '\n'.join(sessionHistoryQueries) + '\n' + ScApp.GetFileName()
-        dirs = '\n'.join(sessionHistoryDirs) + '\n' + ScApp.GetFileDirectory()
-        self.SetList(self.cmbQuery, queries)
-        self.SetList(self.cmbDir, dirs)
-        self.Set(self.cmbQuery, ScApp.GetFileName())
-        self.Set(self.cmbDir, ScApp.GetFileDirectory())
-        
+        queries = sessionHistoryQueries.getList() or [ScApp.GetFileName()]
+        dirs = sessionHistoryDirs.getList() or [ScApp.GetFileDirectory()]
+        self._refreshComboBoxHistory(queries, dirs)
+
     def OnSearch(self):
-        # if user clicks Search, self.currentFocus is set to None. if they press Enter, self.currentFocus is current control.
-        # we want Enter to start a search if either user clicked Search or "query" is the current control.
-        userClickedButtonRatherThanPressingEnter = self.currentFocus is None
-        if self.currentFocus == self.cmbQuery or userClickedButtonRatherThanPressingEnter:
-            type = self.searchTypes.get(self.Get(self.cmbType), 'other')
-            startProcess(type, self.Get(self.cmbDir), self.Get(self.cmbQuery))
+        type = self.searchTypes.get(self.Get(self.cmbType), 'other')
+        startProcess(type, self.Get(self.cmbDir), self.Get(self.cmbQuery))
+        sessionHistoryQueries.add(self.Get(self.cmbQuery))
+        sessionHistoryDirs.add(self.Get(self.cmbDir))
+        self._refreshComboBoxHistory(sessionHistoryQueries.getList(), sessionHistoryDirs.getList())
         
     def OnCancelSearch(self):
         cancelProcess()
     
-    def OnEvent(self, control, eventType):
-        if eventType == ScConst.eventTypeFocusOut:
-            self.currentFocus = None
-        elif eventType == ScConst.eventTypeFocusIn:
-            self.currentFocus = control
+    def _refreshComboBoxHistory(self, queries, dirs):
+        self.SetList(self.cmbQuery, '\n'.join(queries))
+        self.SetList(self.cmbDir, '\n'.join(dirs))
+        self.Set(self.cmbQuery, queries[0])
+        self.Set(self.cmbDir, dirs[0])
 
 def startProcess(type, dir, query):
     import os, subprocess
