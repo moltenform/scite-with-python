@@ -58,7 +58,7 @@ def DoLineCutIfNoSelection():
             
     else:
         from scite_extend_ui import ScApp
-        ScApp.CmdCut()
+        ScApp.RequestThatEventContinuesToPropagate()
 
 def DoLineCopyIfNoSelection():
     '''if there's no selection, copy the entire line'''
@@ -71,7 +71,7 @@ def DoLineCopyIfNoSelection():
         pane.SetEmptySelection(position)
     else:
         from scite_extend_ui import ScApp
-        ScApp.CmdCopy()
+        ScApp.RequestThatEventContinuesToPropagate()
 
 def DoLinePasteIfHasLine():
     '''if there's no selection,
@@ -82,7 +82,7 @@ def DoLinePasteIfHasLine():
         runCustomPaste(pane)
     else:
         from scite_extend_ui import ScApp
-        ScApp.CmdPaste()
+        ScApp.RequestThatEventContinuesToPropagate()
 
 
 def runCustomPaste(pane):
