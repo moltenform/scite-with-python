@@ -35,13 +35,14 @@ def atreplacenumbers(lines):
     import sys
     if sys.platform.startswith('win'):
         import wincommondialog
+        leadingZeros = wincommondialog.askYesNo('Add leading zeros?')
+        
         firstNumber = wincommondialog.askInput(
             'What should the first number in the sequence be?', default='1')
         if not firstNumber:
             return
             
         firstNumber = int(firstNumber)
-        leadingZeros = wincommondialog.askYesNo('Add leading zeros?')
     else:
         firstNumber = 1
         leadingZeros = False

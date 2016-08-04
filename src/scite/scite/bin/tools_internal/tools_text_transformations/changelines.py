@@ -12,7 +12,7 @@ class ChangeLines(object):
             '4|sortcol4|Sort by 4th col',
             'X|splitxml|Split xml by >',
             'T|trimempty|trim empty lines',
-            'I|splitwithindent|Split to lines, with indentation',
+            'I|splitwithindent|Split by \';\' with indentation',
             'J|joinwithoutindent|Join from trimmed lines',
             'D|joinwithoutindentadddelim|Join from trimmed lines and add ;',
             'Q|insertsequencehelp|How to use insert numbered sequence',
@@ -28,53 +28,33 @@ class ChangeLines(object):
         return modifyTextInScite(lambda text: self.runSort(text, choice))
 
     def runSort(self, text, choice):
+        from scite_extend_ui import ScEditor
+        
         # look for a method named choice
         assert choice in [s.split('|')[1] for s in self.choices]
         method = self.__getattribute__(choice)
         
         # validate lines and get newline character
-        self.newlineChar = self.getLineCharacter(text, choice=choice)
-        if not self.newlineChar:
+        self.newlineChar = ScEditor.Utils.GetEolCharacter()
+        if not self.verifyEndOfLineChars(text):
             return None
         
-        # split text into lines
         lines = text.split(self.newlineChar)
+        if len(lines) <= 1 and choice not in ('splitxml', 'splitwithindent'):
+            print('Please select at least two lines.')
+            return None
+        
         method(lines)
         return self.newlineChar.join(lines)
         
-    def getLineCharacter(self, text, silent=None, choice=None):
-        import re
-        text = text or ''
-        
-        # we don't expect to end with a newline
-        # because of the logic in expandSelectionToIncludeEntireLines.
-        assert not text or text[-1] not in ('\r', '\n')
-        
-        reWindows = re.compile('\r\n', re.M)
-        reMacClassic = re.compile('\r[^\n]', re.M)
-        reUnix = re.compile('[^\r]\n', re.M)
-        hasWindows = re.search(reWindows, text)
-        hasMacClassic = re.search(reMacClassic, text)
-        hasUnix = re.search(reUnix, text)
-        countTypes = sum(bool(found) for found in (hasWindows, hasMacClassic, hasUnix))
-        if countTypes == 0:
-            if choice not in ('splitxml', 'splitwithindent'):
-                print(silent or 'Please select at least two lines.')
-                return None
-            else:
-                from scite_extend_ui import ScEditor
-                return ScEditor.GetEolCharacter()
-        elif countTypes == 1:
-            if hasWindows:
-                return '\r\n'
-            elif hasMacClassic:
-                return '\r'
-            else:
-                return '\n'
+    def verifyEndOfLineChars(self, text, silent=None):
+        testText = text.replace(self.newlineChar, '')
+        if '\r' in testText or '\n' in testText:
+            print(silent or 'Contains unexpected newline characters, either correct the characters' +
+                ' or go to the Options menu and select Options->Line End Characters.')
+            return False
         else:
-            print(silent or 'Contains both unix and windows newlines, ' +
-                'please address this first.')
-            return None
+            return True
 
     def sortaz(self, lines):
         lines.sort()
@@ -121,9 +101,10 @@ class ChangeLines(object):
     def splitxml(self, lines):
         # put a nl after every > that wasn't already next to a nl
         for i in range(len(lines)):
-            allButLastChar = lines[i][0:-1]
-            lastChar = lines[i][-1]
-            lines[i] = allButLastChar.replace('>', '>' + self.newlineChar) + lastChar
+            if len(lines[i]):
+                allButLastChar = lines[i][0:-1]
+                lastChar = lines[i][-1]
+                lines[i] = allButLastChar.replace('>', '>' + self.newlineChar) + lastChar
     
     def trimempty(self, lines):
         # deletes empty lines
@@ -165,44 +146,12 @@ def DoChangeLines():
 if __name__ == '__main__':
     from ben_python_common import assertEq
     
-    # unit tests
-    obj = ChangeLines()
-    silent = ' ' # print empty lines instead of warnings
-    assertEq(None, obj.getLineCharacter(None, silent))
-    assertEq(None, obj.getLineCharacter('', silent))
-    assertEq(None, obj.getLineCharacter('abc', silent))
-    assertEq('\n', obj.getLineCharacter('\n\na', silent))
-    assertEq('\n', obj.getLineCharacter('a \n b', silent))
-    assertEq('\n', obj.getLineCharacter('a \n\n\n b', silent))
-    assertEq('\r', obj.getLineCharacter('\r\ra', silent))
-    assertEq('\r', obj.getLineCharacter('a \r b', silent))
-    assertEq('\r', obj.getLineCharacter('a \r\r\r b', silent))
-    assertEq('\r\n', obj.getLineCharacter('\r\n\r\na', silent))
-    assertEq('\r\n', obj.getLineCharacter('a \r\n b', silent))
-    assertEq('\r\n', obj.getLineCharacter('a \r\n\r\n\r\n b', silent))
-    assertEq(None, obj.getLineCharacter('a \n\r b', silent))
-    assertEq(None, obj.getLineCharacter('a \r\n\n b', silent))
-    assertEq(None, obj.getLineCharacter('a \n\r\n b', silent))
-    assertEq(None, obj.getLineCharacter('a \n\n\r b', silent))
-    assertEq(None, obj.getLineCharacter('a \n\r\r b', silent))
-    assertEq(None, obj.getLineCharacter('a \r\n\r b', silent))
-    assertEq(None, obj.getLineCharacter('a \r\r\n b', silent))
-    assertEq(None, obj.getLineCharacter('a \r   \n\n b', silent))
-    assertEq(None, obj.getLineCharacter('a \n   \r\n b', silent))
-    assertEq(None, obj.getLineCharacter('a \n   \n\r b', silent))
-    assertEq(None, obj.getLineCharacter('a \n\n   \r b', silent))
-    assertEq(None, obj.getLineCharacter('a \n   \r\r b', silent))
-    assertEq(None, obj.getLineCharacter('a \r   \n   \r b', silent))
-    assertEq(None, obj.getLineCharacter('a \r\r   \n b', silent))
-    
-    # counter-intuitive, but not a common user scenario
-    assertEq(None, obj.getLineCharacter('\na', silent))
-    
     # first col alternates between a and b
     # second col counts upwards
     # third col counts downwards
     test = 'a 1 5|b 2 4|a 3 3|b 4 2|a 5 1'.split('|')
     normalSort, reverseSort, sort2nd, sort3rd = list(test), list(test), list(test), list(test)
+    obj = ChangeLines()
     obj.sortaz(normalSort)
     obj.sortza(reverseSort)
     obj.sortcol2(sort2nd)
@@ -229,6 +178,11 @@ if __name__ == '__main__':
     
     obj.newlineChar = '\n'
     testLines('a b c', 'a b c', obj.splitxml)
+    testLines('a\n b\n', 'a\n b\n', obj.splitxml)
+    testLines('a\n\nb', 'a\n\nb', obj.splitxml)
+    testLines('\na\n\nb\n', '\na\n\nb\n', obj.splitxml)
+    testLines('a| |b', 'a| |b', obj.splitxml)
+    testLines('a||b', 'a||b', obj.splitxml)
     testLines('<a>\n <b>\n <c>', '<a> <b> <c>', obj.splitxml) # final does not need a \n
     testLines('<a>|<b>|<c>', '<a>|<b>|<c>', obj.splitxml) # it already has a \n
     testLines('<a>\n |<b>| <c>', '<a> |<b>| <c>', obj.splitxml)

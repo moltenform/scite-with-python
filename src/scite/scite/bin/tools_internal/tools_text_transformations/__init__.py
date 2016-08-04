@@ -8,10 +8,6 @@ def ChangeCasing():
 def ChangeLines():
     import changelines
     return changelines.DoChangeLines()
-    
-def InsertSequentialNumbers():
-    import insertsequentialnumbers
-    return insertsequentialnumbers.DoInsertSequentialNumbers()
 
 def modifyTextInScite(fn):
     selected = ScEditor.GetSelectedText()
