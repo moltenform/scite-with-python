@@ -33,6 +33,7 @@ def findFirstSciteInstance(windowClass='SciTEWindow'):
 
 def sendCopyDataMessage(hwnd, message, dwData=0):
     assert isinstance(message, str)
+    hwnd = int(hwnd)
     sender_hwnd = 0
     buf = ctypes.create_string_buffer(message)
 
@@ -74,3 +75,52 @@ def sendSciteMessage(hwnd, message):
             return None
 
     return sendCopyDataMessage(hwnd, message, dwData=0)
+
+def SciTEUtils_SendToTrace(windowId, s):
+    suffix = ''
+    bytes = SciTEUtils_EscapeStringForPython(s)
+    msg = "extender:py:import sys; sys.stdout.write(" + bytes + suffix + ")"
+    sendSciteMessage(windowId, msg)
+
+def SciTEUtils_RedirectStdout(windowId):
+    class StdoutRedirect(object):
+        def write(self, s):
+            SciTEUtils_SendToTrace(windowId, s)
+    
+    sys.stdout = StdoutRedirect()
+    sys.stderr = StdoutRedirect()
+        
+def SciTEUtils_EscapeStringForPython(s):
+    s = s.replace('\x00', "NUL") # escape nul
+    s = s.replace('\\', '\\\\') # escape \
+    s = s.replace('\r', "\\x0d") # escape \r
+    s = s.replace('\n', "\\x0a") # escape \n
+    s = s.replace("'", "\\x27") # escape '
+    s = s.replace('"', '\\x22') # escape " because send_scite does not support "
+    return "'''" + s + "'''"
+    
+if __name__ == '__main__':
+    def assertEq(expected, received):
+        if expected != received:
+            raise AssertionError('expected %s but got %s' % (expected, received))
+    
+    def testEscapeString(input):
+        import ast
+        
+        # we'll evaluate the literal, just like SciTE's embedded Python will evaluate it.
+        escaped = SciTEUtils_EscapeStringForPython(input)
+        got = ast.literal_eval(escaped)
+        assertEq(input, got)
+    
+    testEscapeString('')
+    testEscapeString('abc')
+    testEscapeString("'abc'")
+    testEscapeString('"abc"')
+    testEscapeString('"a\nb\rc\r\nd"')
+    testEscapeString("a'''b'''c")
+    testEscapeString('a"""b"""c')
+    testEscapeString('\\slash\\')
+    testEscapeString('\\\\slash\\\\')
+    testEscapeString('"""\\\\slash\\\\"""')
+    testEscapeString('already escaped \x0a newline')
+    
