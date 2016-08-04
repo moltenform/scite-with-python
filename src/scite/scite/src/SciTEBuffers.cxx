@@ -1475,7 +1475,11 @@ JobSubsystem SciTEBase::SubsystemType(const char *cmd) {
 	return subsystem.empty() ? jobCLI : SubsystemFromChar(subsystem.at(0));
 }
 
-void SciTEBase::ToolsMenu(int item) {
+void SciTEBase::ToolsMenu(int item, bool *toolRequestedThatEventShouldContinue) {
+	if (toolRequestedThatEventShouldContinue) {
+		*toolRequestedThatEventShouldContinue = false;
+	}
+	
 	SelectionIntoProperties();
 
 	const std::string itemSuffix = StdStringFromInteger(item) + ".";
@@ -1491,7 +1495,10 @@ void SciTEBase::ToolsMenu(int item) {
 				CurrentBuffer()->fileModTime -= 1;
 			if (jobMode.jobType == jobImmediate) {
 				if (extender) {
-					extender->OnExecute(command.c_str());
+					bool handled = extender->OnExecute(command.c_str());
+					if (toolRequestedThatEventShouldContinue && !handled) {
+						*toolRequestedThatEventShouldContinue = true;
+					}
 				}
 			} else {
 				AddCommand(command.c_str(), "", jobMode.jobType, jobMode.input, jobMode.flags);

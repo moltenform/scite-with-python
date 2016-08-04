@@ -881,7 +881,7 @@ protected:
 	bool ToolIsImmediate(int item);
 	void SetToolsMenu();
 	JobSubsystem SubsystemType(const char *cmd);
-	void ToolsMenu(int item);
+	void ToolsMenu(int item, bool *toolRequestsContinuedEventPropagation = 0);
 
 	void AssignKey(int key, int mods, int cmd);
 	void ViewWhitespace(bool view);

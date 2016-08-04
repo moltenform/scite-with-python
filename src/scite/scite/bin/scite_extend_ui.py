@@ -1,6 +1,6 @@
 
 import SciTEModule
-from scite_extend import ScEditor, ScOutput, ScApp, ScConst, OnEvent, findCallbackModule
+from scite_extend import ScEditor, ScOutput, ScApp, ScConst, OnEvent, findCallbackModule, RequestThatEventContinuesToPropagate
 
 class ScToolUIManagerClass(object):
     '''

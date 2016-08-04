@@ -1745,8 +1745,11 @@ LRESULT SciTEWin::KeyDown(WPARAM wParam) {
 		mii.fMask = MIIM_DATA;
 		if (::GetMenuItemInfo(hToolsMenu, IDM_TOOLS+tool_i, FALSE, &mii) && mii.dwItemData) {
 			if (SciTEKeys::MatchKeyCode(static_cast<long>(mii.dwItemData), static_cast<int>(wParam), modifiers)) {
-				SciTEBase::MenuCommand(IDM_TOOLS+tool_i);
-				return 1l;
+				bool toolRequestedThatEventShouldContinue = false;
+				SciTEBase::ToolsMenu(tool_i, &toolRequestedThatEventShouldContinue);
+				if (!toolRequestedThatEventShouldContinue) {
+					return 1l;
+				}
 			}
 		}
 	}

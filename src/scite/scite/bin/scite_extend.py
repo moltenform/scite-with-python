@@ -84,6 +84,16 @@ class ScAppClass(object):
     def GetSciteUserDirectory(self):
         '''Returns SciTE user dir location'''
         return self.GetProperty('SciteUserHome')
+    
+    def RequestThatEventContinuesToPropagate(self):
+        '''Call this to allow event propagation to continue, i.e. to let a keyboard shortcut
+        be passed on to its default handlers. Can be used to add a hook a keyboard shortcut while
+        still allowing the default behavior to occur.
+        In most cases this isn't needed because the plugin can call a ScApp.Cmd method to send an IDM command.
+        
+        RequestThatEventContinuesToPropagate only works for tools in py_immediate mode, e.g.
+        customcommand.name_of_tool.action.py_immediate=ThisModule().myAction()'''
+        raise RequestThatEventContinuesToPropagate()
         
     def __getattr__(self, s):
         '''Run a command, see the full list in SciTEWithPythonAPIReference.html'''
@@ -252,6 +262,10 @@ class ScPaneClass(object):
         else:
             return (lambda *args: SciTEModule.pane_SendScintilla(self.paneNumber, sprop, *args))
 
+class RequestThatEventContinuesToPropagate(Exception):
+    # see ScApp.RequestThatEventContinuesToPropagate
+    pass
+
 def OnEvent(eventName, args):
     # user strip events are handled differently
     if eventName == 'OnUserStrip':
@@ -384,6 +398,9 @@ def registerCustomCommand(heuristicDuplicateShortcut, command, number):
     if not filetypes:
         filetypes = '*'
     
+    if '"' in command or "'" in command or ' ' in command or '\n' in command or '\r' in command:
+        assert False, 'in command %s, command name should not have whitespace or quote characters.' % command
+    
     if callbacks and (' ' in callbacks or '\t' in callbacks or '/' in callbacks or '\\' in callbacks):
         assert False, 'in command %s, callbacks invalid, expected syntax like OnOpen|OnSave.' % command
     
@@ -424,10 +441,10 @@ def registerCustomCommand(heuristicDuplicateShortcut, command, number):
     
     actionPrefix = ''
     if subsystem and isPython:
-        actionPrefix = 'py:from scite_extend_ui import *; '
+        actionPrefix = 'py:'
         if 'ThisModule()' in actionTemporary:
             assert path, 'in command %s, use of ThisModule requires setting .path'
-            actionPrefix += 'ThisModule = lambda: findCallbackModule("%s"); ' % command
+            actionPrefix += 'ThisModule = lambda: scite_extend_ui.findCallbackModule("%s"); ' % command
     
     if callbacks:
         registerCallbacks(command, path, callbacks)

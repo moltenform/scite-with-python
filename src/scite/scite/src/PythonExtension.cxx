@@ -399,6 +399,9 @@ class CachePythonObjects
 	PyObjectOwned module;
 	PyObjectOwned moduleDict;
 	PyObjectOwned functionOnEvent;
+	PyObjectOwned classRequestEventPropagate;
+	PyObjectOwned runStringGlobals;
+	PyObjectOwned runStringLocals;
 	
 	CachePythonObjects (const CachePythonObjects& other);
 	CachePythonObjects& operator= (const CachePythonObjects& other);
@@ -461,6 +464,34 @@ public:
 			return false;
 		}
 		
+		classRequestEventPropagate.Attach(PyDict_GetItemString(moduleDict, "RequestThatEventContinuesToPropagate"));
+		if (!classRequestEventPropagate)
+		{
+			trace_error("Could not get module's RequestThatEventContinuesToPropagate class.");
+			return false;
+		}
+		
+		PyObjectOwned getBuiltins = PyImport_ImportModule("__builtin__");
+		if (!getBuiltins)
+		{
+			trace_error("Could not find Python builtins.");
+			return false;
+		}
+		
+		runStringLocals.Attach(PyDict_New());
+		runStringGlobals.Attach(PyDict_New());
+		if (PyDict_SetItemString(runStringGlobals, "__builtins__", getBuiltins) != 0)
+		{
+			trace_error("Could not add Python builtins to globals.");
+			return false;
+		}
+		
+		if (PyDict_SetItemString(runStringGlobals, c_PythonModuleName, module) != 0)
+		{
+			trace_error("Could not add scite_extend_ui to globals.");
+			return false;
+		}
+		
 		return true;
 	}
 	
@@ -480,6 +511,9 @@ public:
 		module.Release();
 		moduleDict.Release();
 		functionOnEvent.Release();
+		classRequestEventPropagate.Release();
+		runStringGlobals.Release();
+		runStringLocals.Release();
 	}
 	
 	void BuildPythonArgs(PyObjectOwned& args, EventNumber eventNumber, const char* stringPar,
@@ -529,6 +563,34 @@ public:
 		}
 		
 		return eventEnabled[eventNumber];
+	}
+	
+	bool RunString(const char* cmd)
+	{
+		if (!initSucceeded)
+		{
+			return true;
+		}
+		
+		PyObjectOwned result = PyRun_String(cmd, Py_file_input, runStringGlobals, runStringLocals);
+		if (PyErr_Occurred() && PyErr_ExceptionMatches(classRequestEventPropagate))
+		{
+			// this special exception means we should say that the event was not handled.
+			PyErr_Clear();
+			return false;
+		}
+		else if (PyErr_Occurred())
+		{
+			// for this case we want to return true, we want to indicate the event as handled.
+			// return true even on error
+			PyErr_Print();
+			PyErr_Clear();
+			return true;
+		}
+		else
+		{
+			return true;
+		}
 	}
 	
 	bool RunCallback(EventNumber eventNumber,
@@ -689,16 +751,8 @@ bool PythonExtension::OnExecute(const char* cmd)
 	{
 		cmd += strlen("py:");
 		InitializePython();
-
-		int result = PyRun_SimpleString(cmd);
-		if (result != 0)
-		{
-			PyErr_Print();
-		}
-
-		// for this case we want to return true, we want to indicate the event as handled.
-		// return true even on error
-		return true;
+		
+		return cachePythonObjects.RunString(cmd);
 	}
 	else
 	{

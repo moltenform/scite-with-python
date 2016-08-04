@@ -3397,8 +3397,11 @@ gint SciTEGTK::Key(GdkEventKey *event) {
 		if (item) {
 			long keycode = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), "key"));
 			if (keycode && SciTEKeys::MatchKeyCode(keycode, event->keyval, modifiers)) {
-				SciTEBase::MenuCommand(IDM_TOOLS + tool_i);
-				return 1;
+				bool toolRequestedThatEventShouldContinue = false;
+				SciTEBase::ToolsMenu(tool_i, &toolRequestedThatEventShouldContinue);
+				if (!toolRequestedThatEventShouldContinue) {
+					return 1l;
+				}
 			}
 		}
 	}
