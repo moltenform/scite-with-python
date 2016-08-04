@@ -550,6 +550,18 @@ static void AccelStringGtkToWindowsIfNeeded(std::string &accelKey) {
 	Substitute(accelKey, "<alt>", "Alt+");
 }
 
+static bool CanAcceleratorBeRedefined(const GUI::gui_string &accel)
+{
+	// The following accelerators should not be redefined or registered by acceleratorKeys
+	// because often they shouldn't lead to an IDM event (e.g. in the incremental search box)
+	return (accel != GUI_TEXT("Ctrl+C") &&
+		accel != GUI_TEXT("Ctrl+X") &&
+		accel != GUI_TEXT("Ctrl+V") &&
+		accel != GUI_TEXT("Ctrl+A") &&
+		accel != GUI_TEXT("Ctrl+Z") &&
+		accel != GUI_TEXT("Ctrl+Y"));
+}
+
 GUI::gui_string SciTEWin::GetUserDefinedAccel(
 	const GUI::gui_char *path, const GUI::gui_char *current) {
 	// Try to find user-defined accelerator key
@@ -570,21 +582,11 @@ GUI::gui_string SciTEWin::GetUserDefinedAccel(
 		
 		AccelStringGtkToWindowsIfNeeded(fromProps);
 		ret = GUI::StringFromUTF8(fromProps);
+		if (!CanAcceleratorBeRedefined(ret)) {
+			ret = GUI_TEXT("");
+		}
 	}
 	return ret;
-}
-
-static bool CanAcceleratorBeRegistered(const GUI::gui_string &accel)
-{
-	// Ctrl+C shouldn't be handled by acceleratorKeys, because we 
-	// shouldn't send a IDM_COPY event if say, a user strip control is focused.
-	if (accel == GUI_TEXT("Ctrl+C") || 
-		accel == GUI_TEXT("Ctrl+X") || 
-		accel == GUI_TEXT("Ctrl+V")) {
-		return false;
-	}
-	
-	return true;
 }
 
 void SciTEWin::RegisterAccelerator(const GUI::gui_char *accel, int id) {
@@ -628,7 +630,7 @@ void SciTEWin::LocaliseMenuAndReadAccelerators(HMENU hmenu, GUI::gui_string path
 					
 					GUI::gui_string menupath(path + GUI_TEXT("/") + text);
 					accel = GetUserDefinedAccel(menupath.c_str(), accel.c_str());
-					if (CanAcceleratorBeRegistered(accel)) {
+					if (CanAcceleratorBeRedefined(accel)) {
 						RegisterAccelerator(accel.c_str(), mii.wID);
 					}
 					
