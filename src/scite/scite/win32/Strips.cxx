@@ -575,10 +575,6 @@ LRESULT Strip::WndProc(UINT iMessage, WPARAM wParam, LPARAM lParam) {
 		else
 			return ::DefWindowProc(Hwnd(), iMessage, wParam, lParam);
 
-	case WM_SETCURSOR:
-		::SetCursor(::LoadCursor(NULL, IDC_ARROW));
-		break;
-
 	case WM_SIZE:
 		Size();
 		break;
