@@ -131,7 +131,27 @@ class AskChoiceStoredString(BaseAskChoiceStoredData):
         
     def getRetrieveLabel(self):
         return 'copy'
+
+def getFileList(dir, sortByExtension):
+    skipExts = dict(pyc=0, pyo=0, so=0, o=0, a=0, tgz=0, gz=0, rar=0, zip=0, bak=0,
+        pdb=0, png=0, jpg=0, gif=0, bmp=0, tif=0, tiff=0, pyd=0, dll=0, exe=0, obj=0, lib=0, webp=0)
+    
+    skipExts['7z'] = 0
+    listFiles = []
+    if dir:
+        for full, short in files.listfiles(dir):
+            if not short.startswith('.'):
+                extension = files.splitext(short)[1].lstrip('.')
+                if extension not in skipExts:
+                    listFiles.append((short, extension))
         
+        if sortByExtension:
+            listFiles.sort(key=lambda tp: tp[1])
+        else:
+            listFiles.sort(key=lambda tp: tp[0])
+            
+    return [file[0] for file in listFiles]
+
 class QuickInfo(object):
     def go(self):
         from scite_extend_ui import ScAskUserChoiceByPressingKey
@@ -192,34 +212,56 @@ class QuickInfo(object):
         else:
             ScApp.OpenFile(scratchpath)
 
-    def listfiles(self, sortByExtension):
+    def listfiles(self,sortByExtension):
         from scite_extend_ui import ScApp
-        skipExts = dict(pyc=0, pyo=0, so=0, o=0, a=0, tgz=0, gz=0, rar=0, zip=0, bak=0,
-            pdb=0, png=0, jpg=0, gif=0, bmp=0, tif=0, tiff=0, pyd=0, dll=0, exe=0, obj=0, lib=0, webp=0)
-            
+        
         # print the filenames, SciTE will make them clickable links
-        skipExts['7z'] = 0
-        dir = ScApp.GetFileDirectory()
-        if dir:
-            print('Contents of %s' % dir)
-            listFiles = []
-            for full, short in files.listfiles(dir):
-                ext = files.splitext(short)[1]
-                ext = ext.lstrip('.')
-                if ext not in skipExts:
-                    listFiles.append((short, ext))
-            
-            if sortByExtension:
-                listFiles.sort(key=lambda tp: tp[1])
-            else:
-                listFiles.sort(key=lambda tp: tp[0])
-            
-            for short, ext in listFiles:
-                print(short + ':1: ')
+        print('Contents of %s' % ScApp.GetFileDirectory())
+        for name in getFileList(ScApp.GetFileDirectory(), sortByExtension):
+            print(name + ':1: ')
 
 
 def DoQuickInfo():
     QuickInfo().go()
+
+class ShowFileChoiceList(object):
+    def __init__(self, dir, prefix):
+        self.dir = dir
+        self.prefix = prefix
+    
+    def go(self):
+        from scite_extend_ui import ScAskUserChoiceByPressingKey
+        import string
+        self.fileList = getFileList(self.dir, sortByExtension=False)
+        self.choices = ['U|updirectory|Go up a directory...']
+        availableLetters = string.digits + string.uppercase.replace('U', '')
+        for i, file in enumerate(self.fileList):
+            if i < len(availableLetters):
+                character = availableLetters[i]
+                s = self.prefix + file
+                self.choices.append('%s|%d|%s' % (character, i, s))
+        
+        label = 'Pick a file to open in %s.' % self.dir
+        if len(self.fileList) > len(availableLetters):
+            label += '\nToo many files... the rest are ommitted.'
+        
+        ScAskUserChoiceByPressingKey(
+            choices=self.choices, callback=self.onChoiceMade, label=label, showPerforming=False)
+    
+    def onChoiceMade(self, choiceId):
+        import os
+        if choiceId == 'updirectory':
+            newObject = ShowFileChoiceList(os.path.split(self.dir)[0], '..' + os.sep + self.prefix)
+            newObject.go()
+        else:
+            from scite_extend_ui import ScApp
+            index = int(choiceId)
+            filename = self.fileList[index]
+            ScApp.OpenFile(os.path.join(ScApp.GetFileDirectory(), self.prefix + filename))
+
+def DoListFilesInFolder():
+    from scite_extend_ui import ScApp
+    ShowFileChoiceList(ScApp.GetFileDirectory(), '').go()
     
 if __name__ == '__main__':
     from ben_python_common import assertEq
