@@ -257,7 +257,7 @@ class ShowFileChoiceList(object):
             from scite_extend_ui import ScApp
             index = int(choiceId)
             filename = self.fileList[index]
-            ScApp.OpenFile(os.path.join(ScApp.GetFileDirectory(), self.prefix + filename))
+            ScApp.OpenFile(os.path.join(self.dir, filename))
 
 def DoListFilesInFolder():
     from scite_extend_ui import ScApp
