@@ -1,15 +1,10 @@
 
-from scite_extend_ui import *
-
-def ChangeCasing():
-    import changecasing
-    return changecasing.DoChangeCasing()
-
-def ChangeLines():
-    import changelines
-    return changelines.DoChangeLines()
+from changecasing import DoChangeCasing
+from changelines import DoChangeLines
+from movelines import MoveLinesUp, MoveLinesDown
 
 def modifyTextInScite(fn):
+    from scite_extend_ui import ScEditor
     selected = ScEditor.GetSelectedText()
     if not selected:
         print('Nothing is selected.')
