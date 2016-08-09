@@ -14,7 +14,7 @@ def WritePrintStatement(word):
 
 def AddPrintStatement():
     from scite_extend_ui import ScApp, ScEditor
-    if ScEditor.GetFocus():
+    if ScEditor.GetFocus() and ScEditor.GetSelections() <= 1:
         sel = ScEditor.GetSelectedText()
         if sel and sel.strip():
             if '\n' in sel or '\r' in sel:
@@ -25,4 +25,3 @@ def AddPrintStatement():
             word = ScApp.GetProperty('CurrentWord')
             if word and word.strip():
                 WritePrintStatement(word)
-            

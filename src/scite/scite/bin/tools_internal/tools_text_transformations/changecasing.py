@@ -1,8 +1,7 @@
 
-from scite_extend_ui import *
-
 class ChangeCasing(object):
     def go(self):
+        from scite_extend_ui import ScAskUserChoiceByPressingKey
         self.choices = ['U|upper|Upper case', 'L|lower|Lower case', 'T|title|Title case']
         label = 'Please choose a way to change the selected text:'
         ScAskUserChoiceByPressingKey(choices=self.choices, label=label, callback=self.onChoiceMade)
@@ -32,7 +31,11 @@ class ChangeCasing(object):
         return result
 
 def DoChangeCasing():
-    ChangeCasing().go()
+    from scite_extend_ui import ScEditor
+    if ScEditor.GetSelections() <= 1:
+        ChangeCasing().go()
+    else:
+        print('this tool does not support multiple selections')
 
 if __name__ == '__main__':
     from ben_python_common import assertEq

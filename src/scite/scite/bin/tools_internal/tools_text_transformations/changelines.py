@@ -141,7 +141,11 @@ class ChangeLines(object):
         insertsequentialnumbers.insertsequentialnumbers(lines)
 
 def DoChangeLines():
-    ChangeLines().go()
+    from scite_extend_ui import ScEditor
+    if ScEditor.GetSelections() <= 1:
+        ChangeLines().go()
+    else:
+        print('this tool does not support multiple selections')
 
 if __name__ == '__main__':
     from ben_python_common import assertEq
