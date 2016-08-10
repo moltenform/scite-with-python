@@ -293,9 +293,8 @@ public:
 	}
 };
 
-// Interface between SciTE and dialogs and strips for find and replace
-class Searcher {
-public:
+struct BasicSearcherState {
+	BasicSearcherState();
 	std::string findWhat;
 	std::string replaceWhat;
 
@@ -305,7 +304,13 @@ public:
 	bool unSlash;
 	bool wrapFind;
 	bool reverseFind;
+	
+	bool Equals(const BasicSearcherState *other);
+};
 
+// Interface between SciTE and dialogs and strips for find and replace
+class Searcher : public BasicSearcherState {
+public:
 	bool findInFilesSharesStateWithFindReplace;
 	bool findInFilesWholeWord;
 	bool findInFilesMatchCase;
@@ -523,6 +528,11 @@ protected:
 	bool returnOutputToCommand;
 	JobQueue jobQueue;
 
+	bool enableSaveSearchesAcrossInstances;
+	BasicSearcherState previouslySavedSearchState;
+	PropSetFile propsLoadSearchState;
+	time_t modifiedTimeLoadSearchState;
+	
 	bool macrosEnabled;
 	std::string currentMacro;
 	bool recording;
@@ -912,6 +922,8 @@ protected:
 	void SetStyleFor(GUI::ScintillaWindow &win, const char *lang);
 	static void SetOneIndicator(GUI::ScintillaWindow &win, int indicator, const IndicatorDefinition &ind);
 	void ReloadProperties();
+	void SaveSearchState();
+	void LoadSearchState();
 
 	void CheckReload();
 	void Activate(bool activeApp);

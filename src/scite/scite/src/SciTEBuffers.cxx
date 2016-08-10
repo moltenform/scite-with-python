@@ -792,6 +792,8 @@ void SciTEBase::SaveSessionFile(const GUI::gui_char *sessionName) {
 	if (fclose(sessionFile) != 0) {
 		FailedSaveMessageBox(sessionPathName);
 	}
+	
+	SaveSearchState();
 
 	FilePath sessionFilePath = FilePath(sessionPathName).AbsolutePath();
 	// Add/update SessionPath environment variable

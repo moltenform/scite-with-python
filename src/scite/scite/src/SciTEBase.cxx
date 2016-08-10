@@ -43,14 +43,27 @@
 #include "MatchMarker.h"
 #include "SciTEBase.h"
 
-Searcher::Searcher() {
+BasicSearcherState::BasicSearcherState() {
 	wholeWord = false;
 	matchCase = false;
 	regExp = false;
 	unSlash = false;
 	wrapFind = true;
 	reverseFind = false;
-	
+}
+
+bool BasicSearcherState::Equals(const BasicSearcherState *other) {
+	return wholeWord == other->wholeWord &&
+		matchCase == other->matchCase &&
+		regExp == other->regExp &&
+		unSlash == other->unSlash &&
+		wrapFind == other->wrapFind &&
+		reverseFind == other->reverseFind &&
+		findWhat == other->findWhat &&
+		replaceWhat == other->replaceWhat;
+}
+
+Searcher::Searcher() {
 	findInFilesSharesStateWithFindReplace = false;
 	findInFilesWholeWord = false;
 	findInFilesMatchCase = false;
@@ -141,6 +154,9 @@ SciTEBase::SciTEBase(Extension *ext) : apis(true), extender(ext) {
 	allowMenuActions = true;
 	scrollOutput = 1;
 	returnOutputToCommand = true;
+
+	enableSaveSearchesAcrossInstances = false;
+	modifiedTimeLoadSearchState = 0;
 
 	ptStartDrag.x = 0;
 	ptStartDrag.y = 0;
@@ -3182,6 +3198,7 @@ void SciTEBase::MenuCommand(int cmdID, int source) {
 		break;
 
 	case IDM_FIND:
+		LoadSearchState();
 		Find();
 		break;
 
@@ -3190,10 +3207,12 @@ void SciTEBase::MenuCommand(int cmdID, int source) {
 		break;
 
 	case IDM_FINDNEXT:
+		LoadSearchState();
 		FindNext(reverseFind);
 		break;
 
 	case IDM_FINDNEXTBACK:
+		LoadSearchState();
 		FindNext(!reverseFind);
 		break;
 
@@ -3220,10 +3239,12 @@ void SciTEBase::MenuCommand(int cmdID, int source) {
 		break;
 
 	case IDM_FINDINFILES:
+		LoadSearchState();
 		FindInFiles();
 		break;
 
 	case IDM_REPLACE:
+		LoadSearchState();
 		Replace();
 		break;
 
@@ -4811,4 +4832,62 @@ void SciTEBase::Perform(const char *actionList) {
 
 void SciTEBase::DoMenuCommand(int cmdID) {
 	MenuCommand(cmdID, 0);
+}
+
+void SciTEBase::LoadSearchState() {
+	if (enableSaveSearchesAcrossInstances) {
+		FilePath filePath(GetSciteUserHome(), GUI_TEXT("SciTE_save_search.session"));
+		time_t lmt = filePath.ModifiedTime();
+		
+		// modified time is 0: file doesn't exist.
+		// modified time is modifiedTimeLoadSearchState: no one has updated the file.
+		if (lmt != 0 && lmt != modifiedTimeLoadSearchState) {
+			FilePath disableImport;
+			ImportFilter filter;
+			propsLoadSearchState.Clear();
+			propsLoadSearchState.Read(filePath, disableImport, filter, NULL, 0);
+			
+			findWhat = propsLoadSearchState.GetString("save.search.across.findwhat");
+			replaceWhat = propsLoadSearchState.GetString("save.search.across.replacewhat");
+			wholeWord = propsLoadSearchState.GetInt("save.search.across.wholeword");
+			matchCase = propsLoadSearchState.GetInt("save.search.across.matchcase");
+			regExp = propsLoadSearchState.GetInt("save.search.across.regexp");
+			unSlash = propsLoadSearchState.GetInt("save.search.across.escapes");
+			wrapFind = propsLoadSearchState.GetInt("save.search.across.wrapfind");
+			reverseFind = propsLoadSearchState.GetInt("save.search.across.reversefind");
+			previouslySavedSearchState = *this;
+			modifiedTimeLoadSearchState = lmt;
+		}
+	}
+}
+
+void SciTEBase::SaveSearchState() {
+	// for performance reasons, only save state if the search-state has actually been changed.
+	if (enableSaveSearchesAcrossInstances && !previouslySavedSearchState.Equals(this)) {
+		if (!(strchr(findWhat.c_str(), '\n') || strchr(findWhat.c_str(), '\r') || 
+				strchr(replaceWhat.c_str(), '\n') || strchr(replaceWhat.c_str(), '\r'))) {
+
+			FilePath filePath(GetSciteUserHome(), GUI_TEXT("SciTE_save_search.session"));
+			FILE *f = filePath.Open(GUI_TEXT("wb"));
+			if (f) {
+				if (findWhat.c_str()) {
+					fputs("\nsave.search.across.findwhat=", f);
+					fputs(findWhat.c_str(), f);
+				}
+				if (replaceWhat.c_str()) {
+					fputs("\nsave.search.across.replacewhat=", f);
+					fputs(replaceWhat.c_str(), f);
+				}
+				fprintf(f, "\nsave.search.across.wholeword=%d", (wholeWord ? 1 : 0));
+				fprintf(f, "\nsave.search.across.matchcase=%d", (matchCase ? 1 : 0));
+				fprintf(f, "\nsave.search.across.regexp=%d", (regExp ? 1 : 0));
+				fprintf(f, "\nsave.search.across.escapes=%d", (unSlash ? 1 : 0));
+				fprintf(f, "\nsave.search.across.wrapfind=%d", (wrapFind ? 1 : 0));
+				fprintf(f, "\nsave.search.across.reversefind=%d", (reverseFind ? 1 : 0));
+				fclose(f);
+				previouslySavedSearchState = *this;
+				modifiedTimeLoadSearchState = filePath.ModifiedTime();
+			}
+		}
+	}
 }

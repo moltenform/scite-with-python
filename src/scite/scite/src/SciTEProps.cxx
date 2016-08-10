@@ -1575,6 +1575,10 @@ void SciTEBase::ReadPropertiesInitial() {
 	props.Set("SciteUserHome", homepath.AsUTF8().c_str());
 	
 	findInFilesSharesStateWithFindReplace = props.GetInt("find.in.files.settings.shared.state", 1);
+	enableSaveSearchesAcrossInstances = props.GetInt("save.find.across.instances", 0);
+	if (enableSaveSearchesAcrossInstances) {
+		LoadSearchState();
+	}
 }
 
 FilePath SciTEBase::GetDefaultPropertiesFileName() {
