@@ -280,39 +280,6 @@ EventNumber eventNumberFromString(const char* eventName)
 	return EventNumber_LEN;
 }
 
-// reuse a stringstream, to reduce the number of allocations
-class ReusableStringStream
-{
-	std::ostringstream _strm;
-	ReusableStringStream (const ReusableStringStream& other);
-	ReusableStringStream& operator= (const ReusableStringStream& other);
-	
-public:
-	ReusableStringStream() {}
-	void Write(const char* sz)
-	{
-		_strm << sz;
-	}
-	void Write(int n)
-	{
-		_strm << n;
-	}
-	void Write(unsigned int n)
-	{
-		_strm << n;
-	}
-	void Reset()
-	{
-		_strm.clear(); // clear flags
-		_strm.seekp(0); // seek the "put ptr" to start
-	}
-	std::string Get()
-	{
-		_strm << std::ends; // write a nul character, effectively ending the string
-		return _strm.str();
-	}
-};
-
 // a simple string buffer
 class SimpleStringBuffer
 {
@@ -1777,10 +1744,9 @@ void trace_error(const char* text1, const char* text2)
 
 void trace(const char* text, int n)
 {
-	ReusableStringStream stm;
-	stm.Write(text);
-	stm.Write(n);
-	trace(stm.Get().c_str());
+	std::ostringstream stm;
+	stm << text << n;
+	trace(stm.str().c_str());
 }
 
 int FindFriendlyNamedIDMConstant(const char* name)
