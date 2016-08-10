@@ -534,6 +534,7 @@ protected:
 
 	bool saveFindAcrossInstances;
 	SaveFindStateWorker saveFindStateWorker;
+	std::ostringstream saveFindStateStream;
 
 	bool macrosEnabled;
 	std::string currentMacro;
