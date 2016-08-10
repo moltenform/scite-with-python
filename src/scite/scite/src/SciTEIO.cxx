@@ -779,10 +779,6 @@ void SciTEBase::Activate(bool activeApp) {
 	if (activeApp) {
 		CheckReload();
 	} else {
-		if (saveFindAcrossInstances) {
-			SaveFindState();
-		}
-		
 		if (props.GetInt("save.on.deactivate")) {
 			SaveTitledBuffers();
 		}

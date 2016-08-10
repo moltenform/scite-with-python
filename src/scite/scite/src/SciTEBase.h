@@ -353,15 +353,6 @@ struct SearchOption {
 	int id;	// Control in dialog
 };
 
-class SaveFindStateWorker : public Worker {
-protected:
-    GUI::gui_string filePath;
-    std::string textToWrite;
-public:
-	void SetText(const GUI::gui_char *path, const char *text);
-	virtual void Execute();
-};
-
 class SearchUI {
 protected:
 	Searcher *pSearcher;
@@ -531,10 +522,6 @@ protected:
 	int scrollOutput;
 	bool returnOutputToCommand;
 	JobQueue jobQueue;
-
-	bool saveFindAcrossInstances;
-	SaveFindStateWorker saveFindStateWorker;
-	std::ostringstream saveFindStateStream;
 
 	bool macrosEnabled;
 	std::string currentMacro;
@@ -925,7 +912,6 @@ protected:
 	void SetStyleFor(GUI::ScintillaWindow &win, const char *lang);
 	static void SetOneIndicator(GUI::ScintillaWindow &win, int indicator, const IndicatorDefinition &ind);
 	void ReloadProperties();
-	void SaveFindState();
 
 	void CheckReload();
 	void Activate(bool activeApp);

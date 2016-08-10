@@ -7,12 +7,11 @@
 
 struct Worker {
 private:
+	Mutex *mutex;
 	volatile bool completed;
 	volatile bool cancelling;
 	volatile int jobSize;
 	volatile int jobProgress;
-protected:
-	Mutex *mutex;
 public:
 	Worker() : mutex(Mutex::Create()), completed(false), cancelling(false), jobSize(1), jobProgress(0) {
 	}

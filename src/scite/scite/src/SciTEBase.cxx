@@ -16,7 +16,6 @@
 #include <time.h>
 
 #include <string>
-#include <sstream>
 #include <vector>
 #include <set>
 #include <map>
@@ -142,10 +141,6 @@ SciTEBase::SciTEBase(Extension *ext) : apis(true), extender(ext) {
 	allowMenuActions = true;
 	scrollOutput = 1;
 	returnOutputToCommand = true;
-
-	saveFindAcrossInstances = false;
-	saveFindStateWorker.SetCompleted();
-	saveFindStateStream << "";
 
 	ptStartDrag.x = 0;
 	ptStartDrag.y = 0;
@@ -4817,54 +4812,3 @@ void SciTEBase::Perform(const char *actionList) {
 void SciTEBase::DoMenuCommand(int cmdID) {
 	MenuCommand(cmdID, 0);
 }
-
-void SciTEBase::SaveFindState() {
-	if (saveFindStateWorker.FinishedJob()) {
-		const int maxLength = 4096;
-		if (strchr(findWhat.c_str(), '\n') || strchr(findWhat.c_str(), '\r') || 
-				strchr(replaceWhat.c_str(), '\n') || strchr(replaceWhat.c_str(), '\r') || 
-				findWhat.length() > maxLength || replaceWhat.length() > maxLength) {
-			return;
-		}
-		
-		saveFindStateStream.clear();
-		saveFindStateStream.seekp(std::ios::beg);
-		saveFindStateStream << "\nsave.find.findwhat=" << findWhat;
-		saveFindStateStream << "\nsave.find.replacewhat=" << replaceWhat;
-		saveFindStateStream << "\nsave.find.wholeword=" << (wholeWord ? "1" : "0");
-		saveFindStateStream << "\nsave.find.matchcase=" << (matchCase ? "1" : "0");
-		saveFindStateStream << "\nsave.find.regexp=" << (regExp ? "1" : "0");
-		saveFindStateStream << "\nsave.find.escapes=" << (unSlash ? "1" : "0");
-		saveFindStateStream << "\nsave.find.wrapfind=" << (wrapFind ? "1" : "0");
-		saveFindStateStream << "\nsave.find.reversefind=" << (reverseFind ? "1" : "0");
-		saveFindStateStream << std::ends; // write nul character to end the string
-		
-		FilePath filePath(GetSciteUserHome(), GUI_TEXT("SciTE_save_find.session"));
-		saveFindStateWorker.SetText(filePath.AsInternal(), saveFindStateStream.str().c_str());
-		PerformOnNewThread(&saveFindStateWorker);
-	}
-}
-
-void SaveFindStateWorker::SetText(const GUI::gui_char *path, const char *text) {
-	Lock lock(mutex);
-	filePath = path;
-	textToWrite = text;
-}
-
-void SaveFindStateWorker::Execute() {
-	std::string textToWriteCopy;
-	FilePath filePathCopy;
-	
-	{
-		// make a copy, for data consistency.
-		Lock lock(mutex);
-		textToWriteCopy = textToWrite;
-		filePathCopy.Set(filePath);
-	}
-	
-	FILE* f = filePathCopy.Open(GUI_TEXT("wb"));
-	fputs(textToWriteCopy.c_str(), f);
-	fclose(f);
-	SetCompleted();
-}
-
