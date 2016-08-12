@@ -1,7 +1,7 @@
 [Desktop Entry]
 Encoding=UTF-8
 Version=1.0
-Name=SciTE Text Editor
+Name=SciTE with Python Text Editor
 Name[es]=Editor de textos SciTE
 Name[fr]=Éditeur de texte SciTE
 Name[ru]=Текстовый редактор SciTE
@@ -9,9 +9,9 @@ Comment=Edit your source files
 Comment[es]=Edita especializado para programación
 Comment[fr]=Éditer des fichiers sources
 Comment[ru]=Редактор исходных кодов
-GenericName=Text Editor
+GenericName=Text Editor with Python
 Type=Application
-Exec=SciTE %F
+Exec=SciTE_with_python %F
 Icon=Sci48M
 Terminal=false
 StartupNotify=true
