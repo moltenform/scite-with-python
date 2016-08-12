@@ -84,6 +84,19 @@ class ScAppClass(object):
     def GetSciteUserDirectory(self):
         '''Returns SciTE user dir location'''
         return self.GetProperty('SciteUserHome')
+        
+    def GetExternalPython(self):
+        import os
+        from ben_python_common import files
+        python = self.GetProperty('customcommand.externalpython')
+        python = files.findBinaryOnPath(python)
+        if not os.path.isfile(python):
+            print('''Could not find Python 2 installation, please open the file \n%s\n
+    and set the property \ncustomcommand.externalpython\n to the directory where Python 2 is installed.''' % 
+            os.path.join(self.GetSciteDirectory(), 'properties', 'python.properties'))
+            return None
+        else:
+            return python
     
     def RequestThatEventContinuesToPropagate(self):
         '''Call this to allow event propagation to continue, i.e. to let a keyboard shortcut
@@ -187,6 +200,43 @@ class ScPaneClassUtils(object):
         while self.pane.GetCharAt(endpos - 1) in (ord('\r'), ord('\n')):
             endpos -= 1
         self.pane.SetSelection(startpos, endpos)
+    
+    def SetClipboardText(self, s):
+        self.pane.CopyText(s)
+    
+    def GetClipboardText(self):
+        # SciTE apparently provides CopyText but no GetCopiedText
+        # On Windows:
+        #       Tkinter is a large dependency
+        #       Pyperclip doesn't work from inside the SciTE context, on Gtk fails, on Win returns garbage
+        #       We can run Pyperclip in an external context and read from stdout.
+        # On Gtk:
+        #       reading from printclipboard.py causes a deadlock,
+        #       printclipboard.py is waiting for SciTE to send the clipboard data while
+        #       SciTE is waiting for printclipboard.py to exit.
+        #       Providing a C hook into gtk_widget_get_clipboard would cause the same problem.
+        #       Also, using SciTE to paste does not work because paste is asynchronous, see ScintillaGTK::Paste
+        import os, sys
+        if sys.platform.startswith('win'):
+            python = ScApp.GetExternalPython()
+            if not python:
+                return None
+            
+            script = os.path.join(ScApp.GetSciteDirectory(), 'tools_internal', 'ben_python_common', 'printclipboard.py')
+            if not os.path.isfile(script):
+                print('Could not find script at %s.' % script)
+                return None
+            
+            # specify -O (look for .pyo files) and -B (won't try to write .pyc or .pyo files)
+            args = [python, '-O', '-B', script]
+            from ben_python_common import files
+            retcode, stdout, stderr = files.run(args, shell=False, throwOnFailure=False, captureoutput=True, wait=True)
+            if retcode != 0:
+                return None
+            else:
+                return stdout
+        else:
+            raise RuntimeError('GetClipboardText not supported on this platform')
 
 class ScPaneClass(object):
     '''

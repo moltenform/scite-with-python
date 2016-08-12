@@ -40,6 +40,11 @@ class SearchFilenames(ScToolUIBase):
         self._refreshComboBoxHistory(queries, dirs)
 
     def OnSearch(self):
+        import sys
+        if not sys.platform.startswith('win'):
+            print('Filename search is not yet supported on this platform.')
+            return
+
         type = self.searchTypes.get(self.Get(self.cmbType), 'other')
         startProcess(type, self.Get(self.cmbDir), self.Get(self.cmbQuery))
         sessionHistoryQueries.add(self.Get(self.cmbQuery))
@@ -62,11 +67,8 @@ def startProcess(type, dir, query):
         print('Please cancel existing search before starting new search.')
         return
     
-    python = ScApp.GetProperty('customcommand.externalpython')
-    if not os.path.isfile(python):
-        print('''Could not find Python 2 installation, please open the file \n%s\n
-and set the property \ncustomcommand.externalpythondir\n to the directory where Python 2 is installed.''' % 
-        os.path.join(ScApp.GetSciteDirectory(), 'properties', 'python.properties'))
+    python = ScApp.GetExternalPython()
+    if not python:
         return
     
     scriptLocation = os.path.join(ScApp.GetSciteDirectory(), 'tools_external', 'tools_search', 'search_filenames.py')

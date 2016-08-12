@@ -70,13 +70,13 @@ class ScToolUIBase(object):
         return self._add(text, start=start, end=end, callback=callback, closes=closes)
         
     def AddCombo(self):
-        return self._add('', start="{", end="}")
+        return self._add('', start='{', end='}')
         
     def AddEntry(self, text):
-        return self._add(text, start="[", end="]")
+        return self._add(text, start='[', end=']')
         
     def AddRow(self):
-        return self._add('\n', start="", end="", noNumber=True)
+        return self._add('\n', start='', end='', noNumber=True)
         
     def _add(self, text, start, end, callback=None, closes=False, noNumber=False):
         assert self.currentlyBuilding, 'Controls can only be added within AddControls().'
@@ -251,6 +251,11 @@ class ScMultiKeyChoiceClass(object):
         ScOutput.ReplaceSel('')
         
     def GetChoiceIDFromKey(self, key):
+        import sys
+        if not sys.platform.startswith('win'):
+            if ord('a') <= key <= ord('z'):
+                key = ord(chr(key).upper())
+        
         try:
             index = self.choiceKeys.index(key)
         except ValueError:
