@@ -7,21 +7,28 @@ from scite_extend_ui import ScApp
 def OpenInNewWindow():
     from ben_python_common import files
     currentFile = ScApp.GetFilePath()
+    
+    if sys.platform.startswith('win'):
+        scite = files.join(ScApp.GetSciteDirectory(), 'SciTE.exe')
+    else:
+        scite = '/usr/bin/SciTE_with_python'
+    
+    if not files.isfile(scite):
+        print('Could not find scite.')
+        return
+    else:
+        args = [scite]
+        args.append("-check.if.already.open=0")
+        args.append("-save.session=0")
+    
+    # if there's an untitled document open, just start a new SciTE instance
+    # otherwise, start a new SciTE instance and open the current file+line
     if currentFile:
         ScApp.CmdClose()
+        args.append(currentFile)
+        args.append("-goto:%s,%s" % 
+            (ScApp.GetProperty('SelectionStartLine'), ScApp.GetProperty('SelectionStartColumn')))
+            
+    files.run(args, createNoWindow=False, captureoutput=False,
+        wait=False, throwOnFailure=None)
         
-        scite = 'scite.exe' if sys.platform.startswith('win') else 'scite'
-        scite = files.join(ScApp.GetSciteDirectory(), scite)
-        if not files.isfile(scite):
-            print('Could not find scite.')
-        else:
-            args = [scite]
-            args.append("-check.if.already.open=0")
-            args.append("-save.session=0")
-            args.append(currentFile)
-            args.append("-goto:%s,%s" % 
-                (ScApp.GetProperty('SelectionStartLine'), ScApp.GetProperty('SelectionStartColumn')))
-            files.run(args, createNoWindow=False, captureoutput=False,
-                    wait=False, throwOnFailure=None)
-    else:
-        print('Cannot OpenInNewWindow an unsaved document.')
