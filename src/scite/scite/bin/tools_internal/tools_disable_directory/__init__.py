@@ -10,11 +10,13 @@ class ShowWarnings(object):
     directoriesToWarn = None
     
     def __init__(self):
+        from os.path import sep
         from scite_extend_ui import ScApp
         self.mapFilenameToWarningStatus = dict()
         propKey = 'customcommand.disable_directory.disabled_directories'
         propMappings = ScApp.GetProperty(propKey)
         self.directoriesToWarn = getListFromPropertiesString(propMappings)
+        self.directoriesToWarn = [dir.rstrip(sep) for dir in self.directoriesToWarn]
         
     def updateCurrentFilename(self):
         from scite_extend_ui import ScApp
@@ -51,17 +53,21 @@ def OnFileChange():
     showWarnings.updateCurrentFilename()
     showWarnings.showWarningIfNeeded()
 
+def OnClose(file):
+    showWarnings.onClose()
+
 def getListFromPropertiesString(s):
     s = s.replace('\r\n', '\n').replace('\r', '\n')
     s = s.replace('|', '\n')
     lines = s.split('\n')
     return [line.strip() for line in lines if line.strip()]
 
-def shouldWarn(currentFile, listDirs):
+def shouldWarn(currentFile, listDirs, sepr=None):
     from os.path import sep
+    sepr = sepr or sep
     currentFileLower = currentFile.lower()
     for dir in listDirs:
-        if currentFileLower.startswith(dir.lower() + sep):
+        if currentFileLower.startswith(dir.lower() + sepr):
             return True
     return False
 
@@ -89,12 +95,13 @@ if __name__ == '__main__':
         getListFromPropertiesString(input))
         
     listDirs = getListFromPropertiesString(r'c:\example\warn1|c:\example\warn2')
-    assertEq(False, shouldWarn(r'', listDirs))
-    assertEq(False, shouldWarn(r'c:\example', listDirs))
-    assertEq(False, shouldWarn(r'c:\example\warn1', listDirs))
-    assertEq(False, shouldWarn(r'c:\example\warn1_not_match', listDirs))
+    sep = '\\'
+    assertEq(False, shouldWarn(r'', listDirs, sep))
+    assertEq(False, shouldWarn(r'c:\example', listDirs, sep))
+    assertEq(False, shouldWarn(r'c:\example\warn1', listDirs, sep))
+    assertEq(False, shouldWarn(r'c:\example\warn1_not_match', listDirs, sep))
     
-    assertEq(True, shouldWarn(r'c:\example\warn1\a.txt', listDirs))
-    assertEq(True, shouldWarn(r'c:\example\warn1\d\d\d\a.txt', listDirs))
-    assertEq(True, shouldWarn(r'c:\exAMPle\warn1\aCAPITAL.txt', listDirs))
-    assertEq(True, shouldWarn(r'c:\example\warn2\a.txt', listDirs))
+    assertEq(True, shouldWarn(r'c:\example\warn1\a.txt', listDirs, sep))
+    assertEq(True, shouldWarn(r'c:\example\warn1\d\d\d\a.txt', listDirs, sep))
+    assertEq(True, shouldWarn(r'c:\exAMPle\warn1\aCAPITAL.txt', listDirs, sep))
+    assertEq(True, shouldWarn(r'c:\example\warn2\a.txt', listDirs, sep))
