@@ -93,8 +93,6 @@ def runCustomPaste(pane):
     prevPos = pane.GetCurrentPos()
     pane.BeginUndoAction()
     try:
-        # considered using ben_python_common.getClipboardText(), but when running
-        # in the SciTE context and text was copied from same process, it failed to work.
         pane.Paste()
         resultingPos = pane.GetCurrentPos()
         if prevPos == resultingPos:

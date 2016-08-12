@@ -10,12 +10,13 @@ from ben_python_common import files, assertEq
 # run the "switch_to_corresponding_dir" plugin,
 # and then the plugin opens the corresponding file, c:\example\master\foo\bar\code.cpp.
 
-def getCandidates(currentFile, mappings):
+def getCandidates(currentFile, mappings, sepr=None):
     '''get a list of mapped files, if there are any found'''
+    sepr = sepr or files.sep
     candidates = []
     currentFileLower = currentFile.lower()
     for srcdir, destdir in mappings:
-        if currentFileLower.startswith(srcdir.lower() + files.sep):
+        if currentFileLower.startswith(srcdir.lower() + sepr):
             filejustpath = currentFile[len(srcdir):]
             destfile = destdir + filejustpath
             candidates.append(destfile)
@@ -65,6 +66,7 @@ def SwitchToCorrespondingDir():
             ScApp.OpenFile(target)
 
 if __name__ == '__main__':
+    sep = '\\'
     exampleOneEntry = r'c:\example\working|c:\example\master'
     assertEq([(r'c:\example\working', r'c:\example\master')],
         getMappingsFromString(exampleOneEntry))
@@ -84,24 +86,24 @@ if __name__ == '__main__':
         getMappingsFromString(exampleNoNewlines))
     
     map = getMappingsFromString(exampleOneEntry)
-    assertEq([], getCandidates(r'c:\example', map))
-    assertEq([], getCandidates(r'c:\example\working', map))
-    assertEq([], getCandidates(r'c:\example\master\a.cpp', map))
-    assertEq([], getCandidates(r'c:\example\working_not_a_match', map))
-    assertEq([], getCandidates(r'c:\example\working_not_a_match\a.cpp', map))
+    assertEq([], getCandidates(r'c:\example', map, sep))
+    assertEq([], getCandidates(r'c:\example\working', map, sep))
+    assertEq([], getCandidates(r'c:\example\master\a.cpp', map, sep))
+    assertEq([], getCandidates(r'c:\example\working_not_a_match', map, sep))
+    assertEq([], getCandidates(r'c:\example\working_not_a_match\a.cpp', map, sep))
     
     assertEq([r'c:\example\master\a.cpp'],
-        getCandidates(r'c:\example\working\a.cpp', map))
+        getCandidates(r'c:\example\working\a.cpp', map, sep))
     assertEq([r'c:\example\master\d\d\d\a.cpp'],
-        getCandidates(r'c:\example\working\d\d\d\a.cpp', map))
+        getCandidates(r'c:\example\working\d\d\d\a.cpp', map, sep))
     assertEq([r'c:\example\master' + '\\'],
-        getCandidates(r'c:\example\working' + '\\', map))
+        getCandidates(r'c:\example\working' + '\\', map, sep))
     
     # test casing
     assertEq([r'c:\example\master\aFILE.cpp'],
-        getCandidates(r'c:\exAMPle\working\aFILE.cpp', map))
+        getCandidates(r'c:\exAMPle\working\aFILE.cpp', map, sep))
     
     # test multiple matches
     mpMany = r'c:\e\ww|c:\e\mm||c:\e\w|c:\e\m1||c:\e\w|c:\e\m2||c:\e\w|c:\e\m3'
     assertEq([r'c:\e\m1\a.cpp', r'c:\e\m2\a.cpp', r'c:\e\m3\a.cpp'],
-        getCandidates(r'c:\e\w\a.cpp', getMappingsFromString(mpMany)))
+        getCandidates(r'c:\e\w\a.cpp', getMappingsFromString(mpMany), sep))

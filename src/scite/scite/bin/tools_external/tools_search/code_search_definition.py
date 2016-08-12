@@ -90,10 +90,14 @@ def go(filepath, searchTerm, dirDepthString, stringWindowId, action):
         print('Search term should be consist of only alphanumeric characters.')
         return
     
-    pathThisScript = os.path.realpath(__file__)
-    pathScite = os.path.join(applyDirDepth(pathThisScript, 3), 'scite.exe')
+    if sys.platform.startswith('win'):
+        pathThisScript = os.path.realpath(__file__)
+        pathScite = os.path.join(applyDirDepth(pathThisScript, 3), 'SciTE.exe')
+    else:
+        pathScite = '/usr/bin/SciTE_with_python'
+
     if not os.path.isfile(pathScite):
-        print('Could not find scite.exe, expected at %s.' % pathScite)
+        print('Could not find scite, expected at %s.' % pathScite)
         return
     
     if not dirDepthString:
@@ -116,11 +120,19 @@ def go(filepath, searchTerm, dirDepthString, stringWindowId, action):
 
 def tests():
     from code_search_definition_filters import assertEq
-    assertEq(r'C:\d1\d2\d3', applyDirDepth(r'C:\d1\d2\d3', 0))
-    assertEq(r'C:\d1\d2', applyDirDepth(r'C:\d1\d2\d3', 1))
-    assertEq(r'C:\d1', applyDirDepth(r'C:\d1\d2\d3', 2))
-    assertEq('C:\\', applyDirDepth(r'C:\d1\d2\d3', 3))
-    assertEq('C:\\', applyDirDepth(r'C:\d1\d2\d3', 4))
+    import sys
+    if sys.platform == 'win32':
+        assertEq(r'C:\d1\d2\d3', applyDirDepth(r'C:\d1\d2\d3', 0))
+        assertEq(r'C:\d1\d2', applyDirDepth(r'C:\d1\d2\d3', 1))
+        assertEq(r'C:\d1', applyDirDepth(r'C:\d1\d2\d3', 2))
+        assertEq('C:\\', applyDirDepth(r'C:\d1\d2\d3', 3))
+        assertEq('C:\\', applyDirDepth(r'C:\d1\d2\d3', 4))
+    else:
+        assertEq(r'/d1/d2/d3', applyDirDepth(r'/d1/d2/d3', 0))
+        assertEq(r'/d1/d2', applyDirDepth(r'/d1/d2/d3', 1))
+        assertEq(r'/d1', applyDirDepth(r'/d1/d2/d3', 2))
+        assertEq('/', applyDirDepth(r'/d1/d2/d3', 3))
+        assertEq('/', applyDirDepth(r'/d1/d2/d3', 4))
 
 if __name__ == '__main__':
     if len(sys.argv) == 6:
