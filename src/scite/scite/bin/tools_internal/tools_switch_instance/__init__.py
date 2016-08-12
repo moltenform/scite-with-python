@@ -26,7 +26,7 @@ def OpenInNewWindow():
     if currentFile:
         ScApp.CmdClose()
         args.append(currentFile)
-        args.append("-goto:%s,%s" % 
+        args.append("-goto:%s,%s" %
             (ScApp.GetProperty('SelectionStartLine'), ScApp.GetProperty('SelectionStartColumn')))
             
     files.run(args, createNoWindow=False, captureoutput=False,

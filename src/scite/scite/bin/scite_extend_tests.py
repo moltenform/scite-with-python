@@ -5,19 +5,18 @@ from ben_python_common import assertEq, assertException, assertTrue
 import os
 import sys
 
-# to run python extension tests, 
+# to run python extension tests,
 # add the following lines to global properties or user properties and press Ctrl+Shift+F1.
-#*customcommandsregister.begin_tests=begin_tests|
-#customcommand.begin_tests.name=Begin tests...
-#customcommand.begin_tests.shortcut=Ctrl+Shift+F1
-#customcommand.begin_tests.action.py=import scite_extend_tests; scite_extend_tests.First()
-#customcommand.begin_tests.path=.
-
-#*customcommandsregister.begin_tests_next=begin_tests_next|
-#customcommand.begin_tests_next.name=Begin tests next
-#customcommand.begin_tests_next.shortcut=Ctrl+Shift+F2
-#customcommand.begin_tests_next.action.py=import scite_extend_tests; scite_extend_tests.Next()
-#customcommand.begin_tests_next.path=.
+# *customcommandsregister.begin_tests=begin_tests|
+# customcommand.begin_tests.name=Begin tests...
+# customcommand.begin_tests.shortcut=Ctrl+Shift+F1
+# customcommand.begin_tests.action.py=import scite_extend_tests; scite_extend_tests.First()
+# customcommand.begin_tests.path=.
+# *customcommandsregister.begin_tests_next=begin_tests_next|
+# customcommand.begin_tests_next.name=Begin tests next
+# customcommand.begin_tests_next.shortcut=Ctrl+Shift+F2
+# customcommand.begin_tests_next.action.py=import scite_extend_tests; scite_extend_tests.Next()
+# customcommand.begin_tests_next.path=.
 
 # After pressing Ctrl+Shift+F1, instructions will be shown in the output pane to describe what to do.
 

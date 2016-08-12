@@ -92,7 +92,7 @@ class ScAppClass(object):
         python = files.findBinaryOnPath(python)
         if not os.path.isfile(python):
             print('''Could not find Python 2 installation, please open the file \n%s\n
-    and set the property \ncustomcommand.externalpython\n to the directory where Python 2 is installed.''' % 
+    and set the property \ncustomcommand.externalpython\n to the directory where Python 2 is installed.''' %
             os.path.join(self.GetSciteDirectory(), 'properties', 'python.properties'))
             return None
         else:

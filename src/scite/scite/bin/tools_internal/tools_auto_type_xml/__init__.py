@@ -19,7 +19,7 @@ stylesSingleQuoteStrings = dict(
     sql=[7],
     perl=[7, 26],
     bash=[6],
-    python=[4,6],
+    python=[4, 6],
     ruby=[6])
 
 stylesDblQuoteStrings = dict(
@@ -27,9 +27,9 @@ stylesDblQuoteStrings = dict(
     hypertext=[6, 24, 48, 63, 75, 77, 85, 87, 98, 94, 113, 109, 119, 126],
     xml=[6, 24],
     css=[13],
-    lisp=[6,8],
+    lisp=[6, 8],
     lua=[6],
-    d=[10,18,19],
+    d=[10, 18, 19],
     octave=[8],
     matlab=[8],
     registry=[3, 8, 10],
@@ -38,7 +38,7 @@ stylesDblQuoteStrings = dict(
     conf=[6],
     perl=[6, 27, 43, 64],
     bash=[5],
-    python=[3,7],
+    python=[3, 7],
     ruby=[6, 24, 25, 26, 27, 28],
     rust=[13, 14, 21, 22])
 
@@ -61,7 +61,7 @@ stylesComments = dict(css=[9],
     sql=[1, 2, 3, 13, 15, 17, 18],
     perl=[2],
     bash=[2],
-    python=[1,12],
+    python=[1, 12],
     ruby=[2],
     rust=[1, 2, 3, 4])
 
@@ -105,7 +105,7 @@ def showStyles():
     import sys
     currentStyle = -1
     print('\n')
-    for i in range(ScEditor.GetLength()-1):
+    for i in range(ScEditor.GetLength() - 1):
         byte = ScEditor.GetCharAt(i)
         style = ScEditor.GetStyleAt(i)
         if style != currentStyle:
@@ -185,8 +185,8 @@ def getTextToInsertOnCloseTag(lexerLanguage, lineText, linePos):
     else:
         return tagName
 
-mapCharToFunction = { closeAngle: onCloseTag, openParen: onOpenParen,
-    singleQuote: onTypeQuote, dblQuote: onTypeQuote }
+mapCharToFunction = {closeAngle: onCloseTag, openParen: onOpenParen,
+    singleQuote: onTypeQuote, dblQuote: onTypeQuote}
 
 def OnChar(key):
     fn = mapCharToFunction.get(key, None)

@@ -56,7 +56,6 @@ class BaseAskChoiceStoredData(object):
             else:
                 print('Nothing is currently stored in this field.')
         else:
-            import wincommondialog
             value = self.getValueForInput()
             if value:
                 self.storeData(choiceId, value)
@@ -113,7 +112,6 @@ class AskChoiceStoredFilepath(BaseAskChoiceStoredData):
 
 class AskChoiceStoredDirectory(BaseAskChoiceStoredData):
     def onRetrieve(self, choiceId, value):
-        from scite_extend_ui import ScApp
         print('Opening directory:%s' % self.printable(value))
         ben_python_common.files.openDirectoryInExplorer(value)
         
@@ -228,7 +226,7 @@ class QuickInfo(object):
         else:
             ScApp.OpenFile(scratchpath)
 
-    def listfiles(self,sortByExtension):
+    def listfiles(self, sortByExtension):
         from scite_extend_ui import ScApp
         
         # print the filenames, SciTE will make them clickable links

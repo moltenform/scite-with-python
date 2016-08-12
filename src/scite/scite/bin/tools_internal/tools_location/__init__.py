@@ -52,7 +52,7 @@ def GoDown(addToSelection):
     # why move the caret down a line? for the case where the current line is "while(condition) {"
     # it's convenient to act as if the caret were inside the body of this block, even though
     # technically it is outside.
-    # this doesn't work as well for blocks that are only two lines long, preventing 
+    # this doesn't work as well for blocks that are only two lines long, preventing
     # Ctrl+Shift+J, Ctrl+Shift+K from selecting the entire block as expected, but the tool works well enough for now.
     ScEditor.LineDown()
     
@@ -62,7 +62,7 @@ def GoDown(addToSelection):
         ScEditor.SetSelectionEnd(previousSelEnd)
         return
     
-    # fold levels are apparently not determined until user views that text.  
+    # fold levels are apparently not determined until user views that text.
     # call EnsureChildrenVisible, in order to both compute fold levels for the rest of the scope and expand everything.
     ScEditor.SetCurrentPos(startScopePos)
     ScApp.CmdExpandEnsureChildrenVisible()

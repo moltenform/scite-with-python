@@ -1,11 +1,11 @@
 
 # UI for searching filenames
 # The actual work is done by search_filenames.py
-# While __init__.py is run by SciTE's embedded Python, 
+# While __init__.py is run by SciTE's embedded Python,
 # search_filenames.py runs in a different context in an external Python process,
 # so that searches can run smoothly in the background while the user does other work.
 
-from scite_extend_ui import ScToolUIBase, ScApp, ScConst
+from scite_extend_ui import ScToolUIBase, ScApp
 from ben_python_common import RecentlyUsedList
 
 sessionHistoryQueries = RecentlyUsedList(maxSize=50)
@@ -14,9 +14,10 @@ childProcess = None
 
 class SearchFilenames(ScToolUIBase):
     currentFocus = None
+
     def AddControls(self):
         self.searchTypes = {'Filename contains': 'contains',
-            'Wildcard expansion': 'wildcard', 
+            'Wildcard expansion': 'wildcard',
             'Regular expression': 'regex'}
         
         self.AddLabel('Search for files named:')
