@@ -46,15 +46,15 @@
 #endif
 
 #if defined(GTK)
-const GUI::gui_char propUserFileName[] = GUI_TEXT("properties/.SciTEUser.properties");
+const GUI::gui_char propUserFileName[] = GUI_TEXT(".SciTE_with_python_user.properties");
 #elif defined(__APPLE__)
-const GUI::gui_char propUserFileName[] = GUI_TEXT("properties/SciTEUser.properties");
+const GUI::gui_char propUserFileName[] = GUI_TEXT("SciTE_with_python_user.properties");
 #else
 // Windows
-const GUI::gui_char propUserFileName[] = GUI_TEXT("properties/SciTEUser.properties");
+const GUI::gui_char propUserFileName[] = GUI_TEXT("SciTE_with_python_user.properties");
 #endif
-const GUI::gui_char propGlobalFileName[] = GUI_TEXT("properties/SciTEGlobal.properties");
-const GUI::gui_char propAbbrevFileName[] = GUI_TEXT("properties/abbrev.properties");
+const GUI::gui_char propGlobalFileName[] = GUI_TEXT("SciTEGlobal.properties");
+const GUI::gui_char propAbbrevFileName[] = GUI_TEXT("abbrev.properties");
 
 void SciTEBase::SetFileName(FilePath openName, bool fixCase) {
 	if (openName.AsInternal()[0] == '\"') {

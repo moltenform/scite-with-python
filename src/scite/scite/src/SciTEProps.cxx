@@ -159,7 +159,7 @@ void SciTEBase::ReadGlobalPropFile() {
 
 		propsBase.Clear();
 		FilePath propfileBase = GetDefaultPropertiesFileName();
-		propsBase.Read(propfileBase, propfileBase.Directory(), filter, &importFiles, 0);
+		propsBase.Read(propfileBase, GetSciteDefaultHome(), filter, &importFiles, 0);
 
 		propsUser.Clear();
 		FilePath propfileUser = GetUserPropertiesFileName();
@@ -1582,7 +1582,8 @@ void SciTEBase::ReadPropertiesInitial() {
 }
 
 FilePath SciTEBase::GetDefaultPropertiesFileName() {
-	return FilePath(GetSciteDefaultHome(), propGlobalFileName);
+	FilePath propsDir(GetSciteDefaultHome(), GUI_TEXT("properties"));
+	return FilePath(propsDir, propGlobalFileName);
 }
 
 FilePath SciTEBase::GetAbbrevPropertiesFileName() {
