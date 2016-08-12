@@ -116,20 +116,14 @@ def getWindowsBindings(results, props, mapUserDefinedKeys):
 	# --- accelerator table			SciTERes.rc accelerator (priority=80)
 	readFromSciTEResAccelTable(results)
 
-def getScintillaBindings(results, props):
+def getScintillaBindings(results, props, priority):
 	detectCodeChanges('../../scintilla/src/Editor.cxx', getFragment('scintillaKeyHandlerMethodExpectedText'),
 		scintillaKeyHandlerMethodExpectedTextMustInclude)
 	detectCodeChanges('../src/SciTEProps.cxx', getFragment('callsToAssignKey'))
 	detectCodeChanges('../src/SciTEBase.cxx', getFragment('sciteBaseCallAssignKey'))
 	checkForNewIfDefsInKeyMap()
 	addCallsToAssignKeyBindings(results, props)
-	readFromScintillaKeyMap(results)
-
-def adjustScintillaPriority(bindings):
-	# in Windows, scintilla has low priority
-	for binding in bindings:
-		if binding.priority <= 1:
-			binding.priority += 100
+	readFromScintillaKeyMap(results, priority)
 
 def processDuplicatesInOutputFile(filepath, adjustForAesthetics):
 	newContents = []
@@ -161,7 +155,7 @@ def processDuplicatesInOutputFile(filepath, adjustForAesthetics):
 	with open(filepath, 'w') as out:
 		out.write('\n'.join(newContents))
 
-def mainWithPython(propertiesMain, propertiesUser, rootDir, adjustForAesthetics):
+def mainWithPython(propertiesMain, propertiesUser, adjustForAesthetics):
 	import sys
 	if sys.version_info[0] != 2:
 		print('currently, this script is not supported in python 3')
@@ -170,12 +164,17 @@ def mainWithPython(propertiesMain, propertiesUser, rootDir, adjustForAesthetics)
 	assert os.path.isfile('../src/PythonExtension.cxx'), 'Did not see PythonExtension, please run ShowBindings.py instead.'
 	checkForAnyLogicChanges()
 	for platform in ('gtk', 'win32'):
-		props = getAllProperties(propertiesMain, propertiesUser, platform, rootDir)
+		# we've changed SciTE logic for SciTEGlobal.properties, it is now in a subdirectory.
+		propertiesMainParent = os.path.split(propertiesMain)[0]
+		assert os.path.split(propertiesMainParent)[1] == 'properties', 'Expected SciTEGlobal.properties to be in a directory called properties'
+		props = getAllProperties(propertiesMain, propertiesUser, platform, overrideDir=os.path.split(propertiesMainParent)[0])
+		
+		scintillaPriority = 100
 		platformCapitalized = platform[0].upper() + platform[1:]
 		outputFile = '../bin/doc/CurrentBindings%s.html' % platformCapitalized
 		mapUserDefinedKeys = readUserDefinedKeys(props)
 		bindings = []
-		getScintillaBindings(bindings, props)
+		getScintillaBindings(bindings, props, scintillaPriority)
 		expectedSets = ['SciTEProps.cxx AssignKey', 'properties *language', 'properties user.shortcuts',
 			'properties command (implicit)', 'properties command', 'Scintilla keymap']
 		if platform == 'gtk':
@@ -183,12 +182,11 @@ def mainWithPython(propertiesMain, propertiesUser, rootDir, adjustForAesthetics)
 			expectedSets.extend(['KeyToCommand kmap[]', 'SciTEItemFactoryEntry or user-defined'])
 		else:
 			getWindowsBindings(bindings, props, mapUserDefinedKeys)
-			adjustScintillaPriority(bindings)
 			expectedSets.extend(['SciTERes accel', 'menu text or user-defined'])
 		
 		bindings.reverse() # within a priority, generally the binding defined last wins.
 		bindings.sort(key=lambda obj: obj.getSortKey())
-		writeOutputFile(bindings, outputFile)
+		writeOutputFile(bindings, outputFile, includeDuplicates=True)
 		processDuplicatesInOutputFile(outputFile, adjustForAesthetics)
 		setsSeen = {item.setName: 1 for item in bindings}
 		if set(expectedSets) != set(key for key in setsSeen):
@@ -881,19 +879,19 @@ def tests():
 	line = r'''    VK_SPACE, IDM_SHOWCALLTIP, VIRTKEY, CONTROL, SHIFT'''
 	readFromSciTEResAccelTableEntry(line.split(',', 2), entriesRead)
 	line = r'''{'[',			SCI_CSHIFT,	SCI_PARAUPEXTEND},'''
-	readFromScintillaKeyMapEntry(line.split(','), entriesRead)
+	readFromScintillaKeyMapEntry(line.split(','), entriesRead, 100)
 	line = r'''{SCK_UP,			SCI_CTRL_META,	SCI_LINESCROLLUP},'''
-	readFromScintillaKeyMapEntry(line.split(','), entriesRead)
+	readFromScintillaKeyMapEntry(line.split(','), entriesRead, 100)
 	line = r'''{SCK_LEFT,		SCI_NORM,	SCI_CHARLEFT},'''
-	readFromScintillaKeyMapEntry(line.split(','), entriesRead)
+	readFromScintillaKeyMapEntry(line.split(','), entriesRead, 100)
 	expected = '''Ctrl+U|Make Selection Lowercase|80|gtk|SciTEItemFactoryEntry or user-defined
 Ctrl+Shift+Space|Show Calltip|80|gtk|SciTEItemFactoryEntry or user-defined
 Ctrl+N|IDM_NEW|80|win32|SciTERes accel
 F8|IDM_TOGGLEOUTPUT|80|win32|SciTERes accel
 Ctrl+Shift+Space|IDM_SHOWCALLTIP|80|win32|SciTERes accel
-Ctrl+Shift+[|SCI_PARAUPEXTEND|0|any|Scintilla keymap
-Ctrl+Up|SCI_LINESCROLLUP|0|any|Scintilla keymap
-Left|SCI_CHARLEFT|0|any|Scintilla keymap'''
+Ctrl+Shift+[|SCI_PARAUPEXTEND|100|any|Scintilla keymap
+Ctrl+Up|SCI_LINESCROLLUP|100|any|Scintilla keymap
+Left|SCI_CHARLEFT|100|any|Scintilla keymap'''
 	expectedArr = []
 	addBindingsManual(expectedArr, expected)
 	assertEqArray(expectedArr, entriesRead)
@@ -903,7 +901,6 @@ if __name__ == '__main__':
 	tests()
 	propertiesMain = '../bin/properties/SciTEGlobal.properties'
 	propertiesUser = None
-	rootDir = '../bin'
 	adjustForAesthetics = True
 	
 	msg = 'keymap.cxx not found, please download both the scintilla and scite sources and place this script in the /scite/src/scripts directory'
@@ -912,4 +909,4 @@ if __name__ == '__main__':
 	elif not os.path.isfile('../gtk/SciTEGTK.cxx'	):
 		print(msg)
 	else:
-		mainWithPython(propertiesMain, propertiesUser, rootDir, adjustForAesthetics)
+		mainWithPython(propertiesMain, propertiesUser, adjustForAesthetics)

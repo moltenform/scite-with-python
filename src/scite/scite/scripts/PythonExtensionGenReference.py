@@ -184,6 +184,7 @@ LocationPrev|Go to previous location
 GetFilePath|Returns full file path
 GetFileName|Returns file name
 GetFileDirectory|Returns directory of file
+GetExternalPython|Returns path of Python binary
 GetSciteDirectory|Returns SciTE location
 GetSciteUserDirectory|Returns SciTE user dir location'''.replace('\r\n', '\n').split('\n')
 	manuallyAddMethods.reverse()
@@ -205,6 +206,8 @@ StopEventPropagation'''.replace('\r\n', '\n').split('\n')
 def addPythonDefinedPaneMethods(idsInOrder, mapSymbolNameToExplanation):
 	manuallyAdd = '''SCI_GETEOLMODE|Line endings|string|Utils.GetEolCharacter()|Return current EOL character, e.g. \\r\\n
 |Selection and information||Utils.ExpandSelectionToIncludeEntireLines()|Ensure entire lines are selected
+|Cut, copy and paste||Utils.SetClipboardText(s)|Set clipboard text
+|Cut, copy and paste|string|Utils.GetClipboardText()|Get clipboard text (not available on all platforms)
 SCI_APPENDTEXT|Text retrieval and modification||PaneAppend(string txt)|Append text
 SCI_INSERTTEXT|Text retrieval and modification||PaneInsertText(string txt, int pos)|Insert text (without changing selection)
 SCI_INSERTTEXT|Text retrieval and modification||PaneWrite(string txt, int pos=None)|Write text, and update selection
@@ -447,7 +450,8 @@ def RegenerateAll():
 		return
 	
 	with open("../bin/doc/SciTEWithPythonAPIReference.html", "w") as out:
-		out.write(startFile.replace('%script%', os.path.split(__file__)[1]))
+		scriptname = os.path.split(__file__)[1].replace('.pyc', '.py')
+		out.write(startFile.replace('%script%', scriptname))
 		writeScAppMethods(out)
 		writeScEditorMethods(out)
 		writeScConstMethods(out)

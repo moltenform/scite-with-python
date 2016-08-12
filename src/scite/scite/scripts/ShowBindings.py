@@ -317,7 +317,7 @@ def readFromSciTEResAccelTableEntry(parts, bindings):
 	modifiers = ('+'.join(modparts) + '+') if modparts else ''
 	bindings.append(KeyBinding('SciTERes accel', command, modifiers + key, priority=80, platform='win32'))
 
-def readFromScintillaKeyMapEntry(parts, bindings):
+def readFromScintillaKeyMapEntry(parts, bindings, priority):
 	key, modifiers, command, whitespace = [part.strip() for part in parts]
 	command = command.rstrip('} ')
 	key = key.lstrip('{ ')
@@ -333,7 +333,7 @@ def readFromScintillaKeyMapEntry(parts, bindings):
 	map = dict(SCI_CTRL=(True, False, False), SCI_ALT=(False, True, False), SCI_SHIFT=(False, False, True),
 		SCMOD_META=(True, False, False), SCI_CSHIFT=(True, False, True), SCI_ASHIFT=(False, True, True),
 		SCI_SCTRL_META=(True, False, True), SCI_CTRL_META=(True, False, False), SCI_NORM=(False, False, False))
-	binding = KeyBinding('Scintilla keymap', command, priority=0, platform='any')
+	binding = KeyBinding('Scintilla keymap', command, priority=priority, platform='any')
 	binding.control, binding.alt, binding.shift = map[modifiers]
 	binding.keyChar = key
 	bindings.append(binding)
@@ -364,7 +364,7 @@ def readFromSciTEResAccelTable(bindings):
 				else:
 					readFromSciTEResAccelTableEntry(parts, bindings)
 
-def readFromScintillaKeyMap(bindings):
+def readFromScintillaKeyMap(bindings, priority):
 	start = '''const KeyToCommand KeyMap::MapDefault[] = {'''
 	lines = retrieveCodeLines('../../scintilla/src/KeyMap.cxx', start, '};')
 	insideMac = False
@@ -381,7 +381,7 @@ def readFromScintillaKeyMap(bindings):
 			if len(parts) != 4:
 				raise RuntimeError('line started with { but did not have 4 parts ' + line)
 			else:
-				readFromScintillaKeyMapEntry(parts, bindings)
+				readFromScintillaKeyMapEntry(parts, bindings, priority)
 
 def main(propertiesMain, propertiesUser, outputFileTemplate):
 	import sys
@@ -392,11 +392,12 @@ def main(propertiesMain, propertiesUser, outputFileTemplate):
 	assert '$platform' in outputFileTemplate, 'outputFile should include $platform.'
 	assert not os.path.isfile('../src/PythonExtension.cxx'), 'Please run ShowBindingsForSciTEPython.py instead.'
 	for platform in ('gtk', 'win32'):
+		scintillaPriority = 100
 		props = getAllProperties(propertiesMain, propertiesUser, platform)
 		platformCapitalized = platform[0].upper() + platform[1:]
 		outputFile = outputFileTemplate.replace('$platform', platformCapitalized)
 		bindings = []
-		readFromScintillaKeyMap(bindings)
+		readFromScintillaKeyMap(bindings, scintillaPriority)
 		addCallsToAssignKeyBindings(bindings, props)
 		readFromProperties(bindings, props)
 		mapUserDefinedKeys = readUserDefinedKeys(props)
