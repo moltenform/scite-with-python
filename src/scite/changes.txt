@@ -53,20 +53,23 @@ Modifications to SciTE source code include
 		Removing lua extension in this build, though, since the python extension is sufficient
 	
 	New feature: scite/bin is cleaner because properties are in their own directory
-	New feature: user can hide specified menu items via properties files (menu.hidemenuitems)
 	New feature: user can limit number of menuitems shown for properties files (menu.limitpropertiesmenuitems)
 	New feature: warn if the max number of buffers has been opened. (buffers.warn.limitreached)
 	New feature: tools can be hidden from context menu. (context.menu.show.tools)
-	New feature: on Windows, moved Tools to a submenu
-	New feature: on Windows, increased number of slots for mru items
-	New feature: internal grep supports regex search (find.in.files.enable.regexp), UI only updated for Windows
+	New feature: internal grep supports regex search (find.in.files.enable.regexp), UI only updated for Windows (2 commits)
 	New feature: expose SciTEWindowID property for plugins to communicate with SciTE
 	New feature: user.shortcuts supports SCI_ constants
-	New feature: menukey customization supported on windows, was previously gtk-only.
+	New feature: on Windows, user can hide specified menu items via properties files (menu.hidemenuitems)
+	New feature: on Windows, moved Tools to a submenu
+	New feature: on Windows, increased number of slots for mru items
+	New feature: on Windows, for text in the parameters dialog, property is set right when dialog is deactivated (i.e. property is updated faster, no need to click Set).
+	New feature: menukey customization now supported on windows, was previously gtk-only. (3 commits)
 	New feature: "Find" and "Find in Files" can be configured to not have shared state for settings like case sensitivity (find.in.files.settings.shared.state)
 	New feature: if parameters are set from the dialog, they can be automatically added to every Go command. (command.go.use.parameters.from.dialog)
-	New feature: after typing text in the parameters dialog, the property is automatically set when the dialog loses focus (i.e. property is updated faster, no need to click Set).
+	New feature: commands that run in immediate mode can allow the keyboard event to continue to propagate.
+	New feature: current search term and find state can be shared among all SciTE processes. (save.find.across.instances)
+	user strip on Windows, focus in/out events are sent for combo boxes.
+	user strip on Windows, cursor does not flicker in an edit box.
 	Fix minor issue when parsing command.mode strings from properties.
 
 
-	
