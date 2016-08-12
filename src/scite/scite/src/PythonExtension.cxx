@@ -382,6 +382,8 @@ class CachePythonObjects
 	PyObjectOwned classRequestEventPropagate;
 	PyObjectOwned runStringGlobals;
 	PyObjectOwned runStringLocals;
+	std::string pythonHome;
+	std::string pythonProgramName;
 	
 	CachePythonObjects (const CachePythonObjects& other);
 	CachePythonObjects& operator= (const CachePythonObjects& other);
@@ -637,6 +639,13 @@ public:
 		}
 	}
 	
+	void setPythonHomeAndProgramName(const char* home, const char* progname)
+	{
+		pythonHome = home;
+		pythonProgramName = progname;
+		Py_SetPythonHome((char*) pythonHome.c_str());
+		Py_SetProgramName((char*) pythonProgramName.c_str());
+	}
 } cachePythonObjects;
 
 PythonExtension& PythonExtension::Instance()
@@ -1630,7 +1639,6 @@ public:
 			}
 		}
 	}
-	
 } savedLocationManager;
 
 void onUpdateUI()
@@ -1691,16 +1699,60 @@ static PyMethodDef methodsExportedToPython[] =
 	{NULL, NULL, 0, NULL}
 };
 
+void runPythonString(const char* s)
+{
+	if (PyRun_SimpleString(s) != 0)
+	{
+		trace_error("Python extension encountered error while initializing, \n", s);
+		PyErr_Print();
+	}
+}
+
 void PythonExtension::SetupPythonNamespace()
 {
+#ifdef _WIN32
+	std::string SciTEHome(_host->Property("SciteDefaultHome"));
+	const char* pythonHome = SciTEHome.c_str();
+	const char* dirSep = "\\";
+	const char* binaryName = "SciTE.exe";
+#else
+	const char* pythonHome = SYSCONF_PATH;
+	const char* dirSep = "/";
+	const char* binaryName = "SciTE_with_python";
+#endif
+	
 	// tell python to skip running 'import site'
 	Py_NoSiteFlag = 1;
-	Py_Initialize();
+	
+	// set home and argv[0]
+	std::string programName = pythonHome;
+	programName += dirSep;
+	programName += binaryName;
+	cachePythonObjects.setPythonHomeAndProgramName(pythonHome, programName.c_str());
+	
+	// initialize without signal handling
+	Py_InitializeEx(0);
+	
+	// add our C module
 	Py_InitModule("SciTEModule", methodsExportedToPython);
+	
+	// add to system path. 'sys' is built-in, no worry of importing the wrong sys
+	std::string pathToImport = "import sys; sys.path.insert(0, \"";
+	pathToImport += pythonHome;
+	pathToImport += "\");";
+	runPythonString(pathToImport.c_str());
+	pathToImport = "import sys; sys.path.insert(0, \"";
+	pathToImport += pythonHome;
+	pathToImport += dirSep;
+	pathToImport += "python27.zip\");";
+	runPythonString(pathToImport.c_str());
+	
+#ifndef _WIN32
+	// without this, warning seen "no codec search functions registered"
+	runPythonString("import codecs; import encodings");
+#endif
 
-	// PyRun_SimpleString does not handle errors well,
-	// be sure to check return value.
-	int ret = PyRun_SimpleString(
+	runPythonString(
 		"import SciTEModule\n"
 		"import sys\n"
 		"class StdoutCatcher:\n"
@@ -1709,13 +1761,6 @@ void PythonExtension::SetupPythonNamespace()
 		"sys.stdout = StdoutCatcher()\n"
 		"sys.stderr = StdoutCatcher()\n"
 	);
-
-	if (ret != 0)
-	{
-		MessageBoxA(0, "Unexpected: error capturing stdout from Python. "
-			"make sure python27.zip is present?", "", 0);
-		PyErr_Print(); // if printing isn't set up, will not help, but at least will clear python's error bit
-	}
 }
 
 bool GetPaneFromInt(int nPane, ExtensionAPI::Pane* outPane)
