@@ -3680,15 +3680,14 @@ void SciTEGTK::CreateTranslatedMenu(int n, SciTEItemFactoryEntry items[],
 
 		std::string accelKey = props.GetString(menuPath.c_str());
 
-		int accLength = accelKey.length();
-		if (accLength > 0) {
+		if (accelKey.length() > 0) {
 			if (accelKey == "\"\"" || accelKey == "none") {
 				accelKey.clear();	// Allow user to clear accelerator key
 			}
 			
 			AccelStringWindowsToGtkIfNeeded(accelKey);
-			userDefinedAccels[i] = new char[accLength + 1];
-			strncpy(userDefinedAccels[i], accelKey.c_str(), accLength + 1);
+			userDefinedAccels[i] = new char[accelKey.length() + 1];
+			strncpy(userDefinedAccels[i], accelKey.c_str(), accelKey.length() + 1);
 			items[i].accelerator = userDefinedAccels[i];
 		} else {
 			userDefinedAccels[i] = NULL;

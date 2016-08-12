@@ -1340,7 +1340,7 @@ class RegexpSearch
 	stdregex::regex regexObject;
 
 public:
-	RegexpSearch::RegexpSearch() : use(false), valid(false) {}
+	RegexpSearch() : use(false), valid(false) {}
 
 	bool Init(const char *searchString, bool matchCase, bool wholeWord) {
 		stdregex::regex::flag_type flagsRe = stdregex::regex::ECMAScript;
