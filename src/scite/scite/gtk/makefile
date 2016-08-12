@@ -35,11 +35,11 @@ endif
 datadir=$(prefix)/share
 pixmapdir=$(datadir)/pixmaps
 bindir=$(prefix)/bin
-SYSCONF_PATH=$(prefix)/share/scite
+SYSCONF_PATH=$(prefix)/share/scite_with_python
 
 INSTALL=install
 
-PROG	= ../bin/SciTE
+PROG	= ../bin/SciTE_with_python
 
 all: $(PROG)
 
@@ -58,7 +58,13 @@ else
 CXXTFLAGS=-DNDEBUG -Os $(CXXBASEFLAGS)
 endif
 
-ifndef NO_LUA
+ifndef NO_PYTHON
+PY_OBJS = PythonExtension.o
+PY_LIBS = -lpython2.7
+INCLUDEDIRS=-I ../../scintilla/include -I ../src -I /usr/include/python2.7
+endif
+
+ifdef INCLUDE_LUA
 LUA_CORE_OBJS = lapi.o lcode.o ldebug.o ldo.o ldump.o lfunc.o lgc.o llex.o \
 		lmem.o lobject.o lopcodes.o lparser.o lstate.o lstring.o \
 		ltable.o ltm.o lundump.o lvm.o lzio.o
@@ -114,7 +120,7 @@ FilePath.o SciTEBase.o FileWorker.o Cookie.o Credits.o SciTEBuffers.o SciTEIO.o 
 ExportHTML.o ExportPDF.o ExportRTF.o ExportTEX.o ExportXML.o \
 MatchMarker.o StringHelpers.o \
 PropSetFile.o MultiplexExtension.o DirectorExtension.o SciTEProps.o StyleDefinition.o StyleWriter.o Utf8_16.o \
-	JobQueue.o GTKMutex.o IFaceTable.o $(COMPLIB) $(LUA_OBJS)
+	JobQueue.o GTKMutex.o IFaceTable.o $(COMPLIB) $(LUA_OBJS) $(PY_OBJS) $(PY_LIBS)
 	$(CXX) `$(CONFIGTHREADS)` -rdynamic -Wl,--as-needed -Wl,--version-script lua.vers -DGTK $^ -o $@ $(CONFIGLIB) $(LIBDL) -lm -lstdc++
 
 # Automatically generate header dependencies with "make deps"
@@ -128,21 +134,33 @@ install:
 
 	$(INSTALL) -m 755 $(PROG) $(DESTDIR)$(bindir)
 
-	for files in ../src/*.properties ../doc/*.html ../doc/SciTEIco.png ../doc/PrintHi.png; \
+	cp -r ../bin/doc $(DESTDIR)$(SYSCONF_PATH)/doc
+	chmod -R 0644 $(DESTDIR)$(SYSCONF_PATH)/doc
+	cp -r ../bin/properties $(DESTDIR)$(SYSCONF_PATH)/properties
+	chmod -R 0644 $(DESTDIR)$(SYSCONF_PATH)/properties
+	cp -r ../bin/tools_external $(DESTDIR)$(SYSCONF_PATH)/tools_external
+	chmod -R 0644 $(DESTDIR)$(SYSCONF_PATH)/tools_external
+	cp -r ../bin/tools_internal $(DESTDIR)$(SYSCONF_PATH)/tools_internal
+	chmod -R 0644 $(DESTDIR)$(SYSCONF_PATH)/tools_internal
+	
+	for files in ../bin/*.py ../bin/*.zip; \
 	do \
 		$(INSTALL) -m 644 $$files $(DESTDIR)$(SYSCONF_PATH); \
 	done
+	
+	# set directories to 755 to allow access
+	find $(DESTDIR)$(SYSCONF_PATH) -type d -exec chmod 755 {} \;
 
 ifdef gnomeprefix
 	$(INSTALL) -m 755 -d $(DESTDIR)$(datadir)/applications $(DESTDIR)$(pixmapdir)
-	$(INSTALL) -m 755 SciTE.desktop $(DESTDIR)$(datadir)/applications/SciTE.desktop
+	$(INSTALL) -m 755 SciTE_with_python.desktop $(DESTDIR)$(datadir)/applications/SciTE_with_python.desktop
 	$(INSTALL) -m 644 Sci48M.png $(DESTDIR)$(pixmapdir)/Sci48M.png
 endif
 
 uninstall:
-	rm -f $(DESTDIR)$(bindir)/SciTE
+	rm -f $(DESTDIR)$(bindir)/SciTE_with_python
 	rm -rf $(DESTDIR)$(SYSCONF_PATH)
 ifdef gnomeprefix
-	rm -f $(DESTDIR)$(datadir)/applications/SciTE.desktop
+	rm -f $(DESTDIR)$(datadir)/applications/SciTE_with_python.desktop
 	rm -f $(DESTDIR)$(pixmapdir)/Sci48M.png
 endif
