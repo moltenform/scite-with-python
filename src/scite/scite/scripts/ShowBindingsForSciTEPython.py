@@ -1,12 +1,12 @@
 
 # shows current keyboard bindings, includes
-# commands, languages, user.shortcuts, and menukey changes 
+# commands, languages, user.shortcuts, and menukey changes
 # from properties files.
-# 
+#
 # also, performs many checks to see if keyhandling logic has changed
 # -- this script intentionally throws errors if keyhandling logic has been updated,
 # -- in most cases, the response is just to copy/paste the new code into one of the excerpts below.
-# 
+#
 # this script requires SciTE+Scintilla sources to be present.
 # place this script in the /scite/src/scripts directory
 # running it will produce the two files
@@ -109,7 +109,7 @@ def getWindowsBindings(results, props, mapUserDefinedKeys):
 	
 	# --- std::vector<std::pair<int, int>>::iterator itAccels; (priority=75)
 	# --- SciteRes.rc gives menu items names like New\tCtrl+N
-	# --- previously the \tCtrl+N was purely decorational, but now code in 
+	# --- previously the \tCtrl+N was purely decorational, but now code in
 	# --- SciTEWin::LocaliseMenuAndReadAccelerators parses it out and makes it a real shortcut.
 	readFromSciTEResMenus(results, mapUserDefinedKeys)
 	
@@ -131,11 +131,14 @@ def adjustScintillaPriority(bindings):
 		if binding.priority <= 1:
 			binding.priority += 100
 
-def processDuplicatesInOutputFile(filepath):
+def processDuplicatesInOutputFile(filepath, adjustForAesthetics):
 	newContents = []
 	overridden = []
 	lastRowCells = []
 	for line in readall(filepath).replace('\r\n', '\n').split('\n'):
+		if adjustForAesthetics and line in filterLinesFromOutputForAesthetics:
+			continue
+		
 		if line.startswith('<tr><td>'):
 			lineCells = line.split('</td><td>')
 			if lineCells == lastRowCells:
@@ -147,7 +150,7 @@ def processDuplicatesInOutputFile(filepath):
 			else:
 				newContents.append(line)
 			lastRowCells = line.split('</td><td>')
-		elif overridden and line == '</table>':
+		elif overridden and not adjustForAesthetics and line == '</table>':
 			newContents.append('<tr><td colspan="4" align="center"><br />Bindings that were overridden<br /><br /></td></tr>')
 			for override in overridden:
 				newContents.append(override)
@@ -158,7 +161,12 @@ def processDuplicatesInOutputFile(filepath):
 	with open(filepath, 'w') as out:
 		out.write('\n'.join(newContents))
 
-def mainWithPython(propertiesMain, propertiesUser, rootDir):
+def mainWithPython(propertiesMain, propertiesUser, rootDir, adjustForAesthetics):
+	import sys
+	if sys.version_info[0] != 2:
+		print('currently, this script is not supported in python 3')
+		return
+	
 	assert os.path.isfile('../src/PythonExtension.cxx'), 'Did not see PythonExtension, please run ShowBindings.py instead.'
 	checkForAnyLogicChanges()
 	for platform in ('gtk', 'win32'):
@@ -172,18 +180,19 @@ def mainWithPython(propertiesMain, propertiesUser, rootDir):
 			'properties command (implicit)', 'properties command', 'Scintilla keymap']
 		if platform == 'gtk':
 			getGtkBindings(bindings, props, mapUserDefinedKeys)
-			expectedSets.extend(['KeyToCommand kmap[]', 'SciTEItemFactoryEntry'])
+			expectedSets.extend(['KeyToCommand kmap[]', 'SciTEItemFactoryEntry or user-defined'])
 		else:
 			getWindowsBindings(bindings, props, mapUserDefinedKeys)
 			adjustScintillaPriority(bindings)
 			expectedSets.extend(['SciTERes accel', 'menu text or user-defined'])
 		
+		bindings.reverse() # within a priority, generally the binding defined last wins.
 		bindings.sort(key=lambda obj: obj.getSortKey())
 		writeOutputFile(bindings, outputFile)
-		processDuplicatesInOutputFile(outputFile)
-		setsSeen = { item.setName:1 for item in bindings }
+		processDuplicatesInOutputFile(outputFile, adjustForAesthetics)
+		setsSeen = {item.setName: 1 for item in bindings}
 		if set(expectedSets) != set(key for key in setsSeen):
-			warn('''Warning: nothing found in %s, or saw unexpected %s''' %
+			warn('''Warning: saw no bindings from expected sets %s, or saw unexpected %s''' %
 				(set(expectedSets) - set(key for key in setsSeen),
 				set(key for key in setsSeen) - set(expectedSets)))
 
@@ -298,8 +307,11 @@ gint SciTEGTK::Key(GdkEventKey *event) {
 		if (item) {
 			long keycode = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), "key"));
 			if (keycode && SciTEKeys::MatchKeyCode(keycode, event->keyval, modifiers)) {
-				SciTEBase::MenuCommand(IDM_TOOLS + tool_i);
-				return 1;
+				bool toolRequestedThatEventShouldContinue = false;
+				SciTEBase::ToolsMenu(tool_i, &toolRequestedThatEventShouldContinue);
+				if (!toolRequestedThatEventShouldContinue) {
+					return 1l;
+				}
 			}
 		}
 	}
@@ -356,8 +368,11 @@ fragments.append(['SciTEWin::KeyDown', 'win32/SciTEWin.cxx', r'''LRESULT SciTEWi
 		mii.fMask = MIIM_DATA;
 		if (::GetMenuItemInfo(hToolsMenu, IDM_TOOLS+tool_i, FALSE, &mii) && mii.dwItemData) {
 			if (SciTEKeys::MatchKeyCode(static_cast<long>(mii.dwItemData), static_cast<int>(wParam), modifiers)) {
-				SciTEBase::MenuCommand(IDM_TOOLS+tool_i);
-				return 1l;
+				bool toolRequestedThatEventShouldContinue = false;
+				SciTEBase::ToolsMenu(tool_i, &toolRequestedThatEventShouldContinue);
+				if (!toolRequestedThatEventShouldContinue) {
+					return 1l;
+				}
 			}
 		}
 	}
@@ -499,7 +514,7 @@ fragments.append(['gtkStrip::KeyDown', 'gtk/Widget.cxx', r'''bool Strip::KeyDown
 	return retVal;
 }'''])
 
-fragments.append(['win32Strip::KeyDown', 'win32/strips.cxx', r'''bool Strip::KeyDown(WPARAM key) {
+fragments.append(['win32Strip::KeyDown', 'win32/Strips.cxx', r'''bool Strip::KeyDown(WPARAM key) {
 	if (!visible)
 		return false;
 	switch (key) {
@@ -718,6 +733,33 @@ fragments.append(['callsToAssignKey', 'src/SciTEProps.cxx', r'''	if (props.GetIn
 
 	scrollOutput = props.GetInt("output.scroll", 1);'''])
 
+filterLinesFromOutputForAesthetics = {r'''<tr><td>0</td><td>Ctrl+0</td><td>Lint</td><td>only *.pl;*.pm;*.pod</td></tr>''': 0,
+r'''<tr><td>0</td><td>Ctrl+0</td><td>Link</td><td>only *.asm</td></tr>''': 0,
+r'''<tr><td>0</td><td>Ctrl+0</td><td>Debug compile</td><td>only *.pas</td></tr>''': 0,
+r'''<tr><td>0</td><td>Ctrl+0</td><td>Execute selection</td><td>only *.bat</td></tr>''': 0,
+r'''<tr><td>0</td><td>Ctrl+0</td><td>Indent</td><td>only *.c;*.cc;*.cpp;*.cxx;*.h;*.hh;*.hpp;*.hxx;*.ipp;*.m;*.mm;*.sma</td></tr>''': 0,
+r'''<tr><td>2</td><td>Ctrl+2</td><td>Code profiler</td><td>only *.pl;*.pm;*.pod</td></tr>''': 0,
+r'''<tr><td>2</td><td>Ctrl+2</td><td>Bibtex</td><td>only *.tex;*.sty</td></tr>''': 0,
+r'''<tr><td>2</td><td>Ctrl+2</td><td>Gdb</td><td>only *.pas</td></tr>''': 0,
+r'''<tr><td>2</td><td>Ctrl+2</td><td>Bibtex</td><td>only *.tex;*.sty;*.aux;*.toc;*.idx</td></tr>''': 0,
+r'''<tr><td>2</td><td>Ctrl+2</td><td>Bibtex</td><td>only *.tex;*.tui;*.tuo;*.sty</td></tr>''': 0,
+r'''<tr><td>3</td><td>Ctrl+3</td><td>Profiler parser</td><td>only *.pl;*.pm;*.pod</td></tr>''': 0,
+r'''<tr><td>9</td><td>Ctrl+9</td><td>Debug build</td><td>only *.pas</td></tr>''': 0,
+r'''<tr><td>9</td><td>Ctrl+9</td><td>Nmake</td><td>only *.mak</td></tr>''': 0,
+r'''<tr><td>9</td><td>Ctrl+9</td><td>Check syntax</td><td>only *.pl;*.pm;*.pod</td></tr>''': 0,
+r'''<tr><td>2</td><td>Ctrl+2</td><td>Code profiler</td><td>only *.rb</td></tr>''': 0,
+r'''<tr><td>3</td><td>Ctrl+3</td><td>Ddd</td><td>only *.pas</td></tr>''': 0,
+r'''<tr><td>F9</td><td>F9</td><td>Macroplay</td><td></td></tr>''': 0,
+r'''<tr><td>F9</td><td>Shift+F9</td><td>List macros</td><td></td></tr>''': 0,
+r'''<tr><td>F9</td><td>Ctrl+F9</td><td>Macrorecord</td><td></td></tr>''': 0,
+r'''<tr><td>F9</td><td>Ctrl+Shift+F9</td><td>Macrostoprecord</td><td></td></tr>''': 0,
+r'''<tr><td>0</td><td>Alt+0</td><td>Open tab 10</td><td></td></tr>''': 0,
+r'''<tr><td>X</td><td>Ctrl+X</td><td>Line cut if no selection</td><td>from properties</td></tr>''': 0,
+r'''<tr><td>C</td><td>Ctrl+C</td><td>Line copy if no selection</td><td>from properties</td></tr>''': 0,
+r'''<tr><td>V</td><td>Ctrl+V</td><td>Line paste if clipboard has entire line</td><td>from properties</td></tr>''': 0,
+r'''<tr><td>M</td><td>Ctrl+Shift+M</td><td>Null</td><td>from properties</td></tr>''': 0,
+r'''<tr><td>Delete</td><td>Delete</td><td>Clear</td><td></td></tr>''': 0}
+
 def getFragment(fragmentName):
 	for arr in fragments:
 		if arr[0] == fragmentName:
@@ -810,11 +852,11 @@ def checkForAnyLogicChanges():
 	
 	for stripType in ('FindStrip', 'ReplaceStrip', 'UserStrip'):
 		start = '''bool %s::KeyDown(GdkEventKey *event) {''' % stripType
-		allFragments.append(['', 'gtk/SciTEGTK.cxx','\n'.join(retrieveCodeLines('../gtk/SciTEGTK.cxx', start, '}'))])
+		allFragments.append(['', 'gtk/SciTEGTK.cxx', '\n'.join(retrieveCodeLines('../gtk/SciTEGTK.cxx', start, '}'))])
 		
 	for stripType in ('BackgroundStrip', 'SearchStrip', 'FindStrip', 'ReplaceStrip', 'UserStrip'):
 		start = '''bool %s::KeyDown(WPARAM key) {''' % stripType
-		allFragments.append(['', 'win32/Strips.cxx','\n'.join(retrieveCodeLines('../win32/Strips.cxx', start, '}'))])
+		allFragments.append(['', 'win32/Strips.cxx', '\n'.join(retrieveCodeLines('../win32/Strips.cxx', start, '}'))])
 
 	for arr in fragments:
 		assert os.path.isfile(os.path.join('..', arr[1]))
@@ -844,8 +886,8 @@ def tests():
 	readFromScintillaKeyMapEntry(line.split(','), entriesRead)
 	line = r'''{SCK_LEFT,		SCI_NORM,	SCI_CHARLEFT},'''
 	readFromScintillaKeyMapEntry(line.split(','), entriesRead)
-	expected = '''Ctrl+U|Make Selection Lowercase|80|gtk|SciTEItemFactoryEntry
-Ctrl+Shift+Space|Show Calltip|80|gtk|SciTEItemFactoryEntry
+	expected = '''Ctrl+U|Make Selection Lowercase|80|gtk|SciTEItemFactoryEntry or user-defined
+Ctrl+Shift+Space|Show Calltip|80|gtk|SciTEItemFactoryEntry or user-defined
 Ctrl+N|IDM_NEW|80|win32|SciTERes accel
 F8|IDM_TOGGLEOUTPUT|80|win32|SciTERes accel
 Ctrl+Shift+Space|IDM_SHOWCALLTIP|80|win32|SciTERes accel
@@ -862,6 +904,7 @@ if __name__ == '__main__':
 	propertiesMain = '../bin/properties/SciTEGlobal.properties'
 	propertiesUser = None
 	rootDir = '../bin'
+	adjustForAesthetics = True
 	
 	msg = 'keymap.cxx not found, please download both the scintilla and scite sources and place this script in the /scite/src/scripts directory'
 	if not os.path.isfile('../../scintilla/src/KeyMap.cxx'):
@@ -869,4 +912,4 @@ if __name__ == '__main__':
 	elif not os.path.isfile('../gtk/SciTEGTK.cxx'	):
 		print(msg)
 	else:
-		mainWithPython(propertiesMain, propertiesUser, rootDir)
+		mainWithPython(propertiesMain, propertiesUser, rootDir, adjustForAesthetics)

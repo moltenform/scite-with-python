@@ -1,6 +1,6 @@
 
 # shows current keyboard bindings, includes
-# commands, languages, user.shortcuts, and menukey changes 
+# commands, languages, user.shortcuts, and menukey changes
 # from properties files.
 # this script requires SciTE+Scintilla sources to be present.
 # place this script in the /scite/src/scripts directory
@@ -81,7 +81,7 @@ class PropSetFile(object):
 			filename = s[len('import '):]
 			if filename == '*':
 				self._importStar()
-			else:
+			elif '/tools_personal/register' not in filename:
 				self.ReadFile(os.path.join(self.root, filename + '.properties'))
 			return
 		elif s.startswith('if PLAT_WIN'):
@@ -197,7 +197,7 @@ def writeOutputFile(bindings, outputFile):
 	mapSciteToString = getMapFromIdmToMenuText()
 	mapScintillaToString = getMapScintillaToString()
 	with open(outputFile, 'w') as out:
-		out.write(startFile.replace('%script%', __file__))
+		out.write(startFile.replace('%script%', os.path.split(__file__)[1]))
 		out.write("<h2>Current key bindings</h2>\n")
 		out.write("<table><tr><th> </th><th> </th><th> </th><th> </th></tr>\n")
 		for binding in bindings:
@@ -207,9 +207,9 @@ def writeOutputFile(bindings, outputFile):
 		out.write("</body>\n</html>\n")
 
 def renderCommand(command, mapSciteToString, mapScintillaToString):
-	if command.startswith('IDM_BUFFER+'):
-		num = command[len('IDM_BUFFER+'):]
-		command = 'buffer' + num
+	matchObj = re.match(r'(IDM_BUFFER\+|Buffer)([0-9])$', command)
+	if matchObj:
+		command = 'Open tab %d' % (int(matchObj.group(2)) + 1)
 	elif command in mapSciteToString:
 		command = mapSciteToString[command]
 	elif command in mapScintillaToString:
@@ -221,7 +221,6 @@ def renderCommand(command, mapSciteToString, mapScintillaToString):
 		
 	command = command[0].upper() + command[1:].lower()
 	command = command.replace('...', '')
-	command = command.replace('Buffer', 'Buffer ')
 	return command
 
 def writeOutputBinding(out, binding, mapSciteToString, mapScintillaToString):
@@ -279,7 +278,7 @@ def readFromSciTEItemFactoryEntry(parts, bindings, mapUserDefinedKeys):
 		accel = userDefined or accel
 		accel = accel.replace('>space', '>Space')
 		if accel and accel != 'NULL':
-			bindings.append(KeyBinding('SciTEItemFactoryEntry', name, accel, priority=80, platform='gtk'))
+			bindings.append(KeyBinding('SciTEItemFactoryEntry or user-defined', name, accel, priority=80, platform='gtk'))
 
 def readFromSciTEResAccelTableEntry(parts, bindings):
 	key, command, modifiers = [part.strip() for part in parts]
@@ -308,7 +307,7 @@ def readFromScintillaKeyMapEntry(parts, bindings):
 		key = key[len('SCK_'):]
 		key = key[0] + key[1:].lower()
 		
-	map=dict(SCI_CTRL=(True, False, False), SCI_ALT=(False, True, False), SCI_SHIFT=(False, False, True), 
+	map = dict(SCI_CTRL=(True, False, False), SCI_ALT=(False, True, False), SCI_SHIFT=(False, False, True),
 		SCMOD_META=(True, False, False), SCI_CSHIFT=(True, False, True), SCI_ASHIFT=(False, True, True),
 		SCI_SCTRL_META=(True, False, True), SCI_CTRL_META=(True, False, False), SCI_NORM=(False, False, False))
 	binding = KeyBinding('Scintilla keymap', command, priority=0, platform='any')
@@ -362,6 +361,11 @@ def readFromScintillaKeyMap(bindings):
 				readFromScintillaKeyMapEntry(parts, bindings)
 
 def main(propertiesMain, propertiesUser):
+	import sys
+	if sys.version_info[0] != 2:
+		print('currently, this script is not supported in python 3')
+		return
+	
 	assert not os.path.isfile('../src/PythonExtension.cxx'), 'Please run ShowBindingsForSciTEPython.py instead.'
 	for platform in ('gtk', 'win32'):
 		props = getAllProperties(propertiesMain, propertiesUser, platform)
@@ -421,7 +425,7 @@ class KeyBinding(object):
 		return s + self.keyChar
 		
 	def getSortKey(self):
-		return (self.keyChar, self.control, self.alt, self.shift, self.priority, self.command)
+		return (self.keyChar, self.control, self.alt, self.shift, self.priority)
 	
 	def __repr__(self):
 		return '|'.join((self.getKeyString(), self.command, str(self.priority), self.platform, self.setName))

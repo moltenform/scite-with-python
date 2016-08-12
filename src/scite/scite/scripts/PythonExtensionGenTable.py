@@ -185,6 +185,11 @@ def getMap():
 	return map
 
 def go():
+	import sys
+	if sys.version_info[0] != 2:
+		print('currently, this script is not supported in python 3')
+		return
+	
 	map = getMap()
 	results = []
 	for line in open(pathToSciteH):
@@ -208,5 +213,5 @@ def go():
 		print(line)
 	
 if __name__ == "__main__":
-	pathToSciteH = '../src/Scite.h'
+	pathToSciteH = '../src/SciTE.h'
 	go()

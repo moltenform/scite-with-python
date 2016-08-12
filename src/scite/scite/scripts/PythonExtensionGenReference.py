@@ -226,16 +226,28 @@ def writeScAppMethodsToFile(out):
 	mapIdmToText = getMapFromIdmToMenuText()
 	methodsIdm = getLinesFromPythonExtensionSrc()
 	addPythonDefinedAppMethods(mapIdmToText, methodsIdm)
-	includeEvenWithNoText = dict(CmdFindNextBackSel=1, CmdFindNextSel=1, CmdMoveTabLeft=1,
-		CmdMoveTabRight=1, CmdNextFileStack=1, CmdPrevFileStack=1, CmdPasteAndDown=1)
+	fillInMissing = dict(CmdActivate='Activate', CmdAllowAccess='(hide)', CmdBuffer='(hide)',
+		CmdBufferSep='(hide)', CmdDirectionDown='(hide)', CmdDirectionUp='(hide)', CmdEnterSelection='(hide)',
+		CmdExpandEnsureChildrenVisible='Ensure children visible', CmdFiler='(hide)',
+		CmdBookmarkNextSelect='Select to next bookmark',
+		CmdBookmarkPrevSelect='Select to prev bookmark',
+		CmdFindNextBackSel='Find prev and select what is found',
+		CmdFindNextSel='Find next and select what is found',
+		CmdFinishedExecute='(hide)', CmdImport='(hide)', CmdLanguage='(hide)', CmdMacroList='(hide)',
+		CmdMacroPlay='(hide)', CmdMacroRecord='(hide)', CmdMacroSep='(hide)', CmdMacroStopRecord='(hide)',
+		CmdMatchCase='(hide)', CmdMruFile='(hide)', CmdMruSep='(hide)', CmdMruSub='(hide)',
+		CmdNextMatchPpc='Go to next preprocessor section',
+		CmdPrevMatchPpc='Go to prev preprocessor section',
+		CmdRegexp='(hide)', CmdRunWin='(hide)',
+		CmdSelectToNextMatchPpc='Select to next preprocessor section',
+		CmdSelectToPrevMatchPpc='Select to prev preprocessor section',
+		CmdSelectionForFind='(hide)', CmdSrcWin='(hide)', CmdStatusWin='(hide)',
+		CmdTabWin='(hide)', CmdToolWin='(hide)', CmdTools='(hide)', CmdWholeWord='(hide)')
 	for idm_name, methodName in methodsIdm:
-		text = mapIdmToText.get(idm_name, None)
-		if text is None:
-			if methodName in includeEvenWithNoText:
-				text = ''
-			else:
-				continue
-				
+		text = mapIdmToText.get(idm_name, '') or fillInMissing.get(methodName, '')
+		if text == '(hide)':
+			continue
+		
 		if '(' not in methodName:
 			methodName = methodName + '()'
 		methodName = 'ScApp.' + methodName
@@ -429,8 +441,13 @@ def writeScConstMethods(out):
 	out.write("</table>\n")
 
 def RegenerateAll():
+	import sys
+	if sys.version_info[0] != 2:
+		print('currently, this script is not supported in python 3')
+		return
+	
 	with open("../bin/doc/SciTEWithPythonAPIReference.html", "w") as out:
-		out.write(startFile.replace('%script%', __file__))
+		out.write(startFile.replace('%script%', os.path.split(__file__)[1]))
 		writeScAppMethods(out)
 		writeScEditorMethods(out)
 		writeScConstMethods(out)
