@@ -5,6 +5,7 @@
 #include <string.h>
 #include <ctype.h>
 
+#include <string>
 #include <sstream>
 #include <vector>
 #include <algorithm>
@@ -27,8 +28,20 @@
 #define std_unordered_set std::unordered_set
 #endif
 
+#include "SciTE.h"
+#include "Scintilla.h"
+#include "Extender.h"
+#include "SciTEKeys.h"
+#include "IFaceTable.h"
 #include "PythonExtension.h"
-#include "..\python\include\python.h"
+
+#ifdef _WIN32
+#include "..\python\include\Python.h"
+#define countof _countof
+#else
+#include "Python.h"
+#define countof(arr) (sizeof(arr) / sizeof((arr)[0]))
+#endif
 
 // name of the python module to run on startup
 static const char* c_PythonModuleName = "scite_extend_ui";
@@ -407,6 +420,7 @@ public:
 		module.Attach(PyImport_Import(stringModuleName));
 		if (!module)
 		{
+			PyErr_Print();
 			trace_error("Failure importing module");
 			return false;
 		}
@@ -438,7 +452,7 @@ public:
 			return false;
 		}
 		
-		PyObjectOwned getBuiltins = PyImport_ImportModule("__builtin__");
+		PyObjectOwned getBuiltins(PyImport_ImportModule("__builtin__"));
 		if (!getBuiltins)
 		{
 			trace_error("Could not find Python builtins.");
@@ -539,7 +553,7 @@ public:
 			return true;
 		}
 		
-		PyObjectOwned result = PyRun_String(cmd, Py_file_input, runStringGlobals, runStringLocals);
+		PyObjectOwned result(PyRun_String(cmd, Py_file_input, runStringGlobals, runStringLocals));
 		if (PyErr_Occurred() && PyErr_ExceptionMatches(classRequestEventPropagate))
 		{
 			// this special exception means we should say that the event was not handled.
@@ -586,14 +600,14 @@ public:
 		}
 		
 		PyObject* eventName = cachedStrings[eventNumber];
-		PyObjectOwned fullArgs = Py_BuildValue("OO", eventName, (PyObject*)args);
+		PyObjectOwned fullArgs(Py_BuildValue("OO", eventName, (PyObject*)args));
 		if (!fullArgs)
 		{
 			trace_error("Error building full args.");
 			return false;
 		}
 		
-		PyObjectOwned result = PyObject_CallObject(functionOnEvent, fullArgs);
+		PyObjectOwned result(PyObject_CallObject(functionOnEvent, fullArgs));
 		if (!result)
 		{
 			trace_error("Error in callback.", EventNumberToString(eventNumber));
@@ -774,7 +788,7 @@ PyObject* pyfun_MessageBox(PyObject*, PyObject* args)
 	if (PyArg_ParseTuple(args, "s", &msg) && msg)
 	{
 #ifdef _WIN32
-		MessageBoxA(NULL, msg, "SciTEPython", 0);
+		::MessageBoxA(NULL, msg, "SciTE", 0);
 #endif
 		return IncrefAndReturnNone();
 	}
@@ -1053,7 +1067,7 @@ void GetPythonString(PyObject* arg, const char** str, size_t* len, bool optional
 IFaceFunction SearchForFunction(const char* name, std::string& nameFound)
 {
 	// first, look for a function. Some functions begin with the string "Get", but aren't a property.
-	IFaceFunction empty = {0};
+	IFaceFunction empty = IFaceFunction();
 	int index = IFaceTable::FindFunction(name);
 	if (index >= 0)
 	{
@@ -1690,8 +1704,8 @@ void PythonExtension::SetupPythonNamespace()
 		"import SciTEModule\n"
 		"import sys\n"
 		"class StdoutCatcher:\n"
-		"    def write(self, str):\n"
-		"        SciTEModule.LogStdout(str)\n"
+		"    def write(self, s):\n"
+		"        SciTEModule.LogStdout(s)\n"
 		"sys.stdout = StdoutCatcher()\n"
 		"sys.stderr = StdoutCatcher()\n"
 	);
@@ -1998,5 +2012,5 @@ static IFaceConstant rgFriendlyNamedIDMConstants[] =
 };
 
 const IFaceConstant* const PythonExtension::constantsTable = rgFriendlyNamedIDMConstants;
-const size_t PythonExtension::constantsTableLen = _countof(rgFriendlyNamedIDMConstants);
+const size_t PythonExtension::constantsTableLen = countof(rgFriendlyNamedIDMConstants);
 

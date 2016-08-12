@@ -53,6 +53,10 @@
 #include "LuaExtension.h"
 #endif
 
+#ifndef NO_PYTHON
+#include "PythonExtension.h"
+#endif
+
 #endif
 
 #include "SciTE.h"
@@ -5389,6 +5393,9 @@ int main(int argc, char *argv[]) {
 
 #ifndef NO_LUA
 	multiExtender.RegisterExtension(LuaExtension::Instance());
+#endif
+#ifndef NO_PYTHON
+	multiExtender.RegisterExtension(PythonExtension::Instance());
 #endif
 #ifndef NO_FILER
 	multiExtender.RegisterExtension(DirectorExtension::Instance());

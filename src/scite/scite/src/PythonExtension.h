@@ -1,13 +1,7 @@
 // SciTE Python Extension
 // Ben Fisher, 2016
 
-#include <string>
-#include "Scite.h"
-#include "Scintilla.h"
-#include "Extender.h"
-
-#include "SciTEKeys.h"
-#include "IFaceTable.h"
+struct IFaceConstant;
 
 enum EventNumber
 {
