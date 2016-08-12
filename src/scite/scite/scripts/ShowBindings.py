@@ -1,23 +1,36 @@
 
-# shows current keyboard bindings, includes
-# commands, languages, user.shortcuts, and menukey changes
-# from properties files.
-# this script requires SciTE+Scintilla sources to be present.
-# place this script in the /scite/src/scripts directory
-# running it will produce the two files
-# CurrentBindingsGtk.html
-# CurrentBindingsWin32.html
+# ShowBindings.py (Python 2)
+# looks through SciTE source code and user properties,
+# and creates an html file showing current bindings
+# usage:
+#		download SciTE and Scintilla source
+#		place this script in the scite/src/scripts directory
+#		edit the pathPropertiesMain = line to point to your global properties file
+#		edit the pathPropertiesUser = line to point to your user properties file (or None)
+# 		run the script, which creates CurrentBindings_platform.html in current directory.
+# features:
+# 		reads properties files and follows import statements
+# 		includes *language bindings in properties
+# 		includes user.shortcuts bindings in properties
+# 		includes command.shortcut bindings in properties
+# 		includes custom menukey bindings in properties
+# 		includes Scintilla bindings
+# 		includes bindings from SciTE source code that aren't shown in menus
+
+pathPropertiesMain = '/path/to/SciTEGlobal.properties'
+pathPropertiesUser = '/path/to/SciTEUser.properties'
+pathOutputFile = './CurrentBindings_$platform.html'
 
 import os
 import re
 
 class PropSetFile(object):
-	def __init__(self, platform, root):
+	def __init__(self, platform):
 		self.props = dict()
 		self.platform = platform
-		self.root = root
-		self.condition = None
 		self.filesSeen = dict()
+		self.root = None
+		self.condition = None
 
 	def GetString(self, key):
 		return self.props.get(key, '')
@@ -115,12 +128,13 @@ class PropSetFile(object):
 			else:
 				self.props[parts[0]] = parts[1]
 
-def getAllProperties(propertiesMain, propertiesUser, platform, rootDir=None):
-	rootDir = rootDir or os.path.split(propertiesMain)[0]
-	props = PropSetFile(platform, rootDir)
+def getAllProperties(propertiesMain, propertiesUser, platform, overrideDir=None):
+	props = PropSetFile(platform)
 	if propertiesMain:
+		props.root = overrideDir or os.path.split(propertiesMain)[0]
 		props.ReadFile(propertiesMain)
 	if propertiesUser:
+		props.root = os.path.split(propertiesUser)[0]
 		props.ReadFile(propertiesUser)
 	return props
 
@@ -193,15 +207,22 @@ def getMapFromIdmToMenuText():
 				map[symbol] = text
 	return map
 
-def writeOutputFile(bindings, outputFile):
+def writeOutputFile(bindings, outputFile, includeDuplicates=False):
 	mapSciteToString = getMapFromIdmToMenuText()
 	mapScintillaToString = getMapScintillaToString()
+	prevLine = None
 	with open(outputFile, 'w') as out:
-		out.write(startFile.replace('%script%', os.path.split(__file__)[1]))
+		scriptname = os.path.split(__file__)[1].replace('.pyc', '.py')
+		out.write(startFile.replace('%script%', scriptname))
 		out.write("<h2>Current key bindings</h2>\n")
 		out.write("<table><tr><th> </th><th> </th><th> </th><th> </th></tr>\n")
 		for binding in bindings:
-			writeOutputBinding(out, binding, mapSciteToString, mapScintillaToString)
+			line = writeOutputBinding(binding, mapSciteToString, mapScintillaToString)
+			if includeDuplicates or line != prevLine:
+				# skip redundant entry; SciTE and Scintilla will sometimes define the same binding.
+				out.write(line)
+			
+			prevLine = line
 			
 		out.write("</table>\n")
 		out.write("</body>\n</html>\n")
@@ -223,18 +244,20 @@ def renderCommand(command, mapSciteToString, mapScintillaToString):
 	command = command.replace('...', '')
 	return command
 
-def writeOutputBinding(out, binding, mapSciteToString, mapScintillaToString):
-	out.write('<tr><td>%s</td>' % escapeXml(binding.keyChar))
-	out.write('<td>%s</td>' % escapeXml(binding.getKeyString()))
-	out.write('<td>%s</td>' % escapeXml(
-		renderCommand(binding.command, mapSciteToString, mapScintillaToString)))
+def writeOutputBinding(binding, mapSciteToString, mapScintillaToString):
+	s = ''
+	s += '<tr><td>%s</td>' % escapeXml(binding.keyChar)
+	s += '<td>%s</td>' % escapeXml(binding.getKeyString())
+	s += '<td>%s</td>' % escapeXml(
+		renderCommand(binding.command, mapSciteToString, mapScintillaToString))
 	notes = ''
 	if '*' in binding.platform:
 		notes += 'only %s' % binding.platform
 	elif 'properties' in binding.setName:
 		notes += 'from properties'
 	
-	out.write('<td>%s</td></tr>\n' % escapeXml(notes))
+	s += '<td>%s</td></tr>\n' % escapeXml(notes)
+	return s
 
 def getMapScintillaToString():
 	import re
@@ -360,17 +383,18 @@ def readFromScintillaKeyMap(bindings):
 			else:
 				readFromScintillaKeyMapEntry(parts, bindings)
 
-def main(propertiesMain, propertiesUser):
+def main(propertiesMain, propertiesUser, outputFileTemplate):
 	import sys
 	if sys.version_info[0] != 2:
-		print('currently, this script is not supported in python 3')
+		print('this script is not supported in python 3')
 		return
 	
+	assert '$platform' in outputFileTemplate, 'outputFile should include $platform.'
 	assert not os.path.isfile('../src/PythonExtension.cxx'), 'Please run ShowBindingsForSciTEPython.py instead.'
 	for platform in ('gtk', 'win32'):
 		props = getAllProperties(propertiesMain, propertiesUser, platform)
 		platformCapitalized = platform[0].upper() + platform[1:]
-		outputFile = 'CurrentBindings%s.html' % platformCapitalized
+		outputFile = outputFileTemplate.replace('$platform', platformCapitalized)
 		bindings = []
 		readFromScintillaKeyMap(bindings)
 		addCallsToAssignKeyBindings(bindings, props)
@@ -584,7 +608,7 @@ span=a\
 b\
 c
 testfileendswithslash=test''' + '\\'
-	props = PropSetFile('gtk', '.')
+	props = PropSetFile('gtk')
 	props.ReadString(propstring)
 	assertEq('b=c', props.GetString('a'))
 	assertEq('abc', props.GetString('span'))
@@ -594,13 +618,10 @@ testfileendswithslash=test''' + '\\'
 	
 if __name__ == '__main__':
 	tests()
-	propertiesMain = '../bin/SciTEGlobal.properties'
-	propertiesUser = None
-	
 	msg = 'keymap.cxx not found, please download both the scintilla and scite sources and place this script in the /scite/src/scripts directory'
 	if not os.path.isfile('../../scintilla/src/KeyMap.cxx'):
 		print(msg)
-	elif not os.path.isfile('../gtk/SciTEGTK.cxx'	):
+	elif not os.path.isfile('../gtk/SciTEGTK.cxx'):
 		print(msg)
 	else:
-		main(propertiesMain, propertiesUser)
+		main(pathPropertiesMain, pathPropertiesUser, pathOutputFile)
