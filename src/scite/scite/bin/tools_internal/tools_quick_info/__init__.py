@@ -57,13 +57,8 @@ class BaseAskChoiceStoredData(object):
                 print('Nothing is currently stored in this field.')
         else:
             import wincommondialog
-            defaultText = currentContents if currentContents else self.getDefaultForNewInput()
-            value = wincommondialog.askInput('Please enter a value for ' + choiceId +
-                ', or type "clip" to use current clipboard contents:', default=defaultText)
-            
+            value = self.getValueForInput()
             if value:
-                if value.strip() == 'clip':
-                    value = ben_python_common.getClipboardText()
                 self.storeData(choiceId, value)
                 self.onStore(choiceId, value)
     
@@ -91,8 +86,8 @@ class BaseAskChoiceStoredData(object):
             currentPrintable = currentPrintable[0:200] + '...'
         return currentPrintable
         
-    def getDefaultForNewInput(self):
-        return ''
+    def getValueForInput(self):
+        raise NotImplementedError()
         
     def onStore(self, choiceId, value):
         print('Stored the value %s' % (self.printable(value)))
@@ -104,9 +99,14 @@ class AskChoiceStoredFilepath(BaseAskChoiceStoredData):
         print('Opening file:%s' % self.printable(value))
         ScApp.OpenFile(value)
         
-    def getDefaultForNewInput(self):
+    def getValueForInput(self):
         from scite_extend_ui import ScApp
-        return ScApp.GetFilePath()
+        val = ScApp.GetFilePath()
+        if not val:
+            print('No file open')
+            return None
+        else:
+            return val
         
     def getRetrieveLabel(self):
         return 'open'
@@ -117,18 +117,34 @@ class AskChoiceStoredDirectory(BaseAskChoiceStoredData):
         print('Opening directory:%s' % self.printable(value))
         ben_python_common.files.openDirectoryInExplorer(value)
         
-    def getDefaultForNewInput(self):
+    def getValueForInput(self):
+        import os
         from scite_extend_ui import ScApp
-        return ScApp.GetFileDirectory()
+        val = ScApp.GetFilePath()
+        if not val:
+            print('No file open')
+            return None
+        else:
+            return os.path.split(val)[0]
     
     def getRetrieveLabel(self):
         return 'open'
 
 class AskChoiceStoredString(BaseAskChoiceStoredData):
     def onRetrieve(self, choiceId, value):
+        from scite_extend_ui import ScEditor
         print('Copying text to clipboard:%s' % self.printable(value))
-        ben_python_common.setClipboardText(value)
-        
+        ScEditor.Utils.SetClipboardText(value)
+
+    def getValueForInput(self):
+        from scite_extend_ui import ScEditor
+        val = ScEditor.GetSelectedText()
+        if not val:
+            print('First, please select some text.')
+            return None
+        else:
+            return val
+
     def getRetrieveLabel(self):
         return 'copy'
 
@@ -156,11 +172,11 @@ class QuickInfo(object):
     def go(self):
         from scite_extend_ui import ScAskUserChoiceByPressingKey
         self.choices = ['O|storedfilename_get|open stored filename...',
-        'P|storedfilename_set|set stored filename...\n',
+        'P|storedfilename_set|store current filename...\n',
         'J|storeddirectory_get|open stored directory...',
-        'K|storeddirectory_set|set stored directory...\n',
-        'T|storedstring_get|open stored string...',
-        'Y|storedstring_set|set stored string...\n',
+        'K|storeddirectory_set|store current directory...\n',
+        'T|storedstring_get|open stored text...',
+        'Y|storedstring_set|store selected text...\n',
         'L|listfiles|list files in this directory',
         'M|listfilesext|list files, sort by extension',
         'Z|openscratchfile|open scratch file']
@@ -232,6 +248,9 @@ class ShowFileChoiceList(object):
     def go(self):
         from scite_extend_ui import ScAskUserChoiceByPressingKey
         import string
+        if not self.dir:
+            return
+        
         self.fileList = getFileList(self.dir, sortByExtension=False)
         self.choices = ['U|updirectory|Go up a directory...']
         availableLetters = string.digits + string.uppercase.replace('U', '')
