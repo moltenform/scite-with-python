@@ -93,12 +93,13 @@ def getQuoteReplacement(character, language, style):
             return dblQuote
         
 def onTypeQuote(character):
-    from scite_extend_ui import ScEditor
-    style = ScEditor.GetStyleAt(ScEditor.GetCurrentPos())
-    replacement = getQuoteReplacement(character, ScEditor.GetLexerLanguage(), style)
-    if replacement:
-        ScEditor.ReplaceSel(chr(replacement))
-        ScEditor.GotoPos(ScEditor.GetCurrentPos() - 1)
+    from scite_extend_ui import ScApp, ScEditor
+    if ScApp.GetProperty('auto.close.quotes') == '1':
+        style = ScEditor.GetStyleAt(ScEditor.GetCurrentPos())
+        replacement = getQuoteReplacement(character, ScEditor.GetLexerLanguage(), style)
+        if replacement:
+            ScEditor.ReplaceSel(chr(replacement))
+            ScEditor.GotoPos(ScEditor.GetCurrentPos() - 1)
 
 def showStyles():
     from scite_extend_ui import ScEditor
