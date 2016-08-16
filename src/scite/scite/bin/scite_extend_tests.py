@@ -22,7 +22,7 @@ import sys
 
 # run provided methods and IDM commands
 testForAppFunctions = [
-    ('Edit the scitedoc.html file', lambda: ScApp.OpenFile(os.path.join(ScApp.GetSciteDirectory(), 'doc', 'SciTEDoc.html'))),
+    ('Edit the CurrentBindingsGtk.html file', lambda: ScApp.OpenFile(os.path.join(ScApp.GetSciteDirectory(), 'doc', 'CurrentBindingsGtk.html'))),
     ('Make selection lowercase', lambda: ScApp.CmdLowerCase()),
     ('Duplicate current line', lambda: ScApp.CmdDuplicate()),
     ('Select all', lambda: ScApp.CmdSelectAll()),

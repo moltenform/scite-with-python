@@ -8,7 +8,7 @@ debugTracing = False
 class ScAppClass(object):
     '''
     Methods starting with "Cmd" are routed to SciTE,
-    See SciTEWithPythonAPIReference.html for a list of supported methods.
+    See http://downpoured.github.io/scite-with-python/070/pythonapi.html for a list of supported methods.
     example:
         from scite_extend_ui import ScApp
         ScApp.Trace('test')
@@ -109,7 +109,7 @@ class ScAppClass(object):
         raise RequestThatEventContinuesToPropagate()
         
     def __getattr__(self, s):
-        '''Run a command, see the full list in SciTEWithPythonAPIReference.html'''
+        '''Run a command, see the full list in http://downpoured.github.io/scite-with-python/070/pythonapi.html'''
         if s.startswith('Cmd'):
             # return a callable object; it looks like a method to the caller.
             commandName = s[len('Cmd'):]
@@ -126,7 +126,7 @@ class ScConstClass(object):
         ScEditor.SearchNext(matchType, 'a')
         color = ScConst.MakeColor(0, 250, 200)
         ScEditor.SetMarkerBack(1, color)
-    See SciTEWithPythonAPIReference.html for a list of constants.
+    See http://downpoured.github.io/scite-with-python/070/pythonapi.html for a list of constants.
     '''
     def __init__(self):
         self.eventTypeUnknown = 0
@@ -243,7 +243,7 @@ class ScPaneClass(object):
     represents a Scintilla window.
     ScEditor is an instance of this class representing the main code editor.
     ScOutput is an instance of this class representing the output pane.
-    See SciTEWithPythonAPIReference.html for a list of supported methods.
+    See http://downpoured.github.io/scite-with-python/070/pythonapi.html for a list of supported methods.
     example:
         from scite_extend_ui import ScEditor
         print('language is ' + ScEditor.GetLexerLanguage())
@@ -306,7 +306,7 @@ class ScPaneClass(object):
 
     # redirect most methods on this object to call into Scintilla.
     def __getattr__(self, sprop):
-        '''See SciTEWithPythonAPIReference.html for a list of supported methods.'''
+        '''See http://downpoured.github.io/scite-with-python/070/pythonapi.html for a list of supported methods.'''
         if sprop.startswith('_'):
             raise AttributeError()
         else:
