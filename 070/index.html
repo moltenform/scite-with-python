@@ -1,0 +1,48 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta http-equiv="content-language" content="en">
+    <link rel="stylesheet" type="text/css" href="../github-markdown.css">
+<title>Test</title>
+  </head>
+  <body class="markdown-body" style="margin:3em">
+<h1>SciTE-with-Python</h1>
+
+<p>A fork of the SciTE code editor that adds Python extensiblity. In addition to standard multi-tab code editing, this project lets you create plugins to help you write code more efficiently.</p>
+
+<ul><li><p>plugins can use the Python standard library, for example,</p><ul><li>sorting the selected lines of text</li></ul><ul><li><p>restyling ranges of text to underline or highlight</p></li><li><p>automating nearly every editor action</p></li><li><p>showing an interactive GUI inside the code editor</p></li><li><p>shelling out to other tools with Python's subprocess</p></li></ul></li><li><p>plugins can register for events like OnKey, OnOpen, and OnSave, for example,</p><ul><li>letting you listen for multi-key keyboard shortcuts</li></ul><ul><li><p>auto-completing xml tags, or writing snippets a la TextMate</p></li><li><p>showing file metadata when files are opened</p></li></ul></li><li><p>additions to SciTE include</p><ul><li>use "menukey" to customize keyboard bindings</li></ul><ul><li><p>find-text-in-files now has regular expression support</p></li><li><p>when multiple editor windows are open, the search state is shared</p></li><li><p>26 plugins for manipulating text, finding filenames, and navigating to declaration/definition of the selection in C source code</p></li></ul></li></ul>
+
+<h2>Documentation</h2>
+
+<p><a href="usage.html">usage</a></p>
+
+<p><a href="writingplugins.html">writing plugins</a></p>
+
+<p><a href="compile_for_windows.html">compiling for Windows</a></p>
+
+<h2>Windows</h2>
+
+<ul><li><p>install <a href="https://www.python.org/downloads/windows/">Python 2.7</a>, select Windows x86 MSI installer</p></li><li><p>download <a href="release">scite-with-python.zip</a> and uncompress</p></li><li><p>open SciTE.exe</p></li></ul>
+
+<h2>Linux</h2>
+
+<pre><code># install prereqs
+sudo apt-get install libgtk2.0-dev
+sudo apt-get install python2.7-dev
+
+# build scintilla and scite
+mkdir ~/scite-with-python
+cd ~/scite-with-python
+git clone https://github.com/downpoured/scite-with-python.git
+cd scite-with-python/src/scite/scintilla/gtk
+make
+cd ../../scite/gtk
+make
+sudo make install
+
+# run scite
+/usr/bin/SciTE_with_python</code></pre>
+</body>
+</html>
