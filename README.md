@@ -14,8 +14,6 @@ A fork of the SciTE code editor that adds Python extensiblity. In addition to st
     
     * shelling out to other tools with Python's subprocess
     
-    * uploading files via FTP with Python's ftplib
-    
 * plugins can register for events like OnKey, OnOpen, and OnSave, for example,
 
     * letting you listen for multi-key keyboard shortcuts
@@ -33,12 +31,20 @@ A fork of the SciTE code editor that adds Python extensiblity. In addition to st
     * when multiple editor windows are open, the search state is shared
     
     * 26 plugins for manipulating text, finding filenames, and navigating to declaration/definition of the selection in C source code
+    
+## Documentation
+
+[usage and features](https://downpoured.github.io/scite-with-python/070/usage_and_features.html)
+
+[writing plugins](https://downpoured.github.io/scite-with-python/070/writing_plugins.html)
+
+[compiling for Windows](https://downpoured.github.io/scite-with-python/070/compile_for_windows.html)
 
 ## Windows
 
 * install [Python 2.7](https://www.python.org/downloads/windows/), select Windows x86 MSI installer
 
-* download [scite-with-python.zip](release.zip) and uncompress
+* download scite-with-python.zip from [scite-with-python](https://github.com/downpoured/scite-with-python) and uncompress 
 
 * open SciTE.exe
 
@@ -60,12 +66,4 @@ A fork of the SciTE code editor that adds Python extensiblity. In addition to st
 
     # run scite
     /usr/bin/SciTE_with_python
-
-## Documentation
-
-[usage](usage.md)
-
-[writing plugins](writingplugins.md)
-
-[compiling for Windows](compile_for_windows.md)
 

@@ -475,7 +475,7 @@ void SciTEBase::SetAboutMessage(GUI::ScintillaWindow &wsci, const char *appTitle
 		sVersion += " ";
 #if defined(GTK)
 		wsci.CallString(SCI_STYLESETFONT, STYLE_DEFAULT, "Serif");
-		int fontSize = 14;
+		int fontSize = 12;
 		sVersion += "compiled for GTK+ ";
 		sVersion += StdStringFromInteger(GTK_MAJOR_VERSION);
 		sVersion += ".";
@@ -483,7 +483,7 @@ void SciTEBase::SetAboutMessage(GUI::ScintillaWindow &wsci, const char *appTitle
 		sVersion += ".";
 		sVersion += StdStringFromInteger(GTK_MICRO_VERSION);
 #else
-		int fontSize = 15;
+		int fontSize = 13;
 #endif
 		sVersion += "\n";
 
@@ -509,9 +509,12 @@ void SciTEBase::SetAboutMessage(GUI::ScintillaWindow &wsci, const char *appTitle
 		wsci.Call(SCI_STYLESETITALIC, 2, 1);
 		AddStyledText(wsci, GetTranslationToAbout("by").c_str(), trsSty);
 		AddStyledText(wsci, " Neil Hodgson.\n", 2);
+		AddStyledText(wsci, "Python extension and built-in tools\n", trsSty);
+		AddStyledText(wsci, GetTranslationToAbout("by").c_str(), trsSty);
+		AddStyledText(wsci, " Ben Fisher.\n", 2);
 		SetAboutStyle(wsci, 3, ColourRGB(0, 0, 0));
-		AddStyledText(wsci, COPYRIGHT_DATES ".\n", 3);
 		SetAboutStyle(wsci, 4, ColourRGB(0, 0x7f, 0x7f));
+		AddStyledText(wsci, "http://downpoured.github.io/scite-with-python/070\n", 4);
 		AddStyledText(wsci, "http://www.scintilla.org\n", 4);
 		AddStyledText(wsci, "Lua scripting language by TeCGraf, PUC-Rio\n", 3);
 		AddStyledText(wsci, "    http://www.lua.org\n", 4);
