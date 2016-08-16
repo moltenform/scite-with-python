@@ -1,6 +1,0 @@
-
-# sequence of operations to go from standard Scite Windows download to this custom package
-# steps written so that when a new version of Scite is released, these steps can be taken
-
-# --------------------------
-

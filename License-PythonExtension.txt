@@ -1,3 +1,7 @@
+Applies to all Python scripts (files with extension .py) under src/scite/scite/bin
+SciTE-with-Python, by Ben Fisher
+https://github.com/downpoured/scite-with-python
+
                     GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
 
