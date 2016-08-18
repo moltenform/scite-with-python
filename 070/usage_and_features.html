@@ -1,0 +1,117 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta http-equiv="content-language" content="en">
+    <link rel="stylesheet" type="text/css" href="../github-markdown.css">
+<title>SciTE-with-Python</title>
+  </head>
+  <body class="markdown-body" style="margin:3em">
+<p><a href="index.html">SciTE-with-Python</a> &gt; Usage and Features</p>
+
+<h1>Usage and Features</h1>
+
+<ul><li><p>Press Ctrl+Tab or Ctrl+Shift+Tab to move to a different tab</p></li><li><p>Press Ctrl+Q to comment-out the current line</p></li><li><p>Press Ctrl+F2 to add a bookmark on the current line, press F2 to move to a bookmark</p></li><li><p>Press Ctrl+F3 or Ctrl+Shift+F3 to move to the next occurrence of the selected text</p></li><li><p>Hold Alt and click/drag to create a rectangular selection. You can copy/paste this selection, or begin typing to enter text into several lines at once</p></li><li><p>Press F5 to run the current script, displaying output in the pane on the right (read the section below about the "Go command")</p></li></ul>
+
+<h3>Tools</h3>
+
+<ul><li><p>Built-in tools include:</p><p>Search for selected word as declaration<br>Search for selected word as definition<br>Search for all references<br>Copy current folder<br>Line cut/copy/paste if no selection<br>Open in new window<br>Commonly opened files<br>Commonly opened folders<br>Commonly used text<br>List files in this folder<br>Search filenames<br>Google selection<br>RGB color picker<br>ASCII table<br>Sum selected numbers<br>Stats of selected numbers<br>Sum selected times (mm:ss)<br>Show ASCII of selected text<br>Line count/word count/char count<br>Spellcheck via browser<br>Switch to file in corresponding folder<br>Switch to header<br>Go to prev/next caret location<br>Go to top/bottom of scope<br>Change casing<br>Sort lines A-Z<br>Reverse lines order<br>Quick shuffle lines<br>Sort numbers naturally<br>Sort by column<br>Split xml by &gt;<br>Trim empty lines<br>Split by ';' with indentation<br>Join from trimmed lines<br>Insert numbered sequence<br>Move lines up/down</p></li><li><p>Search for selected word</p><ul><li>Declaration -- In C or C++ source files, search for the declaration, typically in a .h header</li></ul><ul><li><p>Definition -- In C or C++ source files, or Python, search for the definition/implementation</p></li><li><p>All references -- search for all occurrences of selected word, even in strings or comments</p></li><li><p>If the project spans many directories, you can add a SciTE.properties file to each directory with the line customcommand.code_search_c_declaration.directory_depth=1, which means to search files in both the current directory and its parent.</p></li></ul></li><li><p>Line copy if no selection</p><ul><li>If Ctrl+C is pressed when there is no selection, the current line is copied. (And, when pasting this line, it will be pasted intact even if the caret is in the middle of other text.)</li></ul></li><li><p>Switch to file in corresponding folder</p><ul><li>Sometimes you'll have two copies of a codebase in separate directories. This plugin lets you quickly switch from one directory's version of a file to another</li></ul><ul><li><p>For example, there are two files, /home/example/working/foo/bar/code.cpp and /home/example/master/foo/bar/code.cpp</p></li><li><p>Press Ctrl+Shift+; to open user.properties and add the line</p><p>customcommand.switch_to_corresponding_dir.directorymappings=\
+||/home/example/working|/home/example/master</p></li><li><p>Now when editing /home/example/working/foo/bar/code.cpp, Ctrl+Shift+F10 will open the corresponding file</p></li></ul></li><li><p>Change lines</p><ul><li>This tool can sort or reverse the order of the selected lines</li></ul><ul><li><p>Sort lines naturally means that 1 sorts before 10, and so on</p></li></ul></li></ul>
+
+<h3>Configuration files</h3>
+
+<p>SciTE is configured by editing plain text files. Press Ctrl+; to open the "global properties" file. The lines that begin with # are comments and take no effect. The line tabbar.visible=1 means that the property "tabbar.visible" is set to 1; generally 1 means true/enabled and 0 means false/disabled.</p>
+
+<p>Press Ctrl+Shift+; to open the "user properties" file, which is at first an empty file. You can edit this file and change properties (overriding anything set in global properties). As an example, if the line tabbar.visible=0 is added here, the file is saved, and SciTE is closed and reopened, the tab bar will not be visible.</p>
+
+<p>If there is a file named SciTEDirectory.properties in the same directory as the file being edited, or in a parent directory, its changes will override those in user properties and global properties, and so properties to be customized on a per-directory basis.</p>
+
+<p>If there is a file named SciTE.properties in the same directory as the file being edited, its changes will be applied.</p>
+
+<p>When setting a property, one can refer to the value of another property by using the special syntax $(). If prop1=abc and prop2=$(prop1), then when prop2 is read it will get the value abc.</p>
+
+<h3>Setting up the Go command</h3>
+
+<p>When you click on Go from the Tools menu, or press F5, what action is taken? The answer depends on file extension. From the options menu choose Open ruby.properties. At the bottom of this file, notice the line "command.go.*.rb=ruby $(FileNameExt)" This tells SciTE that the command ruby should be run with the current file as an argument, if the current file extension matches *.rb.</p>
+
+<p>For example, let's say we are in Windows and want Python scripts to run in Python 3.5 instead of Python 2.7. We choose Open python properties from the options menu. At the bottom of the file we see the line command.go.*.py=$(customcommand.externalpython) -u "$(FileNameExt)". We can change this to command.go.*.py=C:\python35\pythonw.exe -u "$(FileNameExt)".</p>
+
+<p>On Windows if a Python script uses raw_input('prompt') to read from standard input, this works, you can type into the output pane and press Enter. Note that when you press Backspace, although visually the character is cleared, the Python script will not clear the character.</p>
+
+<p>If you are writing code in C or C++, you might consider adding a SciTE.properties file in the directory with the line command.go.*=a.out (if the binary is named a.out). Pressing F7 will run 'make' by default, but can be configured by setting command.compile.*=(command).</p>
+
+<h3>Sending command line arguments</h3>
+
+<p>SciTE with Python adds to SciTE an easier way to pass command-line arguments (argv) to scripts. Once F5 is configured to run your script or binary, press Shift+F8 to open the Parameters dialog. After typing in a value in this dialog, pressing F5 in SciTE will pass it as a command-line argument. You can keep the dialog open; you don't need to click Set.</p>
+
+<h3>View and customize keyboard bindings</h3>
+
+<p><a href="./html/CurrentBindingsWin32.html">View the default Windows keyboard bindings</a></p>
+
+<p><a href="./html/CurrentBindingsGtk.html">View the default GTK keyboard bindings</a></p>
+
+<p>The menukey.* settings allow the user to redefine keyboard bindings for menus. The syntax for the setting is: menukey.menu_title.menu_name=Modifier+Key</p>
+
+<p>The File | Exit command could be specified as follows: menukey.file.exit=Ctrl+Shift+Q</p>
+
+<p>Spaces in menu titles and names must be converted to underscores, and trailing ellipses removed. For example, "File | Save As...." is referenced as "menukey.file.save_as". </p>
+
+<p>Use the special string "none" to remove a keyboard shortcut, as in, menukey.file.exit=none</p>
+
+<p>Keyboard bindings can be further customized by setting user.shortcuts in a properties file, for example,</p>
+
+<pre><code>user.shortcuts=\
+Ctrl+PageDown|IDM_NEXTFILE|\
+Ctrl+L|SCI_LINEDELETE|</code></pre>
+
+<p>Note the required backslashes at the end of the line. The list of available IDM_ commands can be seen <a href="./html/CommandValues.html">here</a>. To use a Scintilla key command from this page, convert to uppercase and add the prefix SCI. For example, to make Ctrl+Shift+Q be a shortcut for moving to the end of the document, <a href="./html/CommandValues.html">CommandValues.html</a> lists DocumentEnd, and so in user.shortcuts you would add Ctrl+Shift+Q|SCI_DOCUMENTEND|.</p>
+
+<p>See the section on <a href="./writing_plugins.html">writing plugins</a> to see how keyboard bindings for tools can be added or edited.</p>
+
+<p>(If you've customized your keyboard bindings and would like to see a summary of current bindings, look at the SciTE-with-python source code and find src/scite/scite/scripts/ShowBindingsForSciTEPython.py. Follow the instructions in the comment at the top of this script and it will read your .properties files and generate an html summary.)</p>
+
+<h3>Insert sequence</h3>
+
+<pre><code>Let's say you want to write the sequence
+
+data1 = getData1();
+data2 = getData2();
+data3 = getData3();
+
+First, write
+data@ = getData@();
+data@ = getData@();
+data@ = getData@();
+
+Then select the text and 
+press Ctrl+I to open "change lines" and 0 to "insert sequential numbers"
+
+Let's say you want to write the sequence
+dataRed = getDataRed();
+dataGreen = getDataGreen();
+dataBlue = getDataBlue();
+
+First, write
+data@Red@ = getData@@();
+data@Green@ = getData@@();
+data@Blue@ = getData@@();
+
+Then select the text and
+press Ctrl+I to open "change lines" and 0 to "insert sequential numbers"</code></pre>
+
+<h3>Some of the new properties added to SciTE</h3>
+
+<ul><li><p>menu.limitpropertiesmenuitems, limits number of menu items shown for properties files</p></li><li><p>buffers.warn.limitreached, warn if the max number of buffers has been opened</p></li><li><p>context.menu.show.tools, should right-clicking on a tab display list of tools</p></li><li><p>on Windows, menu.hidemenuitems allows hiding menu items</p></li><li><p>find.in.files.settings.shared.state, if find state like case sensitivity should be shared between find and find-in-files</p></li><li><p>save.find.across.instances, when F3 or Shift+F3 are used to find text, the current text being found is passed between SciTE processes</p></li></ul>
+
+<h3>Complete reference</h3>
+
+<p><a href="./html/SciTEDoc.html">SciTE Documentation</a></p>
+
+<p><a href="./html/SciTEFAQ.html">SciTE FAQ</a></p>
+
+<p><a href="./writing_plugins.html">writing plugins</a></p>
+
+<p><a href="./compile_for_windows.html">compiling for Windows</a></p>
+</body>
+</html>
