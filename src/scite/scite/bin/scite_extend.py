@@ -1,5 +1,6 @@
 # SciTE Python Extension
 # Ben Fisher, 2016
+# See the documentation at https://downpoured.github.io/scite-with-python/070/writing_plugins.html
 
 import SciTEModule
 

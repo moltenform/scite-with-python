@@ -1,3 +1,6 @@
+# SciTE Python Extension
+# Ben Fisher, 2016
+# See the documentation at https://downpoured.github.io/scite-with-python/070/writing_plugins.html
 
 import SciTEModule
 from scite_extend import ScEditor, ScOutput, ScApp, ScConst, OnEvent, findCallbackModule, RequestThatEventContinuesToPropagate
@@ -240,7 +243,6 @@ class ScMultiKeyChoiceClass(object):
         print('\n\nThis is part of a multi-key combination')
         print(self.label)
         print('Press Esc to cancel')
-        print('Press q to cancel')
         for key, text in zip(self.choiceKeys, self.choiceShown):
             print('Press %s to %s' % (chr(key).lower(), text))
     
@@ -281,7 +283,7 @@ class ScMultiKeyChoiceClass(object):
                         print('Performing ' + self.choiceShown[index] + '...')
                     self.callback(self.choiceIDs[index])
                     print('Done')
-                elif key == ord('Q') or key == escapeKeyCode:
+                elif key == escapeKeyCode:
                     print('Canceled.')
                 else:
                     print('Not a choice, canceled.')
