@@ -1,50 +1,36 @@
 # SciTE-with-Python
 
-A fork of the SciTE code editor that adds Python extensiblity. In addition to standard multi-tab code editing, this project lets you create plugins to help you write code more efficiently.
-    
-* plugins can use the Python standard library, for example,
+A fork of the SciTE code editor that lets you quickly write plugins in Python.
 
-    * sorting the selected lines of text
-    
-    * restyling ranges of text to underline or highlight
-    
-    * automating nearly every editor action
-    
-    * showing an interactive GUI inside the code editor
-    
-    * shelling out to other tools with Python's subprocess
-    
-* plugins can register for events like OnKey, OnOpen, and OnSave, for example,
+* 26 built-in plugins for quickly editing html/xml, debugging .py scripts, and jumping to the definition of a method or function in Python or C
 
-    * letting you listen for multi-key keyboard shortcuts
+* Plugins can insert and delete text, restyle ranges of text to underline or highlight, and automate nearly every editor action
+
+* Plugins read/write files on disk, shell out to other tools, and use the Python standard library
+
+* Plugins can register for events like OnKey and OnOpen, listen for multi-key keyboard shortcuts, and even show an interactive GUI inside the code editor
     
-    * auto-completing xml tags, or writing snippets a la TextMate
+* Customize keyboard bindings on all platforms by editing menukey in a properties file
+
+* Find-text-in-files has regular expression support
+
+* When multiple editor windows are open, the current search term is shared between processes
     
-    * showing file metadata when files are opened
+* [Usage and features](https://downpoured.github.io/scite-with-python/070/usage_and_features.html)
 
-* additions to SciTE include
+* [Writing plugins](https://downpoured.github.io/scite-with-python/070/writing_plugins.html)
 
-    * use "menukey" to customize keyboard bindings
-    
-    * find-text-in-files now has regular expression support
+* [View the default Windows keyboard bindings](https://downpoured.github.io/scite-with-python/070/html/BindingsWin32.html)
 
-    * when multiple editor windows are open, the search state is shared
-    
-    * 26 plugins for manipulating text, finding filenames, and navigating to declaration/definition of the selection in C source code
-    
-## Documentation
+* [View the default GTK keyboard bindings](https://downpoured.github.io/scite-with-python/070/html/BindingsGTK.html)
 
-[usage and features](https://downpoured.github.io/scite-with-python/070/usage_and_features.html)
-
-[writing plugins](https://downpoured.github.io/scite-with-python/070/writing_plugins.html)
-
-[compiling for Windows](https://downpoured.github.io/scite-with-python/070/compile_for_windows.html)
+* [View the API reference](https://downpoured.github.io/scite-with-python/070/html/SciTEWithPythonAPIReference.html)
 
 ## Windows
 
-* install [Python 2.7](https://www.python.org/downloads/windows/), select Windows x86 MSI installer
+* install [Python 2.7](https://www.python.org/downloads/windows/), use the Windows x86 MSI installer
 
-* download scite-with-python.zip from [scite-with-python](https://github.com/downpoured/scite-with-python) and uncompress 
+* download scite-with-python.zip and uncompress 
 
 * open SciTE.exe
 
@@ -54,12 +40,14 @@ A fork of the SciTE code editor that adds Python extensiblity. In addition to st
     sudo apt-get install libgtk2.0-dev
     sudo apt-get install python2.7-dev
 
-    # build scintilla and scite
+    # build scintilla
     mkdir ~/scite-with-python
     cd ~/scite-with-python
     git clone https://github.com/downpoured/scite-with-python.git
     cd scite-with-python/src/scite/scintilla/gtk
     make
+    
+    # build scite
     cd ../../scite/gtk
     make
     sudo make install
