@@ -23,6 +23,7 @@
     Search for selected word as definition  
     Search for all references  
     Copy current folder  
+    Insert accented character  
     Line cut/copy/paste if no selection  
     Open in new window  
     Commonly opened files  
@@ -54,7 +55,14 @@
     Split by ';' with indentation  
     Join from trimmed lines  
     Insert numbered sequence  
-    Move lines up/down
+    Move lines up/down  
+    Designate disabled directories  
+    Python: add print statement  
+    Python: print local variables upon exception  
+    Automatically closes xml tags  
+    Automatically closes html tags, knows not to close <img /> and <br />  
+    Automatically closes parentheses  
+    Automatically closes quotes (if enabled with auto.close.quotes=1)
 
 * Search for selected word
 
@@ -69,7 +77,15 @@
 * Line copy if no selection
 
     * If Ctrl+C is pressed when there is no selection, the current line is copied. (And, when pasting this line, it will be pasted intact even if the caret is in the middle of other text.)
+
+* Print local variables upon exception
+
+    * If a Python script is open: pressing Ctrl+F7 will run the script, and if an unhandled exception occurs, the values of local variables will be shown which can be useful when debugging
     
+    * A line of code that contains only the text "DEBUG" will act like a primitive breakpoint when Ctrl+F7 is pressed
+    
+    * Based on ActiveState recipe 52215 by Bryn Keller
+
 * Switch to file in corresponding folder
 
     * Sometimes you'll have two copies of a codebase in separate directories. This plugin lets you quickly switch from one directory's version of a file to another
@@ -82,7 +98,17 @@
     ||/home/example/working|/home/example/master
 
     * Now when editing /home/example/working/foo/bar/code.cpp, Ctrl+Shift+F10 will open the corresponding file
+
+* Designate "disabled directories"
+
+    * Sometimes you might want to remind yourself that certain files shouldn't usually be edited. When you open a file in a disabled directory, the background will be bright red, as a visual indicator to be careful.
     
+    * To configure a disabled directory, add lines like this to a properties file
+    
+    customcommand.disable\_directory.disabled\_directories=\
+    |/home/example/disableddir1\
+    |/home/example/disableddir2\
+
 * Change lines
 
     * This tool can sort or reverse the order of the selected lines

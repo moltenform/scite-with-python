@@ -1,0 +1,88 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta http-equiv="content-language" content="en">
+    <link rel="stylesheet" type="text/css" href="../github-markdown.css">
+<title>SciTE-with-Python</title>
+  </head>
+  <body class="markdown-body" style="margin:3em">
+<p><a href="index.html">SciTE-with-Python</a> &gt; Writing Plugins</p>
+
+<h1>Writing Plugins</h1>
+
+<p>Plugins have access to a large API and can add quite a bit of customized behavior.</p>
+
+<ul><li><p>Plugins can create an entry in the Tools menu, and have an associated keyboard binding</p></li><li><p>Plugins can register for an event, such as OnOpen or OnKey, and run code when the event is fired</p></li></ul>
+
+<h3>Changing built-in plugins</h3>
+
+<ul><li><p>Let's say we want to modify the built-in plugin "Insert accented character"</p></li><li><p>Look at files in the SciTE home directory (Windows, this is the directory containing SciTE.exe, Linux, this is generally /usr/share/scite-with-python or /usr/local/share/scite-with-python)</p></li><li><p>From this directory open tools_internal/tools_insert_accented_character/register.properties</p></li><li><p>To disable this plugin, comment-out every line in register.properties (Ctrl+A to select all, Ctrl+Q to comment-out the lines), save, and re-open SciTE</p></li><li><p>To change the keyboard binding, type a new binding into the line that starts with customcommand.insert_accented_character.shortcut</p></li><li><p>To change the plugin's code, edit tools_internal/tools_insert_accented_character/__init__.py</p></li></ul>
+
+<h3>Adding a new plugin</h3>
+
+<ul><li><p>Look at files in the SciTE home directory as described above</p></li><li><p>Create a new directory within tools_internal, such as tools_internal/example</p></li><li><p>Create a file register.properties within tools_internal/example</p></li><li><p>Let's say we are on Windows and we want the keyboard shortcut Ctrl+Shift+Q to open Notepad</p></li><li><p>Add the following to tools_internal/example/register.properties</p><pre><code>*customcommandsregister.example_opennotepad=example_opennotepad|
+customcommand.example_opennotepad.name=Open notepad
+customcommand.example_opennotepad.shortcut=Ctrl+Shift+Q
+customcommand.example_opennotepad.action.start=C:\Windows\System32\notepad.exe</code></pre></li><li><p>(Note that because this command doesn't need to interact with the code editor, we don't need to write any Python script)</p></li><li><p>Open SciTEGlobal.properties and scroll to the end, noticing other import statements. Add the line</p></li></ul>
+
+<p>import tools_internal/example/register</p>
+
+<ul><li><p>Save changes, close SciTE, and re-open SciTE. Now the item "Open notepad" will appear in the Tools menu, bound to Ctrl+Shift+Q</p></li><li><p>If we want the plugin to only be enabled if a .txt file is open, add this line to tools_internal/example/register.properties</p></li></ul>
+
+<p>customcommand.example_opennotepad.filetypes=*.txt</p>
+
+<h3>Variables exposed to tools</h3>
+
+<ul><li><p>In the previous example, the tool simply opened Notepad</p></li><li><p>Edit the last line of tools_internal/example/register.properties so that it reads</p></li></ul>
+
+<p>customcommand.example_opennotepad.action.start=C:\Windows\System32\notepad.exe "$(FilePath)"</p>
+
+<ul><li><p>Now the path to the current file will be passed as a command-line argument, so that Ctrl+Shift+Q will open the currently opened file in Notepad.</p></li><li><p>Other variables exposed to tools include $(CurrentWord) $(CurrentSelection) $(SciteDefaultHome) $(SciteUserHome) and $(FileDir) </p></li></ul>
+
+<h3>Adding a Python plugin</h3>
+
+<ul><li><p>As an example, let's create a plugin that makes four copies of the current line when the user presses Ctrl+Shift+4</p></li><li><p>Follow the steps from "adding a new plugin" above</p></li><li><p>Open tools_internal/example/register.properties and add the following registration</p><pre><code>*customcommandsregister.example_makefourcopies=example_makefourcopies|
+customcommand.example_makefourcopies.name=Make four copies
+customcommand.example_makefourcopies.shortcut=Ctrl+Shift+4
+customcommand.example_makefourcopies.action.py=ThisModule().MakeFourCopies()
+customcommand.example_makefourcopies.path=tools_internal/example</code></pre></li><li><p>Create a file tools_internal/example/__init__.py.</p></li><li><p>Add the following code to tools_internal/example/__init__.py</p><pre><code>def MakeFourCopies():
+    from scite_extend_ui import ScEditor
+    for i in range(4):
+        ScEditor.LineDuplicate()</code></pre></li><li><p>Save, close SciTE, and re-open SciTE. Type some text into a document. Pressing Ctrl+Shift+4 will run the plugin and make four copies of the current line.</p></li></ul>
+
+<h3>Registering for events</h3>
+
+<ul><li><p>As an example, let's create a plugin that inserts the text '456' whenever you type the text '123'</p></li><li><p>Follow every step in "adding a Python plugin" above</p></li><li><p>Add the following line to tools_internal/example/register.properties, after the line that starts with customcommand.example_makefourcopies.path,</p></li></ul>
+
+<p>customcommand.example_makefourcopies.callbacks=OnChar</p>
+
+<ul><li><p>Add the following code to tools_internal/example/__init__.py</p><pre><code>def OnChar(c):
+    print('OnChar seen, character = ' + chr(c))
+    if chr(c) == '3':
+        from scite_extend_ui import ScEditor
+        current_pos = ScEditor.GetCurrentPos()
+        if chr(ScEditor.GetCharAt(current_pos - 2)) == '2':
+            if chr(ScEditor.GetCharAt(current_pos - 3)) == '1':
+                ScEditor.ReplaceSel('456')</code></pre></li><li><p>Save, close SciTE, and re-open SciTE. After typing a character, click inside the output pane on the right and see the "OnChar seen" logging we added. Logging is recommended when developing a plugin.</p></li><li><p>After typing '123' into a document, the text '456' should appear</p></li><li><p>Events that can be registered: OnOpen, OnBeforeSave, OnSave, OnDoubleClick, OnMarginClick, OnClose, OnChar, OnUserListSelection, OnKey, OnFileChange</p></li><li><p>OnChar is given the character typed as an argument, as seen in the example</p></li><li><p>OnKey is given four arguments (key, shift, ctrl, alt), where shift, ctrl, and alt are booleans</p></li><li><p>OnOpen, OnBeforeSave, OnSave, OnClose are given the current filename as an argument</p></li><li><p>You can register for more than one event with syntax like customcommand.example_makefourcopies.callbacks=OnChar|OnOpen</p></li></ul>
+
+<h3>Useful API calls</h3>
+
+<ul><li><p>ScApp.GetFilePath() returns path of current file</p></li><li><p>ScEditor.GetSelectedText() returns the selected text</p></li><li><p>ScEditor.ReplaceSel() to insert text at the current caret position as if the text were typed</p></li><li><p>ScEditor.BeginUndoAction() and ScEditor.EndUndoAction(), so that Ctrl+Z will undo a set of changes</p></li><li><p>ScEditor.SetSel(start, end) to set the selection</p></li><li><p>Be sure to see the <a href="./html/SciTEWithPythonAPIReference.html">API reference</a>, and note that any method on ScEditor can also be called on ScOutput</p></li></ul>
+
+<h3>User-interfaces</h3>
+
+<ul><li><p>Multi-key (chained) shortcuts</p></li><li><p>GUI interfaces</p></li><li><p>Custom context menus</p><ul><li>ScEditor.UserListShow and registering for the event OnUserListSelection can be used to show a custom context menu</li></ul></li><li><p>Sending data</p><ul><li>In Windows, WM_COPYDATA can be used to send data, and even call into the Python extension. See the code tools_external/tools_search/code_search_definition.py in def sendSciteCmdNavigateToFirstResult; this code is running in an external python.exe process, but it can use WM_COPYDATA to tell the editor to open a file.</li></ul><ul><li><p>Note also that SciTE can be started with command-line arguments to run actions on startup, as described in <a href="./html/SciTEDoc.html">SciTE Documentation</a> / search for the text "Command line arguments to SciTE"</p></li></ul></li></ul>
+
+<h3>Types of action</h3>
+
+<ul><li><p>Use customcommand.example.action.waitforcomplete_console and provide the path to a executable along with optional command-line arguments. The command will be run and standard output will appear in the output pane.</p></li><li><p>Use customcommand.example.action.waitforcomplete and provide the path to a executable along with optional command-line arguments.</p></li><li><p>Use customcommand.example.action.start and provide the path to a executable along with optional command-line arguments. The process will be run asynchronously in the background, and not waited for.</p></li><li><p>Use customcommand.example.action.py and provide Python code to run. The Python code will usually take the form ThisModule().Method() which will call a method from __init__.py in the directory referred to by "customcommand.example.path"</p></li><li><p>Use customcommand.example.action.py_immediate and provide Python code to run. The code will run immediately, even if another command is already running (this isn't usually needed).</p><ul><li>This isn't usually needed, but an interesting feature for py_immediate is that code running in this mode can call ScApp.RequestThatEventContinuesToPropagate(), which raises a special exception to SciTE. When SciTE receives this exception, it lets the keyboard event continue. For example, if you write a plugin that registers for Ctrl+S and which calls ScApp.RequestThatEventContinuesToPropagate(), when you press Ctrl+S, both your plugin and SciTE's default action "save the current document" occur.</li></ul></li></ul>
+
+<h3>Links</h3>
+
+<p><a href="./html/SciTEWithPythonAPIReference.html">plugin api</a></p>
+
+<p><a href="./usage_and_features.html">usage and features</a></p>
+</body>
+</html>

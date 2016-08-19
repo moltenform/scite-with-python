@@ -30,7 +30,7 @@ A fork of the SciTE code editor that adds Python extensiblity. In addition to st
 
     * when multiple editor windows are open, the search state is shared
     
-    * 26 plugins for manipulating text, finding filenames, and navigating to declaration/definition of the selection in C source code
+    * 26 built-in plugins for manipulating text, finding filenames, editing HTML/XML quickly, debugging Python scripts, and jumping to the definition of a method or function in Python or C
     
 ## Documentation
 
