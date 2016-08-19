@@ -95,6 +95,8 @@ def go(filepath, searchTerm, dirDepthString, stringWindowId, action):
         pathScite = os.path.join(applyDirDepth(pathThisScript, 3), 'SciTE.exe')
     else:
         pathScite = '/usr/bin/SciTE_with_python'
+        if not os.path.isfile(pathScite):
+            pathScite = '/usr/local/bin/SciTE_with_python'
 
     if not os.path.isfile(pathScite):
         print('Could not find scite, expected at %s.' % pathScite)
