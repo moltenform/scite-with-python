@@ -15,6 +15,12 @@
 
 * Press F5 to run the current script, displaying output in the pane on the right (read the section below about the "Go command")
 
+    ![Screenshot of run-script](./runscript.png)
+
+* Press Ctrl+Shift+G to search for filenames
+
+    ![Screenshot of search-for-filenames](./searchfilenames.png)
+
 ### Tools
 
 * Built-in tools include:
@@ -143,9 +149,9 @@ SciTE with Python adds to SciTE an easier way to pass command-line arguments (ar
 
 ### View and customize keyboard bindings
 
-[View the default Windows keyboard bindings](./html/CurrentBindingsWin32.html)
+[View the default Windows keyboard bindings](./html/BindingsWin32.html)
 
-[View the default GTK keyboard bindings](./html/CurrentBindingsGtk.html)
+[View the default GTK keyboard bindings](./html/BindingsGTK.html)
 
 The menukey.\* settings allow the user to redefine keyboard bindings for menus. The syntax for the setting is: menukey.menu\_title.menu\_name=Modifier+Key
 

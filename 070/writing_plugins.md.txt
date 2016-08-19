@@ -9,9 +9,11 @@ Plugins have access to a large API and can add quite a bit of customized behavio
 
 * Plugins can register for an event, such as OnOpen or OnKey, and run code when the event is fired
 
+* The [API reference](./html/SciTEWithPythonAPIReference.html) lists supported calls
+
 ### Changing built-in plugins
 
-* Let's say we want to modify the built-in plugin "Insert accented character"
+* Let's say we want to change the built-in plugin "Insert accented character"
 
 * Look at files in the SciTE home directory (Windows, this is the directory containing SciTE.exe, Linux, this is generally /usr/share/scite-with-python or /usr/local/share/scite-with-python)
 
@@ -25,7 +27,7 @@ Plugins have access to a large API and can add quite a bit of customized behavio
 
 ### Adding a new plugin
 
-* Look at files in the SciTE home directory as described above
+* Look at files in the SciTE home directory (Windows, this is the directory containing SciTE.exe, Linux, this is generally /usr/share/scite-with-python or /usr/local/share/scite-with-python)
 
 * Create a new directory within tools\_internal, such as tools\_internal/example
 
@@ -40,17 +42,15 @@ Plugins have access to a large API and can add quite a bit of customized behavio
         customcommand.example_opennotepad.shortcut=Ctrl+Shift+Q
         customcommand.example_opennotepad.action.start=C:\Windows\System32\notepad.exe
 
-* (Note that because this command doesn't need to interact with the code editor, we don't need to write any Python script)
-
 * Open SciTEGlobal.properties and scroll to the end, noticing other import statements. Add the line
 
-import tools\_internal/example/register
+        import tools_internal/example/register
 
 * Save changes, close SciTE, and re-open SciTE. Now the item "Open notepad" will appear in the Tools menu, bound to Ctrl+Shift+Q
 
-* If we want the plugin to only be enabled if a .txt file is open, add this line to tools\_internal/example/register.properties
+* If we want the tool to only be enabled if a .txt file is open, add this line to tools\_internal/example/register.properties
 
-customcommand.example\_opennotepad.filetypes=*.txt
+        customcommand.example_opennotepad.filetypes=*.txt
 
 ### Variables exposed to tools
 
@@ -58,36 +58,37 @@ customcommand.example\_opennotepad.filetypes=*.txt
 
 * Edit the last line of tools\_internal/example/register.properties so that it reads
 
-customcommand.example\_opennotepad.action.start=C:\Windows\System32\notepad.exe "$(FilePath)"
+        customcommand.example_opennotepad.action.start=C:\Windows\System32\notepad.exe "$(FilePath)"
 
 * Now the path to the current file will be passed as a command-line argument, so that Ctrl+Shift+Q will open the currently opened file in Notepad.
 
-* Other variables exposed to tools include $(CurrentWord) $(CurrentSelection) $(SciteDefaultHome) $(SciteUserHome) and $(FileDir) 
+* Other variables exposed to tools include $(CurrentWord), $(CurrentSelection), $(SciteDefaultHome), $(SciteUserHome), and $(FileDir) 
 
 ### Adding a Python plugin
 
-* As an example, let's create a plugin that makes four copies of the current line when the user presses Ctrl+Shift+4
+* As an example, let's create a plugin that makes three copies of the current line when the user presses Ctrl+Shift+3
 
 * Follow the steps from "adding a new plugin" above
 
 * Open tools\_internal/example/register.properties and add the following registration
 
-        *customcommandsregister.example_makefourcopies=example_makefourcopies|
-        customcommand.example_makefourcopies.name=Make four copies
-        customcommand.example_makefourcopies.shortcut=Ctrl+Shift+4
-        customcommand.example_makefourcopies.action.py=ThisModule().MakeFourCopies()
-        customcommand.example_makefourcopies.path=tools_internal/example
+        *customcommandsregister.example_makethreecopies=example_makethreecopies|
+        customcommand.example_makethreecopies.name=Make three copies
+        customcommand.example_makethreecopies.shortcut=Ctrl+Shift+3
+        customcommand.example_makethreecopies.action.py=ThisModule().makeThreeCopies()
+        customcommand.example_makethreecopies.path=tools_internal/example
 
 * Create a file tools\_internal/example/\_\_init\_\_.py.
 
 * Add the following code to tools\_internal/example/\_\_init\_\_.py
 
-        def MakeFourCopies():
+        def makeThreeCopies():
             from scite_extend_ui import ScEditor
-            for i in range(4):
-                ScEditor.LineDuplicate()
+            ScEditor.LineDuplicate()
+            ScEditor.LineDuplicate()
+            ScEditor.LineDuplicate()
 
-* Save, close SciTE, and re-open SciTE. Type some text into a document. Pressing Ctrl+Shift+4 will run the plugin and make four copies of the current line.
+* Save, close SciTE, and re-open SciTE. Type some text into a document. Pressing Ctrl+Shift+3 will run the plugin and make three copies of the current line.
 
 ### Registering for events
 
@@ -95,9 +96,9 @@ customcommand.example\_opennotepad.action.start=C:\Windows\System32\notepad.exe 
 
 * Follow every step in "adding a Python plugin" above
 
-* Add the following line to tools\_internal/example/register.properties, after the line that starts with customcommand.example\_makefourcopies.path,
+* Add the following line to tools\_internal/example/register.properties, after the line that starts with customcommand.example\_makethreecopies.path,
 
-customcommand.example\_makefourcopies.callbacks=OnChar
+        customcommand.example_makethreecopies.callbacks=OnChar
 
 * Add the following code to tools\_internal/example/\_\_init\_\_.py
 
@@ -110,19 +111,19 @@ customcommand.example\_makefourcopies.callbacks=OnChar
                     if chr(ScEditor.GetCharAt(current_pos - 3)) == '1':
                         ScEditor.ReplaceSel('456')
 
-* Save, close SciTE, and re-open SciTE. After typing a character, click inside the output pane on the right and see the "OnChar seen" logging we added. Logging is recommended when developing a plugin.
+* Save, close SciTE, and re-open SciTE. After typing a character, click in the output pane on the right to view the "OnChar seen" logging we added. Logging is recommended when developing a plugin.
 
 * After typing '123' into a document, the text '456' should appear
 
 * Events that can be registered: OnOpen, OnBeforeSave, OnSave, OnDoubleClick, OnMarginClick, OnClose, OnChar, OnUserListSelection, OnKey, OnFileChange
 
-* OnChar is given the character typed as an argument, as seen in the example
+* The OnChar method is given the character typed as an argument, as seen in the example
 
-* OnKey is given four arguments (key, shift, ctrl, alt), where shift, ctrl, and alt are booleans
+* The OnKey method is given four arguments (key, shift, ctrl, alt), where shift, ctrl, and alt are bools
 
 * OnOpen, OnBeforeSave, OnSave, OnClose are given the current filename as an argument
 
-* You can register for more than one event with syntax like customcommand.example\_makefourcopies.callbacks=OnChar|OnOpen
+* You can register for more than one event with syntax like customcommand.example\_makethreecopies.callbacks=OnChar|OnOpen
 
 ### Useful API calls
 
@@ -130,7 +131,7 @@ customcommand.example\_makefourcopies.callbacks=OnChar
 
 * ScEditor.GetSelectedText() returns the selected text
 
-* ScEditor.ReplaceSel() to insert text at the current caret position as if the text were typed
+* ScEditor.ReplaceSel(text) to insert text at the current caret position as if the text were typed
 
 * ScEditor.BeginUndoAction() and ScEditor.EndUndoAction(), so that Ctrl+Z will undo a set of changes
 
@@ -142,11 +143,101 @@ customcommand.example\_makefourcopies.callbacks=OnChar
 
 * Multi-key (chained) shortcuts
 
+    * Use ScAskUserChoiceByPressingKey to create a multi-key shortcut
+    
+    * It will capture the next keypress and invoke a callback with the choice that was made
+    
+    * See it in action by using a built-in plugin like "change casing" or "change lines"
+    
+    * As input, provide a list of strings, with each string in the format "key|choice id|string to display"
+    
+    * Best explained through an example :
+
+            class ExampleAskChoice(object):
+                def go(self):
+                    from scite_extend_ui import ScAskUserChoiceByPressingKey
+                    self.choices = ['M|mint|Mint ice cream',
+                        'C|chocolate|Chocolate ice cream',
+                        'P|pecan|Pecan ice cream']
+                    ScAskUserChoiceByPressingKey(
+                        choices=self.choices, label='Please choose', callback=self.onChoiceMade)
+                    BLANKLINE
+                def onChoiceMade(self, choice):
+                    print('You chose ' + choice)
+                    BLANKLINE
+            def RunPlugin():
+                ExampleAskChoice().go()
+
 * GUI interfaces
+
+    * Use ScToolUIBase to create a user-interface complete with labels, buttons, entry boxes, and combo boxes
+    
+    * It will be shown at the bottom of the editor, staying open until the user presses Escape or clicks a button with close action
+    
+    * See it in action by pressing Ctrl+Shift+G to start the built-in search-for-filenames tool
+    
+    * Make a class deriving from ScToolUIBase, with an AddControls() method and OnOpen() method
+    
+    * Best explained through an example :
+    
+            from scite_extend_ui import ScToolUIBase, ScApp
+            class ExampleUserInterface(ScToolUIBase):
+                def AddControls(self):
+                    self.AddLabel('Please enter text:')
+                    self.cmbBox = self.AddCombo()
+                    self.AddButton('Perform action', callback=self.OnPerformAction, default=True)
+                    self.AddButton('Close', closes=True)
+                    BLANKLINE
+                def OnOpen(self):
+                    self.Set(self.cmbBox, 'some initial text here')
+                    BLANKLINE
+                def OnPerformAction(self):
+                    textEntered = self.Get(self.cmbBox)
+                    print('You entered the text ' + textEntered)
+                    print('The current file is ' + ScApp.GetFilePath())
+                    BLANKLINE
+             def RunPlugin():
+                ExampleUserInterface().Show()
+
+    * Methods on a class deriving from ScToolUIBase
+
+        * self.Show() displays the UI
+        
+        * self.Close() closes the UI
+        
+        * self.AddLabel(text) (to only be called within the AddControls method)
+        
+        * self.AddButton(text, callback=None, closes=False, default=False) (to only be called within the AddControls method)
+        
+        * self.AddCombo() (to only be called within the AddControls method)
+        
+        * self.AddEntry(text) (to only be called within the AddControls method)
+        
+        * self.AddRow() (to only be called within the AddControls method)
+        
+        * self.Get(control) retrieves the current text in an Entry or Combo
+        
+        * self.Set(control, text) sets the current text in an Entry or Combo
+        
+        * self.SetList(control, text) sets the options in a Combo, provide one string delimited by \n
+    
+    * Optionally, override the method "def OnEvent(self, control, eventType)" and receive events
+    
+        *  from scite\_extend\_ui import ScConst
+        
+        * values for eventType include ScConst.eventTypeChange, ScConst.eventTypeFocusIn, ScConst.eventTypeFocusOut
 
 * Custom context menus
 
     * ScEditor.UserListShow and registering for the event OnUserListSelection can be used to show a custom context menu
+    
+    * Not currently used by any built-in plugins
+    
+* Modal dialogs
+    
+    * In Windows, ScApp.MsgBox(s) will show a message box with text s
+    
+    * In Windows, see the Python module tools\_internal/wincommondialog which can show text input dialogs, file open dialogs, file save dialogs, and dialogs asking for confirmation
     
 * Sending data
 
@@ -166,7 +257,19 @@ customcommand.example\_makefourcopies.callbacks=OnChar
 
 * Use customcommand.example.action.py\_immediate and provide Python code to run. The code will run immediately, even if another command is already running (this isn't usually needed).
 
-    * This isn't usually needed, but an interesting feature for py\_immediate is that code running in this mode can call ScApp.RequestThatEventContinuesToPropagate(), which raises a special exception to SciTE. When SciTE receives this exception, it lets the keyboard event continue. For example, if you write a plugin that registers for Ctrl+S and which calls ScApp.RequestThatEventContinuesToPropagate(), when you press Ctrl+S, both your plugin and SciTE's default action "save the current document" occur.
+    * This also isn't usually needed... code running as py\_immediate can call ScApp.RequestThatEventContinuesToPropagate(), which raises a special exception to SciTE, telling it to let the keyboard event continue. For example, for a plugin that registers for Ctrl+S and that calls ScApp.RequestThatEventContinuesToPropagate(), when you press Ctrl+S, both the plugin and SciTE's default action "save the current document" occur.
+
+* Further options can be set with .mode
+
+    * An example, customcommand.example.mode=filter:yes,quiet:yes,savebefore:yes
+    
+    * filter:yes tells SciTE to reload the current document after running the tool because it may have been modified
+    
+    * quiet:yes suppresses standard out
+    
+    * savebefore:yes will automatically save current document before running tool
+    
+    * safebefore:prompt will ask if current document should be saved before running tool
 
 ### Links
 
@@ -174,4 +277,6 @@ customcommand.example\_makefourcopies.callbacks=OnChar
 
 [usage and features](./usage\_and\_features.html)
 
+[SciTE Documentation](./html/SciTEDoc.html)
 
+[SciTE FAQ](./html/SciTEFAQ.html)
