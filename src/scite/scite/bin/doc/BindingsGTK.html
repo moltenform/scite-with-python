@@ -11,16 +11,15 @@ th { border: 1px solid #1F1F1F; padding: 1px 5px 1px 5px; }
 thead { background-color: #000000; color: #FFFFFF; }
 </style>
 <body>
-<h2>Current key bindings</h2>
+<br />
 <table><tr><th> </th><th> </th><th> </th><th> </th></tr>
+<tr><td>&apos;</td><td>Ctrl+&apos;</td><td>Insert accented character</td><td>from properties</td></tr>
 <tr><td>*</td><td>Ctrl+*</td><td>Toggle current fold</td><td></td></tr>
-<tr><td>-</td><td>Ctrl+-</td><td>Go to previous caret location</td><td>from properties</td></tr>
-<tr><td>-</td><td>Ctrl+Shift+-</td><td>Go to next caret location</td><td>from properties</td></tr>
 <tr><td>.</td><td>Ctrl+.</td><td>Stop executing</td><td></td></tr>
 <tr><td>/</td><td>Ctrl+/</td><td>Word part left</td><td></td></tr>
 <tr><td>/</td><td>Ctrl+Shift+/</td><td>Word part left extend</td><td></td></tr>
 <tr><td>1</td><td>Alt+1</td><td>Open tab 1</td><td></td></tr>
-<tr><td>1</td><td>Ctrl+1</td><td>Copy current directory</td><td>from properties</td></tr>
+<tr><td>1</td><td>Ctrl+1</td><td>Copy current folder</td><td>from properties</td></tr>
 <tr><td>2</td><td>Alt+2</td><td>Open tab 2</td><td></td></tr>
 <tr><td>3</td><td>Alt+3</td><td>Open tab 3</td><td></td></tr>
 <tr><td>3</td><td>Alt+Shift+3</td><td>Line numbers</td><td></td></tr>
@@ -30,30 +29,28 @@ thead { background-color: #000000; color: #FFFFFF; }
 <tr><td>6</td><td>Alt+6</td><td>Open tab 6</td><td></td></tr>
 <tr><td>7</td><td>Alt+7</td><td>Open tab 7</td><td></td></tr>
 <tr><td>8</td><td>Alt+8</td><td>Open tab 8</td><td></td></tr>
-<tr><td>8</td><td>Ctrl+Shift+8</td><td>Whitespace</td><td></td></tr>
 <tr><td>9</td><td>Alt+9</td><td>Open tab 9</td><td></td></tr>
+<tr><td>9</td><td>Ctrl+9</td><td>Check syntax</td><td>only *.rb</td></tr>
 <tr><td>9</td><td>Ctrl+9</td><td>Syntax check</td><td>only *.py;*.pyw</td></tr>
 <tr><td>9</td><td>Ctrl+9</td><td>Lint</td><td>only *.cc;*.cpp;*.cxx</td></tr>
-<tr><td>9</td><td>Ctrl+Shift+9</td><td>End of line</td><td></td></tr>
 <tr><td>:</td><td>Ctrl+Shift+:</td><td>Open user options file</td><td></td></tr>
 <tr><td>;</td><td>Ctrl+;</td><td>Open global options file</td><td></td></tr>
 <tr><td>A</td><td>Ctrl+A</td><td>Select all</td><td></td></tr>
 
+<tr><td>A</td><td>Ctrl+Shift+A</td><td>Whitespace</td><td></td></tr>
 <tr><td>Add</td><td>Ctrl+Add</td><td>Zoom in</td><td></td></tr>
 <tr><td>B</td><td>Ctrl+B</td><td>Expand abbreviation</td><td></td></tr>
 <tr><td>B</td><td>Ctrl+Shift+B</td><td>Box comment</td><td></td></tr>
 <tr><td>Back</td><td>Back</td><td>Delete back</td><td></td></tr>
 <tr><td>Back</td><td>Shift+Back</td><td>Delete back</td><td></td></tr>
 <tr><td>Back</td><td>Alt+Back</td><td>Undo</td><td></td></tr>
-
-<tr><td>Back</td><td>Alt+Shift+Back</td><td>Redo</td><td></td></tr>
 <tr><td>Back</td><td>Ctrl+Back</td><td>Del word left</td><td></td></tr>
 <tr><td>Back</td><td>Ctrl+Shift+Back</td><td>Del line left</td><td></td></tr>
 <tr><td>C</td><td>Ctrl+C</td><td>Copy</td><td></td></tr>
 
 <tr><td>D</td><td>Ctrl+D</td><td>Duplicate</td><td></td></tr>
 <tr><td>D</td><td>Ctrl+Shift+D</td><td>Selection add next</td><td></td></tr>
-<tr><td>Del</td><td>Del</td><td>Delete</td><td></td></tr>
+<tr><td>Delete</td><td>Delete</td><td>Delete</td><td></td></tr>
 <tr><td>Delete</td><td>Shift+Delete</td><td>Cut</td><td></td></tr>
 <tr><td>Delete</td><td>Ctrl+Delete</td><td>Del word right</td><td></td></tr>
 <tr><td>Delete</td><td>Ctrl+Shift+Delete</td><td>Del line right</td><td></td></tr>
@@ -103,13 +100,11 @@ thead { background-color: #000000; color: #FFFFFF; }
 <tr><td>F6</td><td>F6</td><td>Next</td><td></td></tr>
 <tr><td>F6</td><td>Shift+F6</td><td>Previous</td><td></td></tr>
 <tr><td>F6</td><td>Ctrl+F6</td><td>Switch pane</td><td></td></tr>
-<tr><td>F6</td><td>Ctrl+Shift+F6</td><td>Switch pane</td><td></td></tr>
 <tr><td>F7</td><td>F7</td><td>Build</td><td></td></tr>
 <tr><td>F7</td><td>Shift+F7</td><td>Clean</td><td></td></tr>
 <tr><td>F7</td><td>Alt+F7</td><td>Spellcheck selected text</td><td>from properties</td></tr>
 <tr><td>F7</td><td>Ctrl+F7</td><td>Compile</td><td></td></tr>
 <tr><td>F8</td><td>F8</td><td>Output</td><td></td></tr>
-<tr><td>F8</td><td>Shift+F8</td><td>Parameters</td><td></td></tr>
 <tr><td>G</td><td>Ctrl+G</td><td>Go to</td><td></td></tr>
 <tr><td>G</td><td>Ctrl+Shift+G</td><td>Search filenames</td><td>from properties</td></tr>
 <tr><td>H</td><td>Ctrl+H</td><td>Replace</td><td></td></tr>
@@ -129,10 +124,10 @@ thead { background-color: #000000; color: #FFFFFF; }
 <tr><td>Insert</td><td>Insert</td><td>Edit toggle overtype</td><td></td></tr>
 <tr><td>Insert</td><td>Shift+Insert</td><td>Paste</td><td></td></tr>
 <tr><td>Insert</td><td>Ctrl+Insert</td><td>Copy</td><td></td></tr>
-<tr><td>J</td><td>Ctrl+J</td><td>Go up to top</td><td>from properties</td></tr>
-<tr><td>J</td><td>Ctrl+Shift+J</td><td>Select up to top</td><td>from properties</td></tr>
-<tr><td>K</td><td>Ctrl+K</td><td>Go down to next</td><td>from properties</td></tr>
-<tr><td>K</td><td>Ctrl+Shift+K</td><td>Select down to next</td><td>from properties</td></tr>
+<tr><td>J</td><td>Ctrl+J</td><td>Prev match ppc</td><td></td></tr>
+<tr><td>J</td><td>Ctrl+Shift+J</td><td>Selecttoprev match ppc</td><td></td></tr>
+<tr><td>K</td><td>Ctrl+K</td><td>Next match ppc</td><td></td></tr>
+<tr><td>K</td><td>Ctrl+Shift+K</td><td>Selecttonext match ppc</td><td></td></tr>
 <tr><td>L</td><td>Ctrl+L</td><td>Line delete</td><td>from properties</td></tr>
 <tr><td>L</td><td>Ctrl+Shift+L</td><td>Line delete</td><td></td></tr>
 <tr><td>Left</td><td>Left</td><td>Char left</td><td></td></tr>
@@ -143,6 +138,7 @@ thead { background-color: #000000; color: #FFFFFF; }
 <tr><td>M</td><td>Ctrl+M</td><td>Commonly opened files</td><td>from properties</td></tr>
 <tr><td>M</td><td>Ctrl+Shift+M</td><td>Open in new window</td><td>from properties</td></tr>
 <tr><td>N</td><td>Ctrl+N</td><td>New</td><td></td></tr>
+<tr><td>N</td><td>Ctrl+Shift+N</td><td>End of line</td><td></td></tr>
 <tr><td>Next</td><td>Next</td><td>Page down</td><td></td></tr>
 <tr><td>Next</td><td>Shift+Next</td><td>Page down extend</td><td></td></tr>
 <tr><td>Next</td><td>Alt+Shift+Next</td><td>Page down rect extend</td><td></td></tr>
@@ -161,6 +157,7 @@ thead { background-color: #000000; color: #FFFFFF; }
 <tr><td>R</td><td>Ctrl+Shift+R</td><td>Revert</td><td></td></tr>
 <tr><td>Return</td><td>Return</td><td>New line</td><td></td></tr>
 <tr><td>Return</td><td>Shift+Return</td><td>New line</td><td></td></tr>
+<tr><td>Return</td><td>Ctrl+Return</td><td>Complete word</td><td></td></tr>
 <tr><td>Right</td><td>Right</td><td>Char right</td><td></td></tr>
 <tr><td>Right</td><td>Shift+Right</td><td>Char right extend</td><td></td></tr>
 <tr><td>Right</td><td>Alt+Shift+Right</td><td>Char right rect extend</td><td></td></tr>
@@ -169,7 +166,6 @@ thead { background-color: #000000; color: #FFFFFF; }
 <tr><td>S</td><td>Ctrl+S</td><td>Save</td><td></td></tr>
 <tr><td>S</td><td>Ctrl+Shift+S</td><td>Save as</td><td></td></tr>
 <tr><td>Space</td><td>Ctrl+Space</td><td>Complete symbol</td><td></td></tr>
-
 <tr><td>Space</td><td>Ctrl+Shift+Space</td><td>Show calltip</td><td></td></tr>
 <tr><td>Subtract</td><td>Ctrl+Subtract</td><td>Zoom out</td><td></td></tr>
 <tr><td>T</td><td>Ctrl+T</td><td>Line transpose</td><td></td></tr>

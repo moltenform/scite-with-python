@@ -174,8 +174,7 @@ def getLinesFromPythonExtensionSrc():
 	return results
 
 def addPythonDefinedAppMethods(mapIdmToText, methodsIdm):
-	manuallyAddMethods = '''MsgBox(s)|Show message box with text s
-GetProperty(propname)|Returns value of property
+	manuallyAddMethods = '''GetProperty(propname)|Returns value of property
 SetProperty(propname, val)|Set value of property
 UnsetProperty(propname)|Unset property
 OpenFile(filename)|Open File
