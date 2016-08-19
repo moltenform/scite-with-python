@@ -169,12 +169,12 @@ def getFileList(dir, sortByExtension):
 class QuickInfo(object):
     def go(self):
         from scite_extend_ui import ScAskUserChoiceByPressingKey
-        self.choices = ['O|storedfilename_get|open stored filename...',
-        'P|storedfilename_set|store current filename...\n',
-        'J|storeddirectory_get|open stored directory...',
-        'K|storeddirectory_set|store current directory...\n',
-        'T|storedstring_get|open stored text...',
-        'Y|storedstring_set|store selected text...\n',
+        self.choices = ['O|storedfilename_get|open remembered file...',
+        'P|storedfilename_set|remember current file...\n',
+        'J|storeddirectory_get|open remembered directory...',
+        'K|storeddirectory_set|remember directory of current file...\n',
+        'T|storedstring_get|open remembered text...',
+        'Y|storedstring_set|remember selected text...\n',
         'L|listfiles|list files in this directory',
         'M|listfilesext|list files, sort by extension',
         'Z|openscratchfile|open scratch file']
