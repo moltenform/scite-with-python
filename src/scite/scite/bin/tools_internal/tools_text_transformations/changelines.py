@@ -11,7 +11,7 @@ class ChangeLines(object):
             '3|sortcol3|Sort by 3rd col',
             '4|sortcol4|Sort by 4th col',
             'X|splitxml|Split xml by >',
-            'T|trimempty|trim empty lines',
+            'T|trimempty|Trim empty lines',
             'I|splitwithindent|Split by \';\' with indentation',
             'J|joinwithoutindent|Join from trimmed lines',
             'D|joinwithoutindentadddelim|Join from trimmed lines and add ;',
@@ -25,7 +25,10 @@ class ChangeLines(object):
         from __init__ import modifyTextInScite
         from scite_extend_ui import ScEditor
         ScEditor.Utils.ExpandSelectionToIncludeEntireLines()
-        return modifyTextInScite(lambda text: self.runSort(text, choice))
+        if choice == 'insertsequencehelp':
+            return self.insertsequencehelp()
+        else:
+            return modifyTextInScite(lambda text: self.runSort(text, choice))
 
     def runSort(self, text, choice):
         from scite_extend_ui import ScEditor
@@ -132,7 +135,7 @@ class ChangeLines(object):
     def joinwithoutindentadddelim(self, lines):
         self.joinwithoutindent(lines, '; ')
     
-    def insertsequencehelp(self, lines):
+    def insertsequencehelp(self):
         import insertsequentialnumbers
         insertsequentialnumbers.insertsequentialnumbershelp()
     
