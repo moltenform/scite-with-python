@@ -53,5 +53,5 @@ A fork of the SciTE code editor that lets you quickly write plugins in Python.
     sudo make install
 
     # run scite
-    /usr/bin/SciTE_with_python
+    SciTE_with_python
 
