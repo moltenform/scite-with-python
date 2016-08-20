@@ -1,3 +1,6 @@
+# SciTE Python Extension
+# Ben Fisher, 2016
+# Released under the GNU General Public License version 3
 
 # UI for searching filenames
 # The actual work is done by search_filenames.py

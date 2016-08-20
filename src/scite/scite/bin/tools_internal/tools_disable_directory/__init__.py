@@ -1,3 +1,6 @@
+# SciTE Python Extension
+# Ben Fisher, 2016
+# Released under the GNU General Public License version 3
 
 # sometimes you might want to remind yourself that certain files shouldn't be edited lightly.
 # set customcommand.disable_directory.disabled_directories in properties.

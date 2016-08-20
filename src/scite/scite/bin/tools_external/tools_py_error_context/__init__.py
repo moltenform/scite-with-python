@@ -1,4 +1,6 @@
-
+# SciTE Python Extension
+# Ben Fisher, 2016
+# Released under the GNU General Public License version 3
 
 def WritePrintStatement(word):
     from scite_extend_ui import ScEditor

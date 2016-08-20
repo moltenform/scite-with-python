@@ -1,6 +1,7 @@
-Applies to all Python scripts (files with extension .py) under src/scite/scite/bin
-SciTE-with-Python, by Ben Fisher
-https://github.com/downpoured/scite-with-python
+Applies to all Python scripts, i.e. files with extension .py, that begin with the text
+# SciTE Python Extension
+# Ben Fisher, 2016
+# Released under the GNU General Public License version 3
 
                     GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007

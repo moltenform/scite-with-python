@@ -1,3 +1,6 @@
+# SciTE Python Extension
+# Ben Fisher, 2016
+# Released under the GNU General Public License version 3
 
 class ChangeCasing(object):
     def go(self):

@@ -1,3 +1,6 @@
+# SciTE Python Extension
+# Ben Fisher, 2016
+# Released under the GNU General Public License version 3
 
 from ben_python_common import files, assertEq
 
