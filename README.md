@@ -30,7 +30,7 @@ A fork of the SciTE code editor that lets you quickly write plugins in Python.
 
 * install [Python 2.7](https://www.python.org/downloads/windows/), use the Windows x86 MSI installer
 
-* download scite-with-python.zip and uncompress 
+* download [scite_with_python_0_7_0_win32.zip](https://github.com/downpoured/scite-with-python/releases/download/v0.7.0/scite_with_python_0_7_0_win32.zip) and uncompress
 
 * open SciTE.exe
 
