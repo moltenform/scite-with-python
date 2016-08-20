@@ -224,5 +224,3 @@ See the section on [writing plugins](./writing\_plugins.html) to see how keyboar
 
 [writing plugins](./writing\_plugins.html)
 
-[compiling for Windows](./compile\_for\_windows.html)
-
