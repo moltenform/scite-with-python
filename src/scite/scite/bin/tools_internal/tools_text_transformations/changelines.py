@@ -18,6 +18,8 @@ class ChangeLines(object):
             'I|splitwithindent|Split by \';\' with indentation',
             'J|joinwithoutindent|Join from trimmed lines',
             'D|joinwithoutindentadddelim|Join from trimmed lines and add ;',
+            'U|newlinesunix|Convert to unix newlines \\n',
+            'W|newlineswin|Convert to windows newlines \\r\\n',
             'Q|insertsequencehelp|How to use insert numbered sequence',
             '0|insertsequence|Insert numbered sequence']
         label = 'Please choose from this list how to change the selected lines:'
@@ -28,8 +30,10 @@ class ChangeLines(object):
         from __init__ import modifyTextInScite
         from scite_extend_ui import ScEditor
         ScEditor.Utils.ExpandSelectionToIncludeEntireLines()
-        if choice == 'insertsequencehelp':
-            return self.insertsequencehelp()
+        simpleMethods = ('insertsequencehelp', 'newlinesunix', 'newlineswin')
+        if choice in simpleMethods:
+            method = self.__getattribute__(choice)
+            return method()
         else:
             return modifyTextInScite(lambda text: self.runSort(text, choice))
 
@@ -145,6 +149,16 @@ class ChangeLines(object):
     def insertsequence(self, lines):
         import insertsequentialnumbers
         insertsequentialnumbers.insertsequentialnumbers(lines)
+    
+    def newlinesunix(self):
+        from scite_extend_ui import ScApp
+        ScApp.CmdEolLf()
+        ScApp.CmdSave()
+    
+    def newlineswin(self):
+        from scite_extend_ui import ScApp
+        ScApp.CmdEolCrlf()
+        ScApp.CmdSave()
 
 def DoChangeLines():
     from scite_extend_ui import ScEditor
