@@ -1,8 +1,8 @@
 # BenPythonCommon,
 # 2015 Ben Fisher, released under the GPLv3 license.
 
-from common_util import *
-import files
+from .common_util import *
+from . import files
 
 def getInputBool(sPrompt):
     sPrompt += ' '
@@ -249,7 +249,7 @@ def softDeleteFile(s):
     import os
     trashdir = os.path.expanduser('~') + u'/local/less_important/trash'
     if not files.exists(trashdir):
-        trashdir = ur'C:\data\local\less_important\trash'
+        trashdir = u'C:\\data\\local\\less_important\\trash'
         if not files.exists(trashdir):
             raise Exception('please edit softDeleteFile() in common_ui.py ' +
                 'and specify a directory for removed files.')

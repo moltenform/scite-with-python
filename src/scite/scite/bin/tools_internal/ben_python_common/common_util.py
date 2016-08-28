@@ -8,7 +8,7 @@ class Bucket(object):
             object.__setattr__(self, key, kwargs[key])
 
     def __repr__(self):
-        return '\n\n\n'.join(('%s=%s'%(unicode(key), unicode(self.__dict__[key])) for key in sorted(self.__dict__)))
+        return '\n\n\n'.join(('%s=%s'%(unicodestringtype(key), unicodestringtype(self.__dict__[key])) for key in sorted(self.__dict__)))
             
 class SimpleEnum(object):
     "simple enum; prevents modification after creation."
@@ -35,15 +35,26 @@ class SimpleEnum(object):
         raise RuntimeError
     
 def getPrintable(s, okToIgnore=False):
-    if not isinstance(s, unicode):
-        return str(s)
+    if sys.version_info[0] <= 2:
+        if not isinstance(s, unicode):
+            return str(s)
 
-    import unicodedata
-    s = unicodedata.normalize('NFKD', s)
-    if okToIgnore:
-        return s.encode('ascii', 'ignore')
+        import unicodedata
+        s = unicodedata.normalize('NFKD', s)
+        if okToIgnore:
+            return s.encode('ascii', 'ignore')
+        else:
+            return s.encode('ascii', 'replace')
     else:
-        return s.encode('ascii', 'replace')
+        if not isinstance(s, str):
+            return str(s)
+
+        import unicodedata
+        s = unicodedata.normalize('NFKD', s)
+        if okToIgnore:
+            return s.encode('ascii', 'ignore').decode('ascii')
+        else:
+            return s.encode('ascii', 'replace').decode('ascii')
         
 def trace(*args):
     print(' '.join(map(getPrintable, args)))
@@ -205,6 +216,9 @@ def startThread(fn, args=None):
     
 # inspired by http://code.activestate.com/recipes/496879-memoize-decorator-function-with-cache-size-limit/
 def BoundedMemoize(fn):
+    if sys.version_info[0] > 2:
+        raise NotImplementedError('not supported in python 3+')
+    
     from collections import OrderedDict
     cache = OrderedDict()
 
@@ -268,7 +282,7 @@ def assertFloatEq(expected, received, *messageArgs):
         assertTrue(False, *messageArgs)
 
 def assertEqArray(expected, received):
-    if isinstance(expected, basestring):
+    if isinstance(expected, anystringtype):
         expected = expected.split('|')
 
     assertEq(len(expected), len(received))
@@ -296,3 +310,12 @@ def assertException(fn, excType, excTypeExpectedString=None, msg='', regexp=Fals
             passed = excTypeExpectedString in str(e)
         assertTrue(passed, 'exception string check failed ' + msg +
             '\ngot exception string:\n' + str(e))
+
+import sys
+if sys.version_info[0] <= 2:
+    unicodestringtype = unicode
+    anystringtype = basestring
+else:
+    unicodestringtype = str
+    anystringtype = str
+

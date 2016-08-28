@@ -1,7 +1,7 @@
 
 import sys
-from common_util import *
-from common_ui import *
+from .common_util import *
+from .common_ui import *
 
 def common_util_tests():
     # test assertException
@@ -111,22 +111,34 @@ def common_util_tests():
     
     # test OrderedDict equality checks
     from collections import OrderedDict
-    assertEq(OrderedDict(a=1, b=2), OrderedDict(b=2, a=1))
-    assertTrue(OrderedDict(a=1, b=2) != OrderedDict(a=1, b=3))
+    d1 = OrderedDict()
+    d1['a'] = 1; d1['b'] = 2
+    d1same = OrderedDict()
+    d1same['a'] = 1; d1same['b'] = 2
+    d2 = OrderedDict()
+    d2['b'] = 2; d2['a'] = 1
+    d3 = OrderedDict()
+    d3['a'] = 1; d3['b'] = 3
+    assertEq(d1, d1)
+    assertEq(d1, d1same)
+    assertTrue(d1 != d2)
+    assertTrue(d1 != d3)
+    assertTrue(d2 != d3)
     
     # test BoundedMemoize
     countCalls = Bucket(count=0)
 
-    @BoundedMemoize
-    def addTwoNumbers(a, b, countCalls=countCalls):
-        countCalls.count += 1
-        return a + b
-    assertEq(2, addTwoNumbers(1, 1))
-    assertEq(1, countCalls.count)
-    assertEq(2, addTwoNumbers(1, 1))
-    assertEq(1, countCalls.count)
-    assertEq(4, addTwoNumbers(2, 2))
-    assertEq(2, countCalls.count)
+    if sys.version_info[0] <= 2:
+        @BoundedMemoize
+        def addTwoNumbers(a, b, countCalls=countCalls):
+            countCalls.count += 1
+            return a + b
+        assertEq(2, addTwoNumbers(1, 1))
+        assertEq(1, countCalls.count)
+        assertEq(2, addTwoNumbers(1, 1))
+        assertEq(1, countCalls.count)
+        assertEq(4, addTwoNumbers(2, 2))
+        assertEq(2, countCalls.count)
     
     # test RecentlyUsedList
     mruTest = RecentlyUsedList(maxSize=5)
@@ -154,8 +166,8 @@ def common_util_tests():
     assertEqArray('4|3|2|1|ghi', mruTest.getList())
     
 def files_tests():
-    from files import (readall, writeall, exists, copy, move, sep, run, isemptydir, listchildren, makedir,
-        getname, listfiles, recursedirs, recursefiles, delete, runWithoutWaitUnicode)
+    from .files import (readall, writeall, exists, copy, move, sep, run, isemptydir, listchildren, makedir,
+        getname, listfiles, recursedirs, recursefiles, delete, computeHash, runWithoutWaitUnicode)
     import tempfile
     import os
     import shutil
@@ -179,7 +191,7 @@ def files_tests():
     copy(tmpdirsl + 'src.txt', tmpdirsl + 'srccopy.txt', True)
     assertEq('src', readall(tmpdirsl + 'srccopy.txt'))
     assertTrue(exists(tmpdirsl + 'src.txt'))
-    
+        
     # test copy_overwrite, overwrite
     cleardirectoryfiles(tmpdir)
     writeall(tmpdirsl + 'src.txt', 'src')
@@ -258,6 +270,9 @@ def files_tests():
         assertException(lambda: move(tmpdirsl + 'src.txt', tmpdirsl + 'dest.txt', False), OSError, 'File exists')
     assertEq('dest', readall(tmpdirsl + 'dest.txt'))
     assertTrue(exists(tmpdirsl + 'src.txt'))
+    
+    # test computeHash
+    assertEq('f27fede2220bcd326aee3e86ddfd4ebd0fe58cb9', computeHash(tmpdirsl + 'src.txt'))
     
     # test _checkNamedParameters
     assertException(lambda: list(listchildren(tmpdir, True)), ValueError, 'please name parameters')
@@ -354,34 +369,34 @@ def files_tests():
         writeall(tmpdirsl + 'script.bat', '\n@echo off\necho testecho')
         returncode, stdout, stderr = run([tmpdirsl + 'script.bat'])
         assertEq(0, returncode)
-        assertEq('testecho', stdout)
-        assertEq('', stderr)
+        assertEq(b'testecho', stdout)
+        assertEq(b'', stderr)
         
         # test run process, get stderr
         writeall(tmpdirsl + 'script.bat', '\n@echo off\necho testechoerr 1>&2')
         returncode, stdout, stderr = run([tmpdirsl + 'script.bat'])
         assertEq(0, returncode)
-        assertEq('', stdout)
-        assertEq('testechoerr', stderr)
+        assertEq(b'', stdout)
+        assertEq(b'testechoerr', stderr)
         
         # test run process, get both. (this deadlocks if done naively, but it looks like subprocess correctly uses 2 threads.)
         writeall(tmpdirsl + 'script.bat', '\n@echo off\necho testecho\necho testechoerr 1>&2')
         returncode, stdout, stderr = run([tmpdirsl + 'script.bat'])
         assertEq(0, returncode)
-        assertEq('testecho', stdout)
-        assertEq('testechoerr', stderr)
+        assertEq(b'testecho', stdout)
+        assertEq(b'testechoerr', stderr)
         
         # test run process, send argument without spaces
         writeall(tmpdirsl + 'script.bat', '\n@echo off\necho %1')
         returncode, stdout, stderr = run([tmpdirsl + 'script.bat', 'testarg'])
         assertEq(0, returncode)
-        assertEq('testarg', stdout)
+        assertEq(b'testarg', stdout)
         
         # test run process, send argument with spaces (subprocess will quote the args)
         writeall(tmpdirsl + 'script.bat', '\n@echo off\necho %1')
         returncode, stdout, stderr = run([tmpdirsl + 'script.bat', 'test arg'])
         assertEq(0, returncode)
-        assertEq('"test arg"', stdout)
+        assertEq(b'"test arg"', stdout)
         
         # test run process, run without shell
         cleardirectoryfiles(tmpdir)

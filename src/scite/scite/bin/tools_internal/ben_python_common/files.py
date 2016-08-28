@@ -4,7 +4,7 @@
 import sys
 import os as _os
 import shutil as _shutil
-from common_util import *
+from .common_util import *
 
 rename = _os.rename
 delete = _os.unlink
@@ -21,7 +21,7 @@ makedir = _os.mkdir
 makedirs = _os.makedirs
 sep = _os.path.sep
 linesep = _os.linesep
-abspath = _shutil.abspath
+abspath = _os.path.abspath
 rmtree = _shutil.rmtree
 
 # simple wrappers
@@ -237,6 +237,19 @@ def findBinaryOnPath(binaryName):
 
     return None
 
+def computeHash(path, hasher=None):
+    import hashlib
+    hasher = hasher or hashlib.sha1()
+    f = open(path, 'rb')
+    while True:
+        # update the hash with the contents of the file, 256k at a time
+        buffer = f.read(0x40000)
+        if not buffer:
+            break
+        hasher.update(buffer)
+
+    return hasher.hexdigest()
+
 # returns tuple (returncode, stdout, stderr)
 def run(listArgs, _ind=_enforceExplicitlyNamedParameters, shell=False, createNoWindow=True,
         throwOnFailure=RuntimeError, stripText=True, captureoutput=True, silenceoutput=False,
@@ -295,10 +308,12 @@ def run(listArgs, _ind=_enforceExplicitlyNamedParameters, shell=False, createNoW
     return retcode, stdout, stderr
     
 def runWithoutWaitUnicode(listArgs):
-    # in Windows, non-ascii characters cause subprocess.Popen to fail.
+    # in Windows in Python2, non-ascii characters cause subprocess.Popen to fail.
     # https://bugs.python.org/issue1759845
+    
     import subprocess
-    if sys.platform != 'win32' or all(isinstance(arg, str) for arg in listArgs):
+    if sys.version_info[0] > 2 or sys.platform != 'win32' or all(isinstance(arg, str) for arg in listArgs):
+        # no workaround needed in Python3
         p = subprocess.Popen(listArgs, shell=False)
         return p.pid
     else:
