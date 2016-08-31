@@ -431,7 +431,10 @@ def lookForRegistration():
         elif command:
             registerCustomCommand(heuristicDuplicateShortcut, command, number)
             number += 1
-            
+    
+    if number >= 80:
+        print('warning: max number of tools reached.')
+
 def registerCustomCommand(heuristicDuplicateShortcut, command, number):
     # some of the following are 'temporary' because we shouldn't use the value in the future, it's already expanded
     # e.g. if the action contains a reference to '$(FilePath)' then actionTemporary contains the expanded form, frozen

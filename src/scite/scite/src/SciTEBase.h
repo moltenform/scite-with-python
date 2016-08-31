@@ -465,7 +465,7 @@ protected:
 	bool underIndicator;
 	bool openFilesHere;
 	bool fullScreen;
-	enum { toolMax = 50 };
+	enum { toolMax = 80 };
 	Extension *extender;
 	bool needReadProperties;
 	bool quitting;
