@@ -16,8 +16,6 @@ sessionHistoryDirs = RecentlyUsedList(maxSize=50)
 childProcess = None
 
 class SearchFilenames(ScToolUIBase):
-    currentFocus = None
-
     def AddControls(self):
         self.searchTypes = {'Filename contains': 'contains',
             'Wildcard expansion': 'wildcard',
