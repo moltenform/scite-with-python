@@ -100,6 +100,16 @@ def re_replace(starget, sre, srep):
     import re
     return re.sub(sre, srep, starget)
 
+def truncateWithEllipsis(s, maxLength):
+    if len(s) <= maxLength:
+        return s
+    else:
+        ellipsis = '...'
+        if maxLength < len(ellipsis):
+            return s[0:maxLength]
+        else:
+            return s[0:maxLength - len(ellipsis)] + ellipsis
+
 def getClipboardTextTk():
     from Tkinter import Tk
     try:

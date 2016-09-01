@@ -17,7 +17,6 @@ isfile = _os.path.isfile
 getsize = _os.path.getsize
 rmdir = _os.rmdir
 chdir = _os.chdir
-makedir = _os.mkdir
 makedirs = _os.makedirs
 sep = _os.path.sep
 linesep = _os.linesep
@@ -48,6 +47,15 @@ def deletesure(s):
     if exists(s):
         delete(s)
     assert not exists(s)
+    
+def makedir(s):
+    try:
+        _os.mkdir(s)
+    except OSError:
+        if isdir(s):
+            return
+        else:
+            raise
    
 def copy(srcfile, destfile, overwrite):
     if not exists(srcfile):
