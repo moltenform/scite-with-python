@@ -84,8 +84,7 @@ class BaseAskChoiceStoredData(object):
     
     def printable(self, s):
         currentPrintable = s.replace('\r', ' ').replace('\n', ' ')
-        if len(currentPrintable) > 200:
-            currentPrintable = currentPrintable[0:200] + '...'
+        currentPrintable = ben_python_common.truncateWithEllipsis(currentPrintable, 200)
         return currentPrintable
         
     def getValueForInput(self):

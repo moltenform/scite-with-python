@@ -3,7 +3,7 @@
 # Released under the GNU General Public License version 3
 
 from scite_extend_ui import ScToolUIBase, ScApp, ScEditor, ScConst
-from ben_python_common import RecentlyUsedList, Bucket
+from ben_python_common import RecentlyUsedList, Bucket, truncateWithEllipsis
 from collections import OrderedDict
 import re
 
@@ -17,7 +17,11 @@ flagsList['re.MULTILINE | re.IGNORECASE'] = re.MULTILINE | re.IGNORECASE
 flagsList['re.DOTALL | re.IGNORECASE'] = re.DOTALL | re.IGNORECASE
 flagsList['re.MULTILINE | re.DOTALL | re.IGNORECASE'] = re.MULTILINE | re.DOTALL | re.IGNORECASE
 
+sessionHistoryQueries = RecentlyUsedList(maxSize=50)
+
 class RegexPreviewTool(ScToolUIBase):
+    currentlySettingList = False
+    
     def AddControls(self):
         self.AddLabel('Query:')
         self.cmbQuery = self.AddCombo()
@@ -29,12 +33,13 @@ class RegexPreviewTool(ScToolUIBase):
         self.lblResults = self.AddLabel('')
         self.AddRow()
         self.AddLabel('Reference:')
-        self.AddLabel('re.match(exp, s), re.search(exp, s), re.finditer(exp, s), re.sub(exp, repl, s, count)' + ' ' * 50)
+        self.AddLabel('re.match(exp, s), re.search(exp, s), ' + 
+            're.finditer(exp, s), re.sub(exp, repl, s, count)' + ' ' * 50)
         self.AddButton('Search', callback=self.OnSearch, default=True)
         self.AddButton('Close', callback=self.OnClose, closes=True)
         
     def OnOpen(self):
-        queries = ['']
+        queries = sessionHistoryQueries.getList() or ['']
         self.SetList(self.cmbQuery, '\n'.join(queries))
         self.Set(self.cmbQuery, queries[0])
         
@@ -64,9 +69,27 @@ class RegexPreviewTool(ScToolUIBase):
         
         results = doSearch(reObj)
         self.Set(self.lblResults, results)
+        
+        # update history but don't update the combobox yet, see OnEvent
+        sessionHistoryQueries.add(self.Get(self.cmbQuery))
 
     def OnClose(self):
         clearAllHighlights()
+    
+    def OnEvent(self, control, eventType):
+        if not self.currentlySettingList and control == self.cmbQuery and \
+            eventType == ScConst.eventTypeFocusOut:
+            # we would update the combobox in OnSearch, 
+            # but that was distracting while typing because it sets the caret position to 0
+            # so instead, update the combobox when focus leaves it.
+            
+            # (use currentlySettingList flag to guard against infinite loop)
+            self.currentlySettingList = True
+            currentVal = self.Get(self.cmbQuery)
+            self.SetList(self.cmbQuery, '\n'.join(sessionHistoryQueries.getList()))
+            self.Set(self.cmbQuery, currentVal)
+            self.currentlySettingList = False
+            
 
 def clearAllHighlights():
     ScEditor.SetIndicatorCurrent(ScConst.INDIC_CONTAINER)
@@ -118,10 +141,7 @@ def groupsToString(match):
     groups = match.groups()
     if len(groups):
         s = repr(list(groups))
-        if len(s) > maxlen:
-            return s[0:maxlen] + '...'
-        else:
-            return s
+        return truncateWithEllipsis(s, maxlen)
     else:
         return ''
 
