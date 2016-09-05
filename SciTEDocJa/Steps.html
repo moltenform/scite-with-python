@@ -1,0 +1,153 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+<html><head><meta content="text/html; charset=Shift_Jis" http-equiv="Content-Type"><title>Windows における Scintilla エディットコントロールの使い方</title><link href="translation.css" rel="stylesheet" type="text/css" /></head><body bgcolor="#ffffff">
+	<h2><span>Windows における Scintilla エディットコントロールの使い方</span><span class="eng">How to use the Scintilla Edit Control in windows?</span></h2>
+		<p>ここでは Windows 環境で Scintilla の使い方を一歩ずつ理解していきましょう。</p>
+<p class="eng">
+			This should be a little step by step explanation how to use Scintilla in the windows environment.
+</p>
+<h2><span>Scintilla エディットコントロールの作り方</span><span class="eng">How to create Scintilla Edit Control?</span></h2>
+		<p>まず、Scintilla の DLL を読み出さなくてはなりません。</p>
+<p class="eng">
+			First of all, load the Scintilla DLL with something like:
+		</p>
+		<pre>
+
+	hmod = LoadLibrary(&quot;SciLexer.DLL&quot;);
+		if (hmod==NULL)
+		{
+			MessageBox(hwndParent,
+			&quot;The Scintilla DLL could not be loaded.&quot;,
+			&quot;Error loading Scintilla&quot;,
+			MB_OK | MB_ICONERROR);
+		}
+		</pre>
+		<p>DLL を無事に読み出すことができた時点で、すでに自動的に新しいウィンドウクラスが登録されています。新しいクラスは &quot;Scintilla&quot; という名前のエディットコントロールです。</p>
+<p class="eng">
+			If the DLL was loaded successfully, then the DLL has registered (yes, by itself) a new
+			window class. The new class called &quot;Scintilla&quot; is the new scintilla edit control.
+		</p>
+		<p>他のウィンドウコントロール同様に使うことができるようになっています。</p>
+<p class="eng">
+			Now you can use this new control just like any other windows control.
+		</p>
+		<pre>
+
+	hwndScintilla = CreateWindowEx(0,
+		&quot;Scintilla&quot;,&quot;&quot;, WS_CHILD|WS_VISIBLE|WS_TABSTOP,
+		10,10,500,400,hwndParent,(HMENU)GuiID, hInstance,NULL);
+		</pre>
+		<p>&quot;Scintilla&quot; が新しいクラス名です。この時点で実際に Scintilla エディットコントロールがご自身の Windows 用プログラムに含まれたことになります。</p>
+<p class="eng">
+			Note the new window class name: &quot;Scintilla&quot;. By reaching this point you actually included
+			a Scintilla Edit Control to your windows program.
+		</p>
+<h2><span>Scintilla エディットコントロールの制御</span><span class="eng">How to control the Scintilla Edit Control?</span></h2>
+<p>Scintilla はそのエディットコントロールにコマンドを送ることで制御できます。方法は二通りあります。簡単な方法と速い方法です。</p>
+<p class="eng">
+			You can control Scintilla by sending commands to the Edit Control.
+			There a 2 ways of doing this. A simple and fast way.
+		</p>
+<h3><span>Scintilla を制御する簡単な方法</span><span class="eng">The simple way to control Scintilla</span></h3>
+			<p>簡単な方法というのは他の Windows コントロールに対するものと同様の形です。Scintilla エディットコントロールにメッセージを送り、コントロールからは通知を受け取ります。通知は Scintilla エディットコントロールの親ウィンドウに送られることに注意しましょう。</p>
+<p class="eng">
+				The simple way is just like with any other windows control. You can send messages to the
+				Scintilla Edit Control and receive notifications from the control. (Note that the notifications
+				are sent to the parent window of the Scintilla Edit Control.)
+			</p>
+			<p>Scintilla エディットコントロールは各コマンドごとの特別なメッセージを知っています(訳注:誤訳かも)。SendMessage 関数で Scintilla エディットコントロールにコマンドを送ることができます。</p>
+<p class="eng">
+				The Scintilla Edit Control knows a special message for each command.
+				To send commands to the Scintilla Edit Control you can use the SendMessage function.
+			</p>
+			<pre>
+
+	SendMessage(hwndScintilla,sci_command,wparam,lparam);
+			</pre>
+			<p>例えば、次のようになります。</p>
+<p class="eng">
+				like:
+			</p>
+			<pre>
+
+	SendMessage(hwndScintilla,SCI_CREATEDOCUMENT, 0, 0);
+			</pre>
+			<p>いくつかのコマンドは値を返します。使わない引数は NULL にしておくべきです。</p>
+<p class="eng">
+				Some of the commands will return a value and unused parameters should be set to NULL.
+			</p>
+<h3><span>Scintilla を速く制御する方法</span><span class="eng">The fast way to control Scintilla</span></h3>
+			<p>Scintilla エディットコントロールを速く制御する方法は、自分でメッセージ処理関数をよびだすというものです。Scintilla エディットコントロールのメッセージ処理関数へのポインタを取得することができますので、コマンドを実行させるときに直接これを呼び出します。SendMessage() による方法よりうんと高速化できます。</p>
+<p class="eng">
+				The fast way of controlling the Scintilla Edit Control  is to call message handling function by yourself.
+				You can retrieve a pointer to the message handling function of the Scintilla Edit Control and
+				call it directly to execute a command. This way is much more faster than the SendMessage() way.
+			</p>
+			<p>まず、SCI_GETDIRECTFUNCTION を用いてその関数へのポインタを取得し、SCI_GETDIRECTPOINTER を用いて必ずその第一引数となるポインタを取得します。この部分は SendMessage を使わなくてはなりません :)</p>
+<p class="eng">
+				1st you have to use the SCI_GETDIRECTFUNCTION and SCI_GETDIRECTPOINTER commands to
+				retrieve the pointer to the function and a pointer which must be the first parameter when calling the retrieved
+				function pointer.
+				You have to do this with the SendMessage way :)
+			</p>
+			<p>この手続きは次のようになります。</p>
+<p class="eng">
+				The whole thing has to look like this:
+			</p>
+			<pre>
+
+	int (*fn)(void*,int,int,int);
+	void * ptr;
+	int canundo;
+
+	fn = (int (__cdecl *)(void *,int,int,int))SendMessage(
+		hwndScintilla,SCI_GETDIRECTFUNCTION,0,0);
+	ptr = (void *)SendMessage(hwndScintilla,SCI_GETDIRECTPOINTER,0,0);
+
+	canundo = fn(ptr,SCI_CANUNDO,0,0);
+			</pre>
+			<p>&quot;ptr&quot; が必ず第一引数となるポインタです。以降の引数が Scintilla へのコマンドと(あれば)その二つの引数となります。&quot;fn&quot; のほうが Scintilla コントロールのメッセージ処理関数へのポインタとなります。</p>
+<p class="eng">
+				with &quot;fn&quot; as the function pointer to the message handling function of the Scintilla Control
+				and &quot;ptr&quot; as the pointer that must be used as 1st parameter.
+				The next parameters are the Scintilla Command with its two (optional) parameters.
+			</p>
+<p class="eng"><h3><span>Scintilla から通知を受ける方法</span><span class="eng">How will I receive notifications?</span></h3>
+			<p>Scintilla が何らかの情報を提供しようとすると、必ずイベントが発生します。Scintilla エディットコントロールはその親ウィンドウに通知を行います。通知には WM_NOTIFY メッセージが利用されます。そのメッセージを受け取ったら xxx 構造体の中にある実際のメッセージを見る必要があります。</p>
+<p class="eng">
+				Whenever an event occurs where Scintilla wants to inform you about something, the Scintilla Edit Control
+				will send notification to the parent window. This is done by a WM_NOTITY message.
+				When receiving that message, you have to look in the xxx struct for the actual message.
+			</p>
+			<p>ですから Scintilla の親ウィンドウのメッセージ処理関数の中に次のようなコードが必要となります。</p>
+<p class="eng">
+				So in Scintillas parent window message handling function you have to include some code like this:
+			</p>
+			<pre>
+	NMHDR *lpnmhdr;
+
+	[...]
+
+	case WM_NOTIFY:
+		lpnmhdr = (LPNMHDR) lParam;
+
+		if(lpnmhdr-&gt;hwndFrom==hwndScintilla)
+		{
+			switch(lpnmhdr-&gt;code)
+			{
+				case SCN_CHARADDED:
+					/* Scintilla がおのれに新しい文字を追加した言うてまんで。
+					  なんぞイカした文字にでもしてやろか(訳注:誤訳かも) */
+					<span class="eng">/* Hey, Scintilla just told me that a new */
+					/* character was added to the Edit Control.*/
+					/* Now i do something cool with that char. */</span>
+				break;
+			}
+		}
+	break;
+			</pre>
+    <p><i>このページは Holger Schmidt さんより寄贈されました。</i></p>
+<p class="eng">
+       <i>Page contributed by Holger Schmidt.</i>
+    </p>
+</body></html>
+

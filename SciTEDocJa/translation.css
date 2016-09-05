@@ -1,0 +1,54 @@
+@charset "Shift_JIS";
+
+.versionlist .eng {
+	display: block;
+}
+
+.eng {
+	margin-left: 50px;
+	margin-right: 50px;
+	border-left: 2px solid gray;
+	padding-left: 4px;
+	font-size: smaller;
+	color: gray;
+}
+h1 span.eng:before,
+h2 span.eng:before,
+h3 span.eng:before,
+h4 span.eng:before {
+	content: "\a - ";
+}
+h1 span.eng,
+h2 span.eng,
+h3 span.eng,
+h4 span.eng {
+	display: block;
+	margin-left: 0px;
+	border-left: 0px;
+	padding-left: 0px;
+}
+
+li span.eng:before {
+	content: "\a - ";
+}
+li span.eng {
+	margin-left: 0px;
+	border-left: 0px;
+	padding: 2px 6px;
+}
+li div.eng {
+	margin-top: 1.8ex;
+	margin-bottom: 1.8ex;
+}
+
+.eng a {
+	color: #748;
+	background-color: #edf;
+}
+.eng a:hover {
+	border-bottom: medium solid black;
+	text-decoration: underline;
+}
+.eng a:visited {
+	text-decoration: none;
+}

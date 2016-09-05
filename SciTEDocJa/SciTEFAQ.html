@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="Shift_JIS"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja">
+  <head>
+    <meta name="generator" content="HTML Tidy, see www.w3.org" />
+    <meta name="generator" content="SciTE" />
+    <meta http-equiv="Content-Type" content="text/html; charset=Shift_Jis" />
+    <title>
+      SciTE でよくある質問
+    </title>
+	<link href="translation.css" rel="stylesheet" type="text/css" />
+<style type="text/css">
+        table {
+            border: 1px solid #1F1F1F;
+            border-collapse: collapse;
+        }
+        td {
+            border: 1px solid #1F1F1F;
+            padding: 1px 5px 1px 5px;
+        }
+        th {
+            border: 1px solid #1F1F1F;
+            padding: 1px 5px 1px 5px;
+        }
+        h4 {
+            background-color: #CCEEFF;
+        }
+ </style>
+  </head>
+  <body bgcolor="#FFFFFF" text="#000000">
+    <table bgcolor="#000000" width="100%" cellspacing="0" cellpadding="0" border="0"  summary="banner">
+      <tr>
+        <td>
+          <img src="SciTEIco.png" border="3" height="64" width="64" alt="Scintilla icon" />
+        </td>
+        <td>
+          <a href="index.html" style="color:white;text-decoration:none"><font size="5">
+          SciTE</font></a>
+        </td>
+      </tr>
+    </table>
+    <h2>
+       <span>SciTE でよくある質問</span><span class="eng">SciTE Frequently Asked Question</span>
+    </h2>
+    <ul>
+    <li><a class="toc" href="#FixedWidth">全てのテキストに固定幅フォントを使うにはどうしたらいいのですか?</a></li>
+    <li><a class="toc" href="#Monospaced"><code>use.monospaced</code> はどうしたの?</a></li>
+    <li><a class="toc" href="#LineNumbers"><code>line.numbers</code>がうまく動作しません。</a></li>
+    <li><a class="toc" href="#BlackBackground">SciTE の背景色を黒にするには?</a></li>
+    <li><a class="toc" href="#OutputColour">出力部の色を変えるには?</a></li>
+    <li><a class="toc" href="#HorizontalScrollBar">水平スクロールバーをテキストの幅に合わせるには?</a></li>
+    <li><a class="toc" href="#TabbedMode">SciTE でタブウィンドウモードにするには?</a></li>
+    <li><a class="toc" href="#Autocomplete">自動補完を使えるようにするには?</a></li>
+    <li><a class="toc" href="#CannotFindFile">コンパイル・ビルド・実行をしたところ '指定されたファイルが見つかりません' というエラーが出力されました。</a></li>
+    <li><a class="toc" href="#ToolsMenu">ツールメニューに外部アプリケーションを追加するには?</a></li>
+    </ul>
+    <h3>
+       <span>よくある質問</span><span class="eng">Frequently Asked Questions</span>
+    </h3>
+<h4 id="FixedWidth">
+       <span>全てのテキストに固定幅フォントを使うにはどうしたらいいのですか?</span><span class="eng">How do I use a fixed width font for all text?</span>
+    </h4>
+    <p>以下の特性を利用してください。</p>
+	<p class="eng">
+       Use these properties:</p><p><code>
+	font.base=$(font.monospace)<br />
+	font.small=$(font.monospace)<br />
+	font.comment=$(font.monospace)<br />
+	font.text=$(font.monospace)<br />
+	font.text.comment=$(font.monospace)<br />
+	font.embedded.base=$(font.monospace)<br />
+	font.embedded.comment=$(font.monospace)<br />
+	font.vbs=$(font.monospace)<br /></code>
+    </p>
+    <h4 id="Monospaced">
+       <span><code>use.monospaced</code> はどうしたの?</span><span class="eng">What happened to <code>use.monospaced</code>?</span>
+    </h4>
+	<p><code>use.monospaced</code> 特性は削除されました。上記の<a class="toc" href="#FixedWidth">固定幅フォントの正しい指定方法</a>を使ってください。</p>
+    <p class="eng">
+       The <code>use.monospaced</code> property was removed as
+       people were using it to ask for fixed width fonts and then
+       requiring support to cope with its limitations. The correct way to
+       set fixed width fonts is <a class="toc" href="#FixedWidth">here</a>.
+    </p>
+    <h4 id="LineNumbers">
+       <span><code>line.numbers</code>がうまく動作しません。</span><span class="eng">Why doesn't my <code>line.numbers</code> setting work?</span>
+    </h4>
+    <p><code>line.numbers</code> は二つの特性に置き換えられました。<code>line.margin.visible</code> と <code>line.margin.width</code> の説明をご覧ください。</p>
+    <p class="eng">
+       <code>line.numbers</code> has been replaced with two properties: <code>line.margin.visible</code>
+       and <code>line.margin.width</code> which are explained earlier in this document.
+    </p>
+    <h4 id="BlackBackground">
+       <span>SciTE の背景色を黒にするには?</span><span class="eng">How do I change SciTE to use black as the background colour?</span>
+    </h4>
+    <p>書式設定を変更する必要があります。共有設定特性ファイルで標準書式やキャレットの色を変更するのが主な変更内容ですが、うまく動作させるには他の書式設定も変更する必要があるでしょう。<br /><code>
+       style.*.32=$(font.base),back:#000000,fore:#ffffff<br />
+       caret.fore=#FFFFFF</code></p>
+
+    <p class="eng">
+       You need to change the style settings. The main change is in the global
+       options file to the global default style and caret colour but you may have
+       to change other style settings to make this work well:<br /><code>
+       style.*.32=$(font.base),back:#000000,fore:#ffffff<br />
+       caret.fore=#FFFFFF</code>
+    </p>
+    <h4 id="OutputColour">
+       <span>出力部の色を変えるには?</span><span class="eng">How do I change the colours of the output pane?</span>
+    </h4>
+    <p>出力部はしばしばエラーと警告の一覧を表示し、"errorlist" 解析器で色づけなどをおこないます。省略時に errorlist が使用する書式設定は other.porperties です。出力部の背景色を黒に、またその通常のテキストを白にするには次のように指定します。<br /><code>
+       style.errorlist.32=$(font.small),back:#000000<br />
+       style.errorlist.0=fore:#FFFFFF</code></p>
+    <p class="eng">
+       The output pane often lists error and warning messages and
+       is styled by the "errorlist" lexer. The default errorlist styles are found
+       in others.properties. To change the ouput pane background to black
+       and the default text to white set<br /><code>
+       style.errorlist.32=$(font.small),back:#000000<br />
+       style.errorlist.0=fore:#FFFFFF</code>
+    </p>
+    <h4 id="HorizontalScrollBar">
+       <span>水平スクロールバーをテキストの幅に合わせるには?</span><span class="eng">How do I make the horizontal scroll bar adjust to the width of text?</span>
+    </h4>
+    <p>水平スクロールバーの処理が遅くなるのを避けるために自動補正を禁止することができます。<code>horizontal.scroll.width</code> 特性で水平スクロール幅を設定してください。</p>
+    <p class="eng">
+       To avoid slow performance the horizontal scroll bar does not automatically adjust.
+       You can use the <code>horizontal.scroll.width</code> property to change the horizontal scroll range.
+    </p>
+    <h4 id="TabbedMode">
+        <span>SciTE でタブウィンドウモードにするには?</span><span class="eng">How do I enable tabbed window mode in SciTE?</span>
+    </h4>
+    <p>タブウィンドウモードは Windows と GTK+ 2 で可能です。GTK+ 1 では使えません。複数のバッファが設定で使用可能になっている必要がありますので SciTEGlobal.properties 内で <code>buffers=10</code> などのように buffers を 2 以上にします。次に SciTE 起動時にタブを有効にするには <code>tabbar.visible=1</code> を設定します。<code>tabbar.hide.one=1</code> を設定しておくと開いているファイルが一つだけのときにタブを隠すことができます。<code>tabbar.multiline=1</code> が設定されていれば必要なときにタブを縦にも重ねられるようになります。</p>
+    <p class="eng">
+        Tabbed window mode is only available on Windows and GTK+ 2, not on GTK+ 1.
+        Multiple buffers must be allocated by setting, for example, <code>buffers=10</code>
+        in your SciTEGlobal.properties. To have the tab bar visible upon starting
+        SciTE, set <code>tabbar.visible=1</code>.
+        You can also set <code>tabbar.hide.one=0</code> to always show tabs,
+        or 1 to hide when only one file is open.
+        <code>tabbar.multiline=1</code> splits tabs across various lines if neccesary.
+    </p>
+    <h4 id="Autocomplete">
+        <span>自動補完を使えるようにするには?</span><span class="eng">How do I enable autocomplete?</span>
+    </h4>
+    <p>オプションメニューの「共有設定ファイルを開く」でファイルを開いて <code>autocompleteword.automatic=1</code> を有効にしてください。</p>
+    <p class="eng">
+        Goto Options | Open Global Options File and uncomment<br />
+        <code>autocompleteword.automatic=1</code>
+    </p>
+    <h4 id="CannotFindFile">
+        <span>コンパイル・ビルド・実行をしたところ '指定されたファイルが見つかりません' というエラーが出力されました。</span><span class="eng">When I try to compile/build/run my [some language] source files, I get the following error:
+        'The system cannot find the file specified'.</span>
+    </h4>
+    <p>コンパイラへのパスが正しいことを確認してください。コンソールから SciTE が実行しようとしたコマンドと同じものを入力し、それが動作するかを試します。[プログラミング言語名].properties ファイルの中でどのようなコンパイルコマンドを使うかを探すことができます。もし異なるコンパイラを使ったり異なる引数を使ったりする場合は、それに応じてこのファイルを編集する必要があります。次のような行を探してください。<code><br />
+        command.compile.filepattern=<br />
+        command.build.filepattern=<br />
+        command.go.filepattern=</code></p>
+    <p class="eng">
+        Make sure that the path to your compiler is set correctly on your system.
+        Try to execute from console the same command you get in SciTE and see if it works.
+        You can also search in your [language].properties for the compile
+        commands used. If you have a different compiler or use different arguments,
+        edit the commands to suit your needs.
+        The lines to look for:<code><br />
+        command.compile.filepattern=<br />
+        command.build.filepattern=<br />
+        command.go.filepattern=</code>
+    </p>
+    <h4 id="ToolsMenu">
+       <span>ツールメニューに外部アプリケーションを追加するには?</span><span class="eng">How can I add [some external application] to the tools menu on SciTE?</span>
+    </h4>
+    <p>特性ファイルで何行か追加する必要があります。</p>
+    <p class="eng">
+In your properties file, you'll need to add some lines:
+    </p>
+    <p><code>command.name.number.filepattern</code><br />
+(例: <code>command.name.1.$(file.patterns.web)=HTML Tidy</code>)<br />上記でツールメニューに出す文字列を定義します。</p>
+    <p class="eng">
+<code>command.name.number.filepattern</code><br />
+(e.g.: <code>command.name.1.$(file.patterns.web)=HTML Tidy</code>)<br />
+This defines the Text that will appear on the Tools Menu.
+    </p>
+    <p><code>command.number.filepattern</code><br />
+(例: <code>command.1.$(file.patterns.web)=tidy -i -wrap 0 -m $(FilePath)</code> )<br />上記は SciTE が実際に実行するコマンドです。適切なパス名やオプション・引数をコマンドラインから実行するときと同様に与えなくてはなりません。</p>
+    <p class="eng">
+<code>command.number.filepattern</code><br />
+(e.g.: <code>command.1.$(file.patterns.web)=tidy -i -wrap 0 -m $(FilePath)</code> )<br />
+This is the actual command that SciTE executes. You should provide the appropiate paths, options and parameters as you would from a command line. See SciTEDoc.html for more information on parameters and how to make SciTE prompt a Parameters Dialog.
+    </p>
+    <p><code>command.is.filter.number.filepattern</code><br />
+(例.: <code>command.is.filter.1.$(file.patterns.web)=1</code>)<br />外部アプリケーションが SciTE で編集中のファイルを変更することもあります。この設定を 1 にすることで SciTE に実行後の再読込を要求します。
+</p>
+    <p class="eng">
+<code>command.is.filter.number.filepattern</code><br />
+(e.g.: <code>command.is.filter.1.$(file.patterns.web)=1</code>)<br />
+The external application may have modified your file, so setting this to true makes SciTE reload the file after execution of the command.
+    </p>
+    <p><code>command.subsystem.number.filepattern</code><br />
+(例.: <code>command.subsystem.1.$(file.patterns.web)=2</code>)<br />
+Windows では subsystem を通してどの手段で外部アプリケーションを起動するかを指定できます。</p>
+    <p class="eng">
+<code>command.subsystem.number.filepattern</code><br />
+(e.g.: <code>command.subsystem.1.$(file.patterns.web)=2</code>)<br />
+This is for Windows and defines the subsystem through which the program is called. See SciTEDoc.html for more information on this.
+    </p>
+    <p>filepattern に * を指定することで全てのファイルに対するコマンドを設定できます。最大 10 (0～9) のコマンドをツールメニューに定義できます。コマンドは Ctrl+数字 の操作でも実行できます。</p>
+    <p class="eng">
+You can set a command for all files using * as a file pattern. Up to 10 commands (0 - 9) can be defined in the Tools Menu at any time. Commands also get executed with Ctrl+number.
+    </p>
+  </body>
+</html>
+

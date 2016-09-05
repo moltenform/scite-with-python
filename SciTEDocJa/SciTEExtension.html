@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="Shift_JIS"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="jp" lang="jp">
+  <head>
+    <link href="translation.css" rel="stylesheet" type="text/css" />
+    <meta name="generator" content="SciTE" />
+    <meta http-equiv="Content-Type" content="text/html; charset=Shift_Jis" />
+    <title>
+      SciTE 拡張インタフェイス
+    </title>
+  </head>
+  <body bgcolor="#FFFFFF" text="#000000">
+    <table bgcolor="#000000" width="100%" cellspacing="0" cellpadding="0" border="0">
+      <tr>
+        <td>
+          <img src="SciTEIco.png" border="3" height="64" width="64" alt="Scintilla icon" />
+        </td>
+        <td>
+          <a href="index.html" style="color:white;text-decoration:none"><font size="5">
+	 <span>SciTE 拡張インタフェイス</span><span class="eng">SciTE Extension Interface</span></font></a>
+        </td>
+      </tr>
+    </table>
+    <h3><span>目的</span><span class="eng">Purpose.</span></h3>
+	<p>新しい SciTE の機能による利益を十分に受けながらも、一部の人は拡張版の SciTE エディタを作りたいと考えます。ゲームを開発するとか、SciTE にスクリプトを書く能力を組み込むとか、IPC を通して他のプロセスから SciTE を制御する等といった特定環境用に設計されたものです。</p><p class="eng">Some people want to create enhanced versions of the SciTE editor, while
+	still receiving the benefits of new SciTE features. This could be for an
+	editor designed for a particular environment such as developing games,
+	to incorporate a scripting capability within SciTE or to allow SciTE to be
+	controlled by another process through an IPC mechanism.</p>
+	<p>二つの拡張の例があります。<a href="SciTEDirector.html">SciTE Director インタフェイス</a>は Windows 上の SciTE をプロジェクトマネージャのような外部アプリケーションから制御することを可能にします。Lua スクリプト言語の SciTE への統合は拡張インタフェイスによってなされます。これは現在は保守されていませんが、将来は再び活性的に扱われ始める可能性があります。extlua プロジェクトの下にある Scintilla CVS サーバからコードを入手できます。</p><p class="eng">There are two example extensions.
+	The <a href="SciTEDirector.html">SciTE Director Interface</a> allows
+	SciTE on Windows to be controlled by an external application such as a project manager.
+	An integration of the Lua scripting language into SciTE was done using the Extension
+	interface. This is not currently maintained although it may become active again
+	in the future. The code is available from the Scintilla CVS server under the extlua
+	project.</p>
+    <h3><span>拡張インタフェイス</span><span class="eng">
+       Extension Interface.
+    </span></h3>
+    <code>
+	bool Initialise(ExtensionAPI *host_);<br />
+	bool Finalise();<br />
+	bool Clear();<br />
+	bool Load(const char *filename);<br />
+	bool InitBuffer(int index);<br />
+	bool ActivateBuffer(int index);<br />
+	bool RemoveBuffer(int index);<br />
+	bool OnOpen(const char *path);<br />
+	bool OnSwitchFile(const char *path);<br />
+	bool OnSave(const char *path);<br />
+	bool OnChar(char ch);<br />
+	bool OnExecute(const char *s);<br />
+	bool OnSavePointReached();<br />
+	bool OnSavePointLeft();<br />
+	bool OnStyle(unsigned int, int, int, Accessor *);<br />
+	bool OnDoubleClick();<br />
+	bool OnUpdateUI();<br />
+	bool OnMarginClick();<br />
+	bool OnMacro(const char *, const char *);<br />
+	bool SendProperty(const char *);<br />
+    </code>
+	<p>SciTE 拡張は scite/src/Extender.h に定義された拡張用インタフェイスを実装しなくてはなりません。最初の四つのメソッドのみが必ず実装すべきものですが、これらは単に false を返すだけの実装でも構いません。他のメソッドは実装がないのが最低実装状態です。このインタフェイスに将来実装されるメソッドは実装のない状態を最低実装とするので既存の拡張実装もコンパイルすることが可能となります。</p><p class="eng">An extension must implement the Extension interface defined in scite/src/Extender.h
+	Only the first 4 methods must be implemented although an implementation can be as
+	simple as just returning false. The other methods have empty default implementations.
+	Methods added to this interface in the future should have default implementations so
+	existing extensions will continue to compile.</p>
+	<p>各メソッドは真偽値を返します。必要な処置をすべて行い追加の処理の必要がない場合に true を返します。通常は false を返し、さらなる処理を続けることを意味します。</p><p class="eng">Each method returns a bool indicating whether the method handled all processing that
+	is needed and so no additional processing is required. Normally, false is returned to indicate
+	that further processing may be done.</p>
+	<p>拡張実装は Initialise と Finalise の両メソッドによってリソースの割り当てと解放を行わなくてはなりません。Initialise メソッド内で ExtensionAPI ポインタを保存することにより、SciTE 方向への通信が可能となります。</p><p class="eng">The extension should use the Initialise and Finalise methods to allocate
+	and deallocate resources. The ExtensionAPI pointer should be saved in the
+	Initialise method so the extension can communicate back to SciTE.</p>
+	<p>Clear と Load メソッドは、あるファイルを開いたときに、スクリプトファイルのようなリソースを読み出すために使用されます。SciTE がファイルを開いたとき、まず拡張実装へ Clear を介して以前のファイルに関するあらゆるデータを削除するかどうかを尋ねます。その後 SciTE は "extension" という名の属性を調べてファイル名に合致するものを探します。例えば x.cpp であれば extension.*.cpp が合致します。標準の属性ファイル位置に該当名のファイルがあれば Load が引数一つを伴って呼び出されます。</p>
+	<p class="eng">The Clear and Load methods are used to support extensions that need
+	to load a resource such as a script file when a file is opened. When a file is
+	opened in SciTE, first the extension is asked to clear any data associated with
+	the previous file through Clear. Then SciTE checks for a property called
+	"extension" which matches the file name, so for x.cpp, looks for extension.*.cpp.
+	A file with this name is searched for in standard property file locations and if found
+	Load is called with the path as an argument. </p>
+	<p>未訳</p><p class="eng">The InitBuffer, ActivateBuffer, and RemoveBuffer methods provide the necessary hooks
+	so that extensions have a mechanism to associate data with a specific buffer, similar
+	to the way SciTE itself remembers the monospace setting of each buffer.  InitBuffer is
+	called whenever a new document is opened in a given buffer.  The buffer might be a newly
+	allocated one, or it might be recycled if the maximum number of buffers has been reached.
+	Once the buffer has been initialized, it will be the active buffer.  Thereafter,
+	ActivateBuffer is called whenever the user switches to another loaded buffer.
+	RemoveBuffer is called when an existing buffer is closed.  Thereafter, the indexes of
+	the buffers that come after the removed buffer are shifted down by one.  After
+	RemoveBuffer, the extension will receive an InitBuffer or ActivateBuffer to establish
+	the new active buffer.</p>
+	<p>OnExecute は拡張コマンドが実行されたときだけ呼び出されます。これらは属性の中で subsystem 3 を示しています。</p><p class="eng">OnExecute is called only when an extension command is executed. These are
+	indicated in properties as subsystem 3.</p>
+	<p>他のメソッドは SciTE が拡張実装にそれらのイベントに反応することを許可する場合に呼び出されます。</p><p class="eng">Other methods are called upon events occurring in SciTE allowing an extension
+	to respond to those events.</p>
+    <h3><span>ExtensionAPI インタフェイス</span><span class="eng">
+       ExtensionAPI Interface.
+    </span></h3>
+    	<code>
+    	enum Pane { paneEditor=1, paneOutput=2, paneFindOutput=3 };<br />
+	sptr_t Send(Pane p, unsigned int msg, uptr_t wParam=0, sptr_t lParam=0);<br />
+	char *Range(Pane p, int start, int end);<br />
+	void Remove(Pane p, int start, int end);<br />
+	void Insert(Pane p, int pos, const char *s);<br />
+	void Trace(const char *s);<br />
+	char *Property(const char *key);<br />
+	void SetProperty(const char *key, const char *val);<br />
+	uptr_t GetInstance();<br />
+	void ShutDown();<br />
+	void Perform(const char *actions);<br />
+    	</code>
+	<p>これらのインタフェイスを利用することにより、簡素な方法で SciTE の機能に接続することができます。</p><p class="eng">An extension can call back into SciTE using this interface which is a simplified
+	way to access the functionality of SciTE.</p>
+	<p>通常の編集部と出力部の各区画同様に、将来は paneFindOutput 指定により検索結果を出力する三つ目の区画に対しても利用できるようになる予定です。現在は出力部に接続されています。</p><p class="eng">As well as the normal editor pane and output pane, this interface allows for
+	a future feature where a third pane may be used for the output of search
+	commands. This is currently mapped to the output pane.</p>
+	<p>各区画に含まれる Scintilla の制御リソースにメッセージを送るには Send を使います。</p><p class="eng">Send allows sending messages to the Scintilla control contained in each pane.</p>
+	<p>Range によって各区画のテキストを取得できます。これらは delete[] により削除されなくてはなりません。Remove と Insert は区画内のテキストを削除あるいはテキストに挿入するために用いることができます。</p><p class="eng">Range retrieves text from the pane. This must be deleted with delete[].
+	Remove and Insert are used to remove and insert text in a pane.</p>
+	<p>Trace は出力部の最後に文字列を表示します。</p><p class="eng">Trace displays a string at the end of the output pane.</p>
+	<p>Property と SetProperty によって、SciTE の属性値を読み書きできます。Property の戻り値は delete[] によって削除する必要があります。</p><p class="eng">SciTE's properties can be read and written with Property and
+	SetProperty. The result from Property should be deleted with delete[].</p>
+	<p>GetInstance は Windows 専用で、環境依存の機能利用のためにアプリケーションの HINSTANCE を得ることができます。</p><p class="eng">GetInstance is Windows specific and returns the HINSTANCE of
+	the application which is needed when accessing platform facilities.</p>
+	<p>ShutDown はユーザがメニューから「終了」を選択したときと同じ動作をします。更新後未保存のファイルがあるときはユーザはそれらを保存するかどうか、あるいは終了をキャンセルするかをダイアログで尋ねられます。従って、ShutDown を呼び出した後でもアプリケーションの実行が継続される場合があります。</p><p class="eng">ShutDown is equivalent to the user choosing the Quit menu item.
+	If there are any unsaved files loaded, then the user is asked whether to save them
+	and may cancel from this dialog. So under some circumstances, the application will
+	continue to run after ShutDown is called.</p>
+	<p>Perform は行動を記した文字列、':'、行動に対する引数の三つからなる文字列を取ります。現時点では行動は open、その引数はパス名しかとることができません。これは <a href="SciTEDirector.html">Director 拡張</a> が他のアプリケーションにつなぐために用いられます。将来はこのメソッドでより多くの行動ができるようになります。</p><p class="eng">Perform takes a string containing an action, a ':' character, and an argument.
+	Currently the only known action is open and then the argument is a path.
+	This is used by the <a href="SciTEDirector.html">Director extension</a>
+	to relay commands from another application.
+	In the future more actions will be possible through this method.</p>
+    <h3><span>拡張実装に接続する</span><span class="eng">
+       Attaching the extension.
+    </span></h3>
+    	<p>拡張実装は起動関数の中にコードで明確に加えられています。Windows では DirectorExtension が次の簡素な例と同様のコードにより接続されています。</p><p class="eng">Extensions are currently added explicitly by code in the start up function.
+	On Windows, the DirectorExtension is attached with code similar to this simplified
+	example:</p>
+<code>
+DirectorExtension director;<br />
+Extension *extender = &amp;director;<br />
+//...<br />
+SciTEWin MainWind(extender);
+</code>
+	<p class="eng">It would be better to move to an implicit attachment mechanism similar to the
+	way lexers are attached to Scintilla, determining which extensions are used
+	by simply linking their object files into SciTE. It would also be good to
+	allow run-time attachment of extensions housed in DLLs or shared object libraries.</p>
+    <h3><span>拡張実装の多重化</span><span class="eng">
+       Multiplexing.
+    </span></h3>
+	<p>SciTE は一度にたくさんの拡張を利用できます。多重拡張機構は、拡張実装の一覧を保守して必要な各メソッドを一つずつ呼び出していきます。ある拡張実装が true を返したとき、これは処理の停止を意味するので一覧に残る他の実装の同メソッドを呼び出さずに多重呼び出し処理を完了します。ただし、Intialize や Finalise のようなメソッドの場合は他の拡張が何を返してきても全ての拡張が呼び出されます。</p>
+	<p class="eng">SciTE supports multiple extensions at a time. A multiplexer extension
+	maintains a list of extensions and calls each in turn for each method. Once an extension
+	returns true indicating processing should stop, the multiplexer returns without traversing
+	any remaining list members. However, for some methods such as Initialise and Finalise,
+	the remaining extensions are traversed regardless of the return value of the previous
+	extension.</p>
+    <h3>
+       <span>スレッド安全性</span><span class="eng">Thread safety.</span>
+    </h3>
+	<p>一般的に、SciTE はシングルスレッドアプリケーションです。しかしながら、Windows ではコマンドツールが OnExecute を独立したスレッドで呼び出します。OnExecute をメインスレッドに直列化して呼び出す目的で SingleThreadExtension アダプタクラスを使って拡張を覆うことができます。もちろん、拡張自身がスレッドセーフであったり OnExecute を実装していなかったり、あるいは GTK 依存の拡張であったときはこのアダプタクラスを使う必要はありません。</p>
+	<p class="eng">In general, SciTE is a single threaded application.  However, on Windows, command
+	tools call OnExecute from a separate worker thread.  The SingleThreadExtension adapter
+	class can be used to wrap an extension so that OnExecute calls are marshalled to the
+	main thread.  Of course, this is not necessary if your extension is thread safe, or
+	if it does not implement OnExecute, or if it is a GTK-specific extension.</p>
+  </body>
+</html>
+

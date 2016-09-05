@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="Shift_JIS"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja">
+  <head>
+    <meta name="generator" content="SciTE" />
+    <meta http-equiv="Content-Type" content="text/html; charset=Shift_Jis" />
+    <title>
+      SciTE Lua 外部解析器
+    </title>
+  <link href="translation.css" rel="stylesheet" type="text/css" />
+  </head>
+<body bgcolor="#FFFFFF" text="#000000">
+
+    <table bgcolor="#000000" width="100%" cellspacing="0" cellpadding="0" border="0" id="table1">
+      <tr>
+        <td>
+          <img src="SciTEIco.png" border="3" height="64" width="64" alt="Scintilla icon" />
+        </td>
+        <td>
+          <a href="index.html" style="color:white;text-decoration:none"><font size="5">
+	  <span>SciTE に外部解析器を加える</span><span class="eng">Add an external lexer to SciTE</span></font></a>
+        </td>
+      </tr>
+    </table>
+    <h2><span>解析器の追加</span><span class="eng">Lexer addition.</span>
+    </h2>
+     <p>この文書はすでに解析器を知っている方向けに書かれた物です。外部解析器として動作させるための必要な変更に特化した情報を記しています。</p><p class="eng">This document assumes you know how to create a lexer.&nbsp; It only 
+		covers information specific to making the changes necessary for that 
+		lexer to work as an external lexer.</p>
+<p>解析器は四つの関数をエクスポートしなくてはなりません。Windows では関数名が正しくエクスポートされるようにモジュール定義ファイルを作る必要があります。以下にそれらの関数の雛形を示します。ExternalLexer.h をインクルードすることで EXT_LEXER_DECL が解決されます。</p><p class="eng">The lexer must export 4 functions (On Windows, it is necessary to create a 
+module definition file to export the symbols correctly).&nbsp; Below are the 
+proto-types for those functions (ExternalLexer.h must be included so that 
+EXT_LEXER_DECL can be resolved):</p>
+<pre><code>void EXT_LEXER_DECL Lex(
+    unsigned int lexer,
+    unsigned int startPos,
+    int length,
+    int initStyle, 
+    char *words[],
+    WindowID window,
+    char *props);
+int EXT_LEXER_DECL GetLexerCount();
+void EXT_LEXER_DECL GetLexerName(unsigned int Index, char *name, int buflength);
+void EXT_LEXER_DECL Fold(
+    unsigned int lexer,
+    unsigned int startPos,
+    int length, 
+    int initStyle,
+    char *words[],
+    WindowID window, char *props);</code></pre>
+<p>Lex 関数は解析の実行を要求したときに常に呼び出されます。最初に通知され得るのは、書式を定めるアクセサオブジェクトの不足です。WindowsAccessor オブジェクトは WindowID と props オブジェクトから生成されます。PropSet オブジェクトは必ず props から生成されます。次に PropSet と WindowID が WindowAccessor を作るために使われます。これに加えて独自の WordList を作らなくてはなりません。単語列の最後は NULL ポインタなので、最後の列まで一度読むことで何列あるかを安全に定めることができます。WordList と Accessor を所有したら、内蔵解析器を使うときと同様にそれを解析関数に渡すことができます。唯一の違いは時に Accessor::Flush() を呼び出す必要があるということです。関数 Lex から制御を返される前や全てのテキストが更新される前に呼び出さなければならないことがあります。これは Scintilla がバッファを持つためです。</p><p class="eng">Lex - This function is called whenever lexing needs to be done.&nbsp; The 
+first thing you may notice is the lack of an Accessor object to style with.&nbsp; 
+A WindowAccessor object can be created from the WindowID and props objects.&nbsp; 
+A PropSet object must be created from props, first, then that PropSet and the 
+WindowID are used to create a WindowAccessor.&nbsp; You will also need to create 
+your own WordList.&nbsp; (The last row in the words array is a NULL pointer, so 
+you can safely read 1 past the last row to determine how many rows there are).&nbsp; 
+Once you have the WordList and Accessor, you can pass them to your lexing 
+function just like using a built-in lexer.&nbsp; The only other difference is 
+you need to call Accessor::Flush() sometime before Lex returns, or not all text 
+may be updated.&nbsp; This is due to Scintilla's buffering.</p>
+<p>GetLexerCount 関数は独自モジュールがいくつの独立した解析器を持っているかを返します。</p><p class="eng">GetLexerCount - This returns the number of individual lexers you want to 
+export from your module.</p>
+<p>GetLexerName 解析器の名前で名称枠を満たします。これは SciTE の属性内で区別する方法として用いられます。</p><p class="eng">GetLexerName - Fill in the name field with the name of the lexer.&nbsp; This 
+is how it is later identified in SciTE properties.</p>
+<p>Fold 関数は SciTE が折りたたみを行うときに常に呼び出されます。Lex 関数に同じ情報があります。WindowsAccessor を作ったときと同じ情報をここで与えます。</p><p class="eng">Fold - The function called whenever SciTE requests folding be performed.&nbsp; 
+The same information found in Lex for creating a WindowAccessor apply here, too.</p>
+</body>
+</html>

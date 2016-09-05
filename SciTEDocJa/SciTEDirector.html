@@ -1,0 +1,534 @@
+<?xml version="1.0" encoding="Shift_JIS"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja">
+  <head>
+    <meta name="generator" content="SciTE" />
+    <meta http-equiv="Content-Type" content="text/html; charset=Shift_Jis" />
+    <title>
+      SciTE Director Interface
+    </title>
+    <link href="translation.css" rel="stylesheet" type="text/css" />
+<style type="text/css">
+	table {
+		border: 1px solid black;
+		border-collapse: collapse;
+	}
+	td {
+		border: 1px solid black;
+		padding: 1px 5px 1px 5px;
+	}
+	.S0 {
+		color: #808080;
+	}
+	.S1 {
+		font-family: Comic Sans MS;
+		color: #007F00;
+		font-size: 9pt;
+	}
+	.S2 {
+		font-family: Comic Sans MS;
+		color: #007F00;
+		font-size: 9pt;
+	}
+	.S3 {
+		font-family: Comic Sans MS;
+		color: #3F703F;
+		font-size: 9pt;
+	}
+	.S4 {
+		color: #007F7F;
+	}
+	.S5 {
+		font-weight: bold;
+		color: #00007F;
+	}
+	.S6 {
+		color: #7F007F;
+	}
+	.S7 {
+		color: #7F007F;
+	}
+	.S8 {
+		color: #804080;
+	}
+	.S9 {
+		color: #7F7F00;
+	}
+	.S10 {
+		font-weight: bold;
+		color: #000000;
+	}
+	.S12 {
+		font-family: Courier New;
+		color: #000000;
+		background: #E0C0E0;
+		font-size: 10pt;
+	}
+	.S13 {
+		font-family: Courier New;
+		color: #007F00;
+		background: #E0FFE0;
+		font-size: 10pt;
+	}
+	.S14 {
+		font-family: Courier New;
+		color: #3F7F3F;
+		background: #E0F0FF;
+		font-size: 10pt;
+	}
+	.S15 {
+		font-family: Comic Sans MS;
+		color: #3F703F;
+		font-size: 9pt;
+	}
+	.S0, .S1, .S2, .S3, .S4, .S5, .S6, .S7, .S8, .S9, .S10, .S11, .S12, .S13, .S14, .S15 {
+		font-family: Verdana;
+		font-size: 10pt;
+	}
+</style>
+  </head>
+  <body bgcolor="#FFFFFF" text="#000000">
+    <table bgcolor="#000000" width="100%" cellspacing="0" cellpadding="0" border="0">
+      <tr>
+        <td>
+          <img src="SciTEIco.png" border="3" height="64" width="64" alt="Scintilla icon" />
+        </td>
+        <td>
+          <a href="index.html" style="color:white;text-decoration:none"><span>SciTE Director インタフェース</span><span class="eng"><font size="5">
+	  SciTE Director Interface</font></span></a>
+        </td>
+      </tr>
+    </table>
+    <h3>
+	<span>目的</span>
+	<span class="eng">Purpose.</span>
+    </h3>
+	<p>SciTE で行うソフトウェア開発は単一ファイルだけで行われるものとは限りません。開発者は一つのプロジェクトという概念の中で関係づけられるファイル群に対して作業を行います。他のエディタのように SciTE にプロジェクト管理機能を追加することもできました。ですがそれでは、プロジェクトがどのようにプロジェクトファイルの形式とともに管理されているかを見るに特定の方法を課すことになります。そのかわりに、SciTE はプロジェクトマネージャのようなアプリケーションが SciTE を制御するためのインタフェースを持っています。SciTE を制御するアプリケーションは "Director" として参照されます。</p>
+	<p class="eng">Software development does not occur only at the single file level handled by SciTE.
+	A developer will generally work on a group of related files together in the context of one
+	project. Project manager functionality could be added to SciTE as it has to other editors
+	but this would impose a particular view of how projects are to be managed including the
+	format of project files. Instead, SciTE has an interface that can be used by project
+	managers or similar applications to control SciTE. Any application that controls SciTE is
+	referred to as a "Director".</p>
+	<p>現在の Director インタフェースは Windows のみで動作します。将来は低水準のインタフェースを置き換えて他の環境でも利用できるようにしなくてはならないでしょう。</p>
+	<p class="eng">The current Director interface only works on Windows. In the future, it should be
+	possible to replace the low level interface and so make this interface available on other
+	platforms.</p>
+	<p>現在 Director アプリケーションがひとつあります。<a href="http://llt.chez.tiscali.fr/">Filerx</a> です。</p>
+	<p class="eng">There is currently one director application,
+	<a href="http://llt.chez.tiscali.fr/">Filerx</a>, available.</p>
+	<p>このインタフェースはファイル scite\win32\DirectorExtension.cxx 内で <a href="SciTEExtension.html">SciTE 拡張インタフェース</a> の最上部に実装されています。</p>
+	<p class="eng">This interface is implemented on top of the
+	<a href="SciTEExtension.html">SciTE Extension Interface</a>, in the
+	file scite\win32\DirectorExtension.cxx.</p>
+    <h3>
+	<span>直接接続、全体の告知、明確な復帰アドレス</span>
+       <span class="eng">Direct connection, broadcasting and explicit return addresses.</span>
+    </h3>
+	<p>SciTE の<em>Director</em> として SciTE を制御するのは一度に一つのアプリケーションだけです。他の協働技術を利用できるようにするため、全てのアクティブな Director インタフェースに対する告知を行うことができます。これを行うときは各メッセージが明確な復帰アドレスを持たなくてはなりません。全体告知メッセージへの応答の送り先となります。</p>
+	<p class="eng">One application at a time is <em>the director</em> of SciTE,
+	controlling SciTE as it wishes. To support other communications techniques
+	applications may broadcast to all active director interfaces. When doing so,
+	each message should contain an explicit return address where replies to the
+	broadcast message will be sent.
+	</p>
+    <h3>
+	 <span>Windows 用低水準インタフェース</span>
+       <span class="eng">Low level interface on Windows.</span>
+    </h3>
+	<p>SciTE と Director の間でデータ転送を行うため Windows の WM_COPYDATA メッセージを使います。このメッセージは二つの別アプリケーションから作られたウィンドウ間で送られます。SciTE はメッセージを受け取る以外になにもしないウィンドウを作ります。COPYDATASTRUCT の lpData と cbData フィールドを 2 プロセス間の文字列転送に使います。cbData が長さで lpData が文字列へのポインタとなります。文字列は '\0' で終わる必要はありません。dwData は 0 にしておいてください。</p>
+	<p class="eng">The Windows WM_COPYDATA message is used to transfer data between
+	SciTE and a Director. The messages are sent between windows created by the two
+	applications. SciTE uses a window that has no other purpose than to receive these
+	messages.
+	The lpData and cbData fields of the COPYDATASTRUCT
+	are used to transfer a string between the two processes, with cbData holding the length
+	of the string pointed to by lpData. The string does not have to be terminated with '\0'.
+	The dwData should be 0.</p>
+	<p>一方から他方にメッセージが送られる前にメッセージを受け取るウィンドウハンドルを見つけなくてはなりません。これは通常他方のアプリケーションがコマンドライン引数として起動したときに転送されます。どちらのアプリケーションも他方を起動できます。SciTE は WindowID 属性としてそれらのハンドルを扱えるようにします。また diractor.hwnd 属性をデータを送る側のウィンドウハンドルとして受け入れます。</p>
+	<p class="eng">Before messages can be sent from one application to the other, the window handle
+	of the window to receive the message must be found. This is normally transferred when
+	starting the other application as a command line parameter. Either application may
+	start the other. SciTE makes its window handle available in the WindowID
+	property and accepts a director.hwnd property as the window handle to which it
+	sends data.</p>
+	<p>ウィンドウハンドルとともに動作する例としてツールメニューに Filerx を追加すると上記の属性が使えるようになります。</p><p class="eng">As an example of communicating the window handle, to install Filerx in the Tools
+	menu of SciTE these properties could be used:</p>
+	<code>
+	command.name.0.*=Project Editor<br />
+	command.0.*="C:\os\scite\bin\filerx.exe" "$(FileDir)" "$(WindowID)"<br />
+	command.subsystem.0.*=2
+	</code>
+	<p>逆に Filerx が SciTE を起動する場合、編集したいファイル名と同様にウィンドウハンドルをコマンドラインに渡すことができます。</p><p class="eng">In the opposite direction, Filerx can start up SciTE with a command line that
+	specifies its window handle as well as the file it wants edited:</p>
+	<code>
+	SciTE -director.hwnd=937846 c:\os\scite\src\SciTEBase.cxx
+	</code>
+	<p>一方のアプリケーションが他のアプリケーションのウィンドウハンドルを持ったら、自身のウィンドウハンドルを他方に知らせなくてはなりません。これには口述の識別メッセージを用います。</p><p class="eng">Once one application has the window handle of the other application, it should send
+	its window handle to the other application using an identity message as described later.
+	Then both sides are able to send messages.</p>
+	<p>Windows において広域告知メッセージを送るにはアクティブな Director インタフェースの一覧を "SciTEDirectorInterface"メッセージを広域告知することで獲得可能です。</p><p class="eng">To broadcast a message on Windows, the set of active director
+	interfaces can be found by broadcasting the "SciTEDirectorInterface"
+	message and seeing which windows reply with the same value as that message.
+	Example broadcast code:</p>
+<span class="S0"></span><span class="S5">unsigned</span><span class="S0">&nbsp;</span><span class="S5">int</span><span class="S0">&nbsp;</span><span class="S11">SDI</span><span class="S0">&nbsp;</span><span class="S10">=</span><span class="S0">&nbsp;</span><span class="S10">::</span><span class="S11">RegisterWindowMessage</span><span class="S10">(</span><span class="S0"></span><span class="S6">"SciTEDirectorInterface"</span><span class="S10">);</span><span class="S0"><br />
+</span><span class="S11">HWND</span><span class="S0">&nbsp;</span><span class="S11">w</span><span class="S0">&nbsp;</span><span class="S10">=</span><span class="S0">&nbsp;</span><span class="S10">::</span><span class="S11">GetWindow</span><span class="S10">(::</span><span class="S11">GetDesktopWindow</span><span class="S10">(),</span><span class="S0"></span><span class="S11">GW_CHILD</span><span class="S10">);</span><span class="S0"><br />
+</span><span class="S5">while</span><span class="S0">&nbsp;</span><span class="S10">(</span><span class="S11">w</span><span class="S10">)</span><span class="S0">&nbsp;</span><span class="S10">{</span><span class="S0"><br />
+&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="S11">DWORD</span><span class="S0">&nbsp;</span><span class="S11">res</span><span class="S0">&nbsp;</span><span class="S10">=</span><span class="S0">&nbsp;</span><span class="S4">0</span><span class="S10">;</span><span class="S0"><br />
+&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="S2">// ハングアップを避けるため時間切れ設定が必要。</span><span class="S0"><br />
+&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="S2">//&nbsp;Need&nbsp;time&nbsp;out&nbsp;to&nbsp;avoid&nbsp;hung&nbsp;applications</span><span class="S0"><br />
+&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="S10">::</span><span class="S11">SendMessageTimeout</span><span class="S10">(</span><span class="S11">w</span><span class="S10">,</span><span class="S0">&nbsp;</span><span class="S11">SDI</span><span class="S10">,</span><span class="S0">&nbsp;</span><span class="S4">0</span><span class="S10">,</span><span class="S0">&nbsp;</span><span class="S4">0</span><span class="S10">,</span><span class="S0"><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="S11">SMTO_NORMAL</span><span class="S10">,</span><span class="S0">&nbsp;</span><span class="S4">1000</span><span class="S10">,</span><span class="S0">&nbsp;</span><span class="S10">&amp;</span><span class="S11">res</span><span class="S10">);</span><span class="S0"><br />
+&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="S5">if</span><span class="S0">&nbsp;</span><span class="S10">(</span><span class="S11">res</span><span class="S0">&nbsp;</span><span class="S10">==</span><span class="S0">&nbsp;</span><span class="S5">static_cast</span><span class="S10">&lt;</span><span class="S11">DWORD</span><span class="S10">&gt;(</span><span class="S11">SDI</span><span class="S10">))</span><span class="S0">&nbsp;</span><span class="S10">{</span><span class="S0"><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="S2">//&nbsp;同じ SDI コードが返されたら SDI 版の WM_COPYDATA を理解すべきである</span><span class="S0"><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="S2">//&nbsp;Replied&nbsp;with&nbsp;same&nbsp;SDI&nbsp;code&nbsp;so&nbsp;should</span><span class="S0"><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="S2">//&nbsp;understand&nbsp;SDI's&nbsp;version&nbsp;of&nbsp;WM_COPYDATA</span><span class="S0"><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="S10">::</span><span class="S11">SendMessage</span><span class="S10">(</span><span class="S11">w</span><span class="S10">,</span><span class="S11">WM_COPYDATA</span><span class="S10">,</span><span class="S0"><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="S10">(</span><span class="S11">UINT</span><span class="S10">)</span><span class="S11">m_hWnd</span><span class="S10">,(</span><span class="S5">long</span><span class="S10">)&amp;</span><span class="S11">cds</span><span class="S10">);</span><span class="S0"><br />
+&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="S10">}</span><span class="S0"><br />
+&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="S11">w</span><span class="S0">&nbsp;</span><span class="S10">=</span><span class="S0">&nbsp;</span><span class="S10">::</span><span class="S11">GetWindow</span><span class="S10">(</span><span class="S11">w</span><span class="S10">,</span><span class="S0">&nbsp;</span><span class="S11">GW_HWNDNEXT</span><span class="S10">);</span><span class="S0"><br />
+</span><span class="S10">}</span><span class="S0"><br />
+</span>
+<p>トップレベルウィンドウが Director インタフェースに対応していることを知らせるには次のようにします。</p><p class="eng">To advertise that a top level window supports the Director interface:</p>
+<span class="S0"></span><span class="S11">LRESULT</span><span class="S0">&nbsp;</span><span class="S11">PASCAL</span><span class="S0">&nbsp;</span><span class="S11">DirectorExtension_WndProc</span><span class="S10">(</span><span class="S11">HWND</span><span class="S0">&nbsp;</span><span class="S11">hWnd</span><span class="S10">,</span><span class="S0">&nbsp;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="S11">UINT</span><span class="S0">&nbsp;</span><span class="S11">iMessage</span><span class="S10">,</span><span class="S0">&nbsp;</span><span class="S11">WPARAM</span><span class="S0">&nbsp;</span><span class="S11">wParam</span><span class="S10">,</span><span class="S0">&nbsp;</span><span class="S11">LPARAM</span><span class="S0">&nbsp;</span><span class="S11">lParam</span><span class="S10">)</span><span class="S0">&nbsp;</span><span class="S10">{</span><span class="S0"><br />
+&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="S5">unsigned</span><span class="S0">&nbsp;</span><span class="S5">int</span><span class="S0">&nbsp;</span><span class="S11">SDI</span><span class="S0">&nbsp;</span><span class="S10">=</span><span class="S0">&nbsp;</span><span class="S10">::</span><span class="S11">RegisterWindowMessage</span><span class="S10">(</span><span class="S6">"SciTEDirectorInterface"</span><span class="S10">);</span><span class="S0"><br />
+&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="S5">if</span><span class="S0">&nbsp;</span><span class="S10">(</span><span class="S11">iMessage</span><span class="S0">&nbsp;</span><span class="S10">==</span><span class="S0">&nbsp;</span><span class="S11">SDI</span><span class="S10">)</span><span class="S0">&nbsp;</span><span class="S10">{</span><span class="S0"><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="S5">return</span><span class="S0">&nbsp;</span><span class="S11">SDI</span><span class="S10">;</span><span class="S0"><br />
+&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="S10">}</span><span class="S0"><br />
+&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="S5">return</span><span class="S0">&nbsp;</span><span class="S10">::</span><span class="S11">DefWindowProc</span><span class="S10">(</span><span class="S11">hWnd</span><span class="S10">,</span><span class="S0">&nbsp;</span><span class="S11">iMessage</span><span class="S10">,</span><span class="S0">&nbsp;</span><span class="S11">wParam</span><span class="S10">,</span><span class="S0"></span><span class="S11">lParam</span><span class="S10">);</span><span class="S0"><br />
+</span><span class="S10">}</span><br />
+    <h3>
+       <span>GTK+ 用低水準インタフェース</span><span class="eng">Low level interface on GTK+.</span>
+    </h3>
+	<p>これはまだ実装されていません。/tmp ディレクトリにある "/tmp/SciTE&lt;PID&gt;.director" という形の名前を持った Director インタフェースが FIFO入力に対応するという方式の提案があります。これによりすべてのアクティブな Director インタフェースを拾うことができ、またコマンドライン引数や identity: コマンドのような手法でもたらされた FIFO 名を伝え合えば特定のインタフェースを開くこともできるようになります。</p><p class="eng">This is not yet implemented.
+	The proposed design uses an input fifo for each application supporting the director
+	interface located in /tmp with a name using a pattern such as
+	"/tmp/SciTE&lt;PID&gt;.director".
+	This allows enumerating all active director interfaces and also opening
+	a specific interface when the fifo name has been communicated through some
+	other means such as a command line argument or an identity: command.</p>
+    <h3>
+       <span>高水準インタフェイス</span><span class="eng">High level interface.</span>
+    </h3>
+	<p>C 言語式のエスケープで制御文字を表現して可視文字だけを転送するメッセージを使います。ただし、メッセージを分離する '\n' はエスケープせずそのまま用います。</p><p class="eng">Messages use C style escapes to represent control characters and
+	ensure that only visible characters are transmitted apart from the use
+	of '\n' to separate messages.</p>
+	<p>低水準インタフェースで転送される文字列は ':' で囲まれたオプションの復帰アドレスを含んでいます。行動内容 ':' 補助引数、という形になります。引数はしばしばファイルのパス名です。':' は引数が無くても付加しなくてはなりません。例えば SciTE は次のメッセージを理解します。</p><p class="eng">The string transmitted by the low level interface contains an optional
+	return address surrounded by ':' characters, an action, a ':' character and
+	an optional argument. The argument is often a file path. The ':' must be present even if there
+	is no argument. For example, SciTE understands the message</p>
+	<code>
+	open:c:\\os\\scintilla\\include\\Scintilla.iface
+	</code>
+	<p>上記はファイル "c:\os\scintilla\include\Scintilla.iface" をユーザが求めたときのように開くことを意味します。</p><p class="eng">as a command to open the file "c:\os\scintilla\include\Scintilla.iface" just as if the user
+	had performed this operation.</p>
+	<p>メッセージの最初の文字が ':' である場合、次の ':' までが復帰アドレスとみなされます。従って SciTE は次のメッセージに対し、</p><p class="eng">If the first character of the message is a ':' then up to the next ':' is a return
+	address, so SciTE will reply to the message</p>
+	<code>
+	:73658:askfilename:
+	</code>
+	<p>編集されようとしているファイル名とその Director に復帰するかわりに番地に復帰します。</p><p class="eng">by sending the filename being edited to the return address 73658
+	rather than to its director.</p>
+	<h4><span>SciTE が受け入れる指示</span><span class="eng">The actions understood by SciTE are:</span></h4>
+	<table border="1">
+		<tr>
+			<td>askfilename:</td>
+			<td>これから編集されつつあるファイルの名前を返す</td>
+		</tr>
+		<tr>
+			<td>askproperty:&lt;項目&gt;</td>
+			<td>属性の値を返す</td>
+		</tr>
+		<tr>
+			<td>close:</td>
+			<td>現在のファイルを閉じる</td>
+		</tr>
+		<tr>
+			<td>closing:</td>
+			<td>Director を閉じる。Director から SciTE を起動していた場合は SciTE も閉じる。</td>
+		</tr>
+		<tr>
+			<td>currentmacro:&lt;文字列&gt;</td>
+			<td>現在のマクロの名前を指定された文字列にする</td>
+		</tr>
+		<tr>
+			<td>cwd:</td>
+			<td>作業ディレクトリを変更する</td>
+		</tr>
+		<tr>
+			<td>enumproperties:dyn|local|user|base|embed</td>
+			<td>引数で指定された群の属性をすべて拾う</td>
+		</tr>
+		<tr>
+			<td>exportashtml:&lt;ファイルパス&gt;</td>
+			<td>HTML 形式で指定のファイルを保存する</td>
+		</tr>
+		<tr>
+			<td>exportasrtf:&lt;ファイルパス&gt;</td>
+			<td>RTF 形式で指定のファイルを保存する</td>
+		</tr>
+		<tr>
+			<td>find:&lt;文字列&gt;</td>
+			<td>文字列を検索し、選択状態にして表示する</td>
+		</tr>
+		<tr>
+			<td>goto:&lt;行番号&gt;[,&lt;桁番号&gt;]</td>
+			<td>キャレットを特定の行に移動して見えるように可視部を移動する。<br />桁番号があればその位置の単語を選択する。なければキャレットを指定位置に移動する。</td>
+		</tr>
+		<tr>
+			<td>identity:&lt;hwndDirector&gt;</td>
+			<td>SciTE のメッセージ送信相手となる Director のウィンドウハンドルを設定する。引数は十進数値。</td>
+		</tr>
+		<tr>
+			<td>insert:&lt;値&gt;</td>
+			<td>編集部の選択部を置換して値を表示する</td>
+		</tr>
+		<tr>
+			<td>macrocommand:&lt;command&gt;</td>
+			<td>マクロコマンドを実行する。コマンドの引数は SciTE のソースコードを参照のこと。</td>
+		</tr>
+		<tr>
+			<td>macroenable:&lt;enable&gt;</td>
+			<td>有効にすると SciTE のメニューでマクロの記録・再生が可能となる</td>
+		</tr>
+		<tr>
+			<td>macrolist:&lt;一覧&gt;</td>
+			<td>ユーザが選択するマクロの一覧を表示する</td>
+		</tr>
+		<tr>
+			<td>menucommand:&lt;cmd&gt;</td>
+			<td>数値による識別子に基づいてメニューコマンドを実行する</td>
+		</tr>
+		<tr>
+			<td>open:&lt;ファイルパス&gt;</td>
+			<td>指定したファイルを開く</td>
+		</tr>
+		<tr>
+			<td>output:&lt;値&gt;</td>
+			<td>選択部を交換して出力部に値を表示する</td>
+		</tr>
+		<tr>
+			<td>property:&lt;項目名&gt;=&lt;値&gt;</td>
+			<td>属性に値を設定する</td>
+		</tr>
+		<tr>
+			<td>quit:</td>
+			<td>SciTE を終了する.</td>
+		</tr>
+		<tr>
+			<td>replaceall:&lt;被検索文字列&gt;\000&lt;置換文字列&gt;</td>
+			<td>文書内の全ての被検索文字列を置換文字列で置き換える</td>
+		</tr>
+		<tr>
+			<td>saveas:&lt;ファイルパス&gt;</td>
+			<td>指定されたファイルとして現在のファイルを保存する</td>
+		</tr>
+	</table>
+	<table class="eng" border="1">
+		<tr>
+			<td>askfilename:</td>
+			<td>Return the name of the file being edited.</td>
+		</tr>
+		<tr>
+			<td>askproperty:&lt;key&gt;</td>
+			<td>Return the value of a property.</td>
+		</tr>
+		<tr>
+			<td>close:</td>
+			<td>Close the current file.</td>
+		</tr>
+		<tr>
+			<td>closing:</td>
+			<td>Director is closing - SciTE closes if it was started by the director.</td>
+		</tr>
+		<tr>
+			<td>currentmacro:&lt;string&gt;</td>
+			<td>Set the current macro to name.</td>
+		</tr>
+		<tr>
+			<td>cwd:</td>
+			<td>Change the working directory.</td>
+		</tr>
+		<tr>
+			<td>enumproperties:dyn|local|user|base|embed</td>
+			<td>Enumerate all the properties in the argument set.</td>
+		</tr>
+		<tr>
+			<td>exportashtml:&lt;path&gt;</td>
+			<td>Save the document in HTML format as the indicated file.</td>
+		</tr>
+		<tr>
+			<td>exportasrtf:&lt;path&gt;</td>
+			<td>Save the document in RTF format as the indicated file.</td>
+		</tr>
+		<tr>
+			<td>find:&lt;string&gt;</td>
+			<td>Search for a string, select and show it.</td>
+		</tr>
+		<tr>
+			<td>goto:&lt;lineNumber&gt;[,&lt;columnNumber&gt;]</td>
+			<td>Move caret to a particular line and make it visible.<br />
+			If there is a column number then select the word at that column number
+			or move the caret there if no word is present.</td>
+		</tr>
+		<tr>
+			<td>identity:&lt;hwndDirector&gt;</td>
+			<td>Sets the director window handle to which SciTE sends messages.
+			The argument is in decimal.</td>
+		</tr>
+		<tr>
+			<td>insert:&lt;value&gt;</td>
+			<td>Display the value in the editor pane replacing the selection.</td>
+		</tr>
+		<tr>
+			<td>macrocommand:&lt;command&gt;</td>
+			<td>Execute a macro command.
+			See the SciTE source code for the syntax of the
+			command argument.</td>
+		</tr>
+		<tr>
+			<td>macroenable:&lt;enable&gt;</td>
+			<td>If enable, display menu commands in SciTE for recording
+			and playing macros.</td>
+		</tr>
+		<tr>
+			<td>macrolist:&lt;list&gt;</td>
+			<td>Display a list for the user to choose from.</td>
+		</tr>
+		<tr>
+			<td>menucommand:&lt;cmd&gt;</td>
+			<td>Execute a menu command based on numeric ID.</td>
+		</tr>
+		<tr>
+			<td>open:&lt;path&gt;</td>
+			<td>Open the indicated file.</td>
+		</tr>
+		<tr>
+			<td>output:&lt;value&gt;</td>
+			<td>Display the value in the output pane replacing the selection.</td>
+		</tr>
+		<tr>
+			<td>property:&lt;key&gt;=&lt;value&gt;</td>
+			<td>Set a property to a value.</td>
+		</tr>
+		<tr>
+			<td>quit:</td>
+			<td>Shut down SciTE.</td>
+		</tr>
+		<tr>
+			<td>replaceall:&lt;search&gt;\000&lt;replace&gt;</td>
+			<td>Replace all instances of he search string in the
+			document with the replace string.</td>
+		</tr>
+		<tr>
+			<td>saveas:&lt;path&gt;</td>
+			<td>Save the document as the indicated file.</td>
+		</tr>
+	</table>
+	<h4><span>SciTE から送られるメッセージ</span><span class="eng">The actions sent by SciTE are:</span></h4>
+	<table border="1">
+		<tr>
+			<td>closing:</td>
+			<td>SciTE は閉じられつつある</td>
+		</tr>
+		<tr>
+			<td>dyn|local|user|base|embed:&lt;項目名&gt;=&lt;値&gt;</td>
+			<td>特定群の中の属性値を設定する</td>
+		</tr>
+		<tr>
+			<td>filename:&lt;ファイルパス&gt;</td>
+			<td>ファイルパスの名を持つファイルが編集されようとしている。これは askfilename: の応答。</td>
+		</tr>
+		<tr>
+			<td>identity:&lt;hwndSciTEReceiving&gt;</td>
+			<td>SciTE は Director にメッセージを送るべきウィンドウハンドルを提示している。引数は十進数値。</td>
+		</tr>
+		<tr>
+			<td>macro:getlist</td>
+			<td>macrolist の応答として使用可能マクロの一覧を返す</td>
+		</tr>
+		<tr>
+			<td>macro:record:&lt;details&gt;</td>
+			<td>マクロの記録を開始する。details 引数の書式は SciTE のソースコードを参照のこと。</td>
+		</tr>
+		<tr>
+			<td>macro:run:&lt;マクロ名&gt;</td>
+			<td>この名前のマクロを実行する</td>
+		</tr>
+		<tr>
+			<td>macro:stoprecord</td>
+			<td>マクロの記録を停止する</td>
+		</tr>
+		<tr>
+			<td>opened:&lt;ファイルパス&gt;</td>
+			<td>SciTE この名前のファイルを開く</td>
+		</tr>
+		<tr>
+			<td>switched:&lt;ファイルパス&gt;</td>
+			<td>SciTE はこの名前のファイルを扱うバッファに切り替える</td>
+		</tr>
+		<tr>
+			<td>saved:&lt;ファイルパス&gt;</td>
+			<td>SciTE はこの名前のファイルを保存する</td>
+		</tr>
+	</table>
+
+	<table class="eng" border="1">
+		<tr>
+			<td>closing:</td>
+			<td>SciTE is closing.</td>
+		</tr>
+		<tr>
+			<td>dyn|local|user|base|embed:&lt;key&gt;=&lt;value&gt;</td>
+			<td>Set a property in a set to a value.</td>
+		</tr>
+		<tr>
+			<td>filename:&lt;path&gt;</td>
+			<td>The file being edited is path.
+			This is the reply to the askfilename: command.</td>
+		</tr>
+		<tr>
+			<td>identity:&lt;hwndSciTEReceiving&gt;</td>
+			<td>SciTE indicates to the director the window handle to which it should send
+			messages. The argument is in decimal.</td>
+		</tr>
+		<tr>
+			<td>macro:getlist</td>
+			<td>Retrieve the list of available macros which will be
+			returned by the macrolist command.</td>
+		</tr>
+		<tr>
+			<td>macro:record:&lt;details&gt;</td>
+			<td>Start recording a macro.
+			See the SciTE source code for the syntax of the
+			details argument.</td>
+		</tr>
+		<tr>
+			<td>macro:run:&lt;macroName&gt;</td>
+			<td>Run the named macro.</td>
+		</tr>
+		<tr>
+			<td>macro:stoprecord</td>
+			<td>Stop recording a macro.</td>
+		</tr>
+		<tr>
+			<td>opened:&lt;path&gt;</td>
+			<td>SciTE has opened the indicated file.</td>
+		</tr>
+		<tr>
+			<td>switched:&lt;path&gt;</td>
+			<td>SciTE has switched buffers to the indicated file.</td>
+		</tr>
+		<tr>
+			<td>saved:&lt;path&gt;</td>
+			<td>SciTE has saved the indicated file.</td>
+		</tr>
+	</table>
+  <p>将来はより多くの通知が定義される予定です。アプリケーションは理解できない通知が来たら無視すべきです。</p><p class="eng">In the future, more actions will be defined. Applications should ignore any
+  actions that they do not understand.</p>
+  </body>
+</html>
+
