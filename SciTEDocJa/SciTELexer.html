@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="Shift_JIS"?>
+<?xml version="1.0" encoding="Utf-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="jp" lang="jp">
@@ -6,9 +6,9 @@
     <link href="translation.css" rel="stylesheet" type="text/css" />
     <meta name="generator" content="HTML Tidy, see www.w3.org" />
     <meta name="generator" content="SciTE" />
-    <meta http-equiv="Content-Type" content="text/html; charset=Shift_Jis" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <title>
-      SciTE —p‰ğÍŠí
+      SciTE ç”¨è§£æå™¨
     </title>
   </head>
   <body bgcolor="#FFFFFF" text="#000000">
@@ -19,40 +19,40 @@
         </td>
         <td>
           <a href="index.html" style="color:white;text-decoration:none"><font size="5">
-	  <span>Scintilla ‚Æ SciTE ‚É‰ğÍŠí‚ğ‰Á‚¦‚é</span><span class="eng">Add a lexer to Scintilla and SciTE</span></font></a>
+	  <span>Scintilla ã¨ SciTE ã«è§£æå™¨ã‚’åŠ ãˆã‚‹</span><span class="eng">Add a lexer to Scintilla and SciTE</span></font></a>
         </td>
       </tr>
     </table>
-    <h2><span>‰ğÍŠí‚Ì’Ç‰Á</span><span class="eng">
+    <h2><span>è§£æå™¨ã®è¿½åŠ </span><span class="eng">
        Lexer addition.</span>
     </h2>
-     <p>Scintilla ‚Æ SciTE ‚Ì‘o•û‚ÉV‚µ‚¢‰ğÍŠí‚ğ‰Á‚¦‚éè‡‚Ì“¹’ö‚Í’Z‚­‚ ‚è‚Ü‚¹‚ñBApache ‚Ì CONF ƒtƒ@ƒCƒ‹‰ğÍŠí‚ğ SciTE ‚É’Ç‰Á‚·‚é•û–@‚É‚Â‚¢‚Ä‚Ì„‚Ì‰ñ“š‚ğ‚±‚±‚ÅĞ‰î‚µ‚Ü‚·B‰ğÍŠí‚ÌƒR[ƒh‚ğŠj‚É“–‚½‚Á‚Ä(step 4 ‚Æ 5)Aî•ñ‚ª‚³‚ç‚É Scintilla ‚Ì‰ğà‘‚É‚ ‚è‚Ü‚·B</p><p class="eng">The process of adding a new lexer to both Scintilla and SciTE
+     <p>Scintilla ã¨ SciTE ã®åŒæ–¹ã«æ–°ã—ã„è§£æå™¨ã‚’åŠ ãˆã‚‹æ‰‹é †ã®é“ç¨‹ã¯çŸ­ãã‚ã‚Šã¾ã›ã‚“ã€‚Apache ã® CONF ãƒ•ã‚¡ã‚¤ãƒ«è§£æå™¨ã‚’ SciTE ã«è¿½åŠ ã™ã‚‹æ–¹æ³•ã«ã¤ã„ã¦ã®ç§ã®å›ç­”ã‚’ã“ã“ã§ç´¹ä»‹ã—ã¾ã™ã€‚è§£æå™¨ã®ã‚³ãƒ¼ãƒ‰ã‚’æ ¸ã«å½“ãŸã£ã¦(step 4 ã¨ 5)ã€æƒ…å ±ãŒã•ã‚‰ã« Scintilla ã®è§£èª¬æ›¸ã«ã‚ã‚Šã¾ã™ã€‚</p><p class="eng">The process of adding a new lexer to both Scintilla and SciTE
 is fairly long. Here is my response when asked how to add a lexer for
 Apache CONF files to SciTE. There is more information on writing the
 lexer code (steps 4 and 5, here) in the documentation for Scintilla.</p>
-<p>İ’è‚Ìè‡‚ª”Ï‚í‚µ‚­‚È‚¢‚æ‚¤‚ÉA˜Z‚Â‘S‚Ä‚Ì makefile ‚ğg‚í‚È‚­‚Ä‚à‚¢‚¢‚æ‚¤‚É‚È‚Á‚Ä‚¢‚Ü‚·B‰ğÍŠí‚ğŠñ‘¡‚µ‚Ä‚à‚ç‚¦‚éê‡‚ÍA„‚ªŒã‚Ù‚ÇC³E‡¬‚ğs‚¢‚Ü‚·B</p><p class="eng">
+<p>è¨­å®šã®æ‰‹é †ãŒç…©ã‚ã—ããªã„ã‚ˆã†ã«ã€å…­ã¤å…¨ã¦ã® makefile ã‚’ä½¿ã‚ãªãã¦ã‚‚ã„ã„ã‚ˆã†ã«ãªã£ã¦ã„ã¾ã™ã€‚è§£æå™¨ã‚’å¯„è´ˆã—ã¦ã‚‚ã‚‰ãˆã‚‹å ´åˆã¯ã€ç§ãŒå¾Œã»ã©ä¿®æ­£ãƒ»åˆæˆã‚’è¡Œã„ã¾ã™ã€‚</p><p class="eng">
 Don't bother about steps which are for configurations you don't
 use all 6 makefiles - I'll patch them up later if you want to
 contribute the lexer.</p>
     <ol>
-<li><span>scintilla/include/Scintilla.iface ‚É‰ğÍŠí¯•Ê”Ô†‚ğ‰Á‚¦‚Ä‚­‚¾‚³‚¢B<br />val SCLEX_CONF=17</span><div class="eng">
+<li><span>scintilla/include/Scintilla.iface ã«è§£æå™¨è­˜åˆ¥ç•ªå·ã‚’åŠ ãˆã¦ãã ã•ã„ã€‚<br />val SCLEX_CONF=17</span><div class="eng">
 In scintilla/include/Scintilla.iface, add a lexer ID value:<br />
 val SCLEX_CONF=17
 </div></li>
-<li><span>‚»‚ê‚©‚ç‰ğÍ•ª—Ş¯•Ê”Ô†‚ğ‰Á‚¦‚Ä‚­‚¾‚³‚¢B<br />
+<li><span>ãã‚Œã‹ã‚‰è§£æåˆ†é¡è­˜åˆ¥ç•ªå·ã‚’åŠ ãˆã¦ãã ã•ã„ã€‚<br />
 val SCE_CONF_DEFAULT=0<br />
 val SCE_CONF_COMMENT=1</span><div class="eng">
 And any lexical class IDs:<br />
 val SCE_CONF_DEFAULT=0<br />
 val SCE_CONF_COMMENT=1
 </div></li>
-<li><span>scintilla/include ƒfƒBƒŒƒNƒgƒŠ‚É‚ ‚é HFacer.py ‚ğÀs‚µASciLexer.h ‚ğÄì¬‚µ‚Ä‚­‚¾‚³‚¢BPython ƒXƒNƒŠƒvƒg‚ğÀs‚µ‚È‚¢‚ÅÏ‚Ü‚¹‚éê‡‚Í ‚±‚ê‚ç‚Ì’l‚ğ #define ‚Å SciLexer.h ‚É’è‹`‚µ‚Ä‚­‚¾‚³‚¢B‚±‚Ìê‡‚Í„‚ª Scintilla.iface ‚É’Ç‰Á‚µ‚Ü‚·B</span><div class="eng">
+<li><span>scintilla/include ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã«ã‚ã‚‹ HFacer.py ã‚’å®Ÿè¡Œã—ã€SciLexer.h ã‚’å†ä½œæˆã—ã¦ãã ã•ã„ã€‚Python ã‚¹ã‚¯ãƒªãƒ—ãƒˆã‚’å®Ÿè¡Œã—ãªã„ã§æ¸ˆã¾ã›ã‚‹å ´åˆã¯ ã“ã‚Œã‚‰ã®å€¤ã‚’ #define ã§ SciLexer.h ã«å®šç¾©ã—ã¦ãã ã•ã„ã€‚ã“ã®å ´åˆã¯ç§ãŒ Scintilla.iface ã«è¿½åŠ ã—ã¾ã™ã€‚</span><div class="eng">
 In the scintilla/include directory run HFacer.py to regenerate the
 SciLexer.h file. Alternatively (if you don't want to run a Python script)
 just add these values to SciLexer.h as #defines and I'll put them in
 Scintilla.iface.
 </div></li>
-<li><span>scintilla/src/LexOthers.cxx ‚Ì’†‚É ColouriseConfDoc ŠÖ”‚ğ‘‚¢‚Ä‚­‚¾‚³‚¢BColouriseLatexDoc ‚Ì‚æ‚¤‚È‘¼‚ÌŠÖ”‚Ì‚Ğ‚Æ‚Â‚Æ—‚½‚à‚Ì‚ğ‘‚«‚Ü‚·B<br />
+<li><span>scintilla/src/LexOthers.cxx ã®ä¸­ã« ColouriseConfDoc é–¢æ•°ã‚’æ›¸ã„ã¦ãã ã•ã„ã€‚ColouriseLatexDoc ã®ã‚ˆã†ãªä»–ã®é–¢æ•°ã®ã²ã¨ã¤ã¨ä¼¼ãŸã‚‚ã®ã‚’æ›¸ãã¾ã™ã€‚<br />
 static void ColouriseConfDoc (unsigned int startPos, int length, int
 initStyle, WordList *[], Accessor &amp;styler) {</span><div class="eng">
 In the scintilla/src/LexOthers.cxx write a ColouriseConfDoc function
@@ -60,21 +60,21 @@ similar to one of the other functions such as ColouriseLatexDoc.<br />
 static void ColouriseConfDoc (unsigned int startPos, int length, int
 initStyle, WordList *[], Accessor &amp;styler) {
 </div></li>
-<li><span>ƒtƒ@ƒCƒ‹‚ÌI‚í‚è‚É‰ğÍŠí¯•Ê”Ô†‚Æ–¼‘O‚ğŠÖ”‚ÉŒ‹‚Ñ‚Â‚¯‚Ä‚­‚¾‚³‚¢B<br />
+<li><span>ãƒ•ã‚¡ã‚¤ãƒ«ã®çµ‚ã‚ã‚Šã«è§£æå™¨è­˜åˆ¥ç•ªå·ã¨åå‰ã‚’é–¢æ•°ã«çµã³ã¤ã‘ã¦ãã ã•ã„ã€‚<br />
 LexerModule lmConf(SCLEX_CONF, ColouriseConfDoc, "conf");</span><div class="eng">
 At the end of the file associate the lexer ID and name with the function:<br />
 LexerModule lmConf(SCLEX_CONF, ColouriseConfDoc, "conf");
 </div></li>
-<li><span>•¡G‚È‰ğÍŠí‚Ìê‡‚ÍA“Æ©‚Ìƒtƒ@ƒCƒ‹‚É•ª‚¯‚½•û‚ª‚¢‚¢‚Å‚µ‚å‚¤BŠù‘¶‚Ìƒtƒ@ƒCƒ‹‚Ìˆê‚Â‚ğ•¡»‚µALexOthers ‚ªŒ»İQÆ‚µ‚Ä‚¢‚é make ƒtƒ@ƒCƒ‹‚ÉV‚µ‚¢ƒtƒ@ƒCƒ‹‚ğ’Ç‰Á‚µ‚Ü‚·B‹ï‘Ì“I‚É‚Í scintilla/win32/makefile, scintilla/win32/scintilla.mak,
-scintilla/gtk/makefile, scite/win32/makefile, scite/win32/scite.mak ‚Å‚·B</span><div class="eng">
+<li><span>è¤‡é›‘ãªè§£æå™¨ã®å ´åˆã¯ã€ç‹¬è‡ªã®ãƒ•ã‚¡ã‚¤ãƒ«ã«åˆ†ã‘ãŸæ–¹ãŒã„ã„ã§ã—ã‚‡ã†ã€‚æ—¢å­˜ã®ãƒ•ã‚¡ã‚¤ãƒ«ã®ä¸€ã¤ã‚’è¤‡è£½ã—ã€LexOthers ãŒç¾åœ¨å‚ç…§ã—ã¦ã„ã‚‹ make ãƒ•ã‚¡ã‚¤ãƒ«ã«æ–°ã—ã„ãƒ•ã‚¡ã‚¤ãƒ«ã‚’è¿½åŠ ã—ã¾ã™ã€‚å…·ä½“çš„ã«ã¯ scintilla/win32/makefile, scintilla/win32/scintilla.mak,
+scintilla/gtk/makefile, scite/win32/makefile, scite/win32/scite.mak ã§ã™ã€‚</span><div class="eng">
 If this is a complex lexer then it may be better off in its own file, in
 which case clone one of the current files and then add the file to all of
 the make files where LexOthers is currently referenced -
 scintilla/win32/makefile, scintilla/win32/scintilla.mak,
 scintilla/gtk/makefile, scite/win32/makefile, and scite/win32/scite.mak.
 </div></li>
-<li><span>scite/src/others.properties ‚É‰ğÍŠí‚ÆŠÖŒW‚·‚éƒtƒ@ƒCƒ‹Šg’£q‚Ì€–Ú‚ğ’Ç‰Á‚µ‚Ä‚­‚¾‚³‚¢B<br />
-lexer.*.conf=conf<br />LexOthers ‚É’Ç‰Á‚·‚é‚Ì‚Å‚Í‚È‚­V‚µ‚¢‰ğÍŠíƒtƒ@ƒCƒ‹‚ğì‚Á‚Ä‚¢‚éê‡‚ÍAscite/src/others.properties ‚ğ•¡»‚µ‚ÄV‚µ‚¢‘®«ƒtƒ@ƒCƒ‹‚ğì‚é‚×‚«‚Å‚·B‚±‚Ìƒtƒ@ƒCƒ‹‚É‚ÍŸ‚Ì‚æ‚¤‚È•ÏX‚ğs‚¢‚Ü‚·B</span><div class="eng">
+<li><span>scite/src/others.properties ã«è§£æå™¨ã¨é–¢ä¿‚ã™ã‚‹ãƒ•ã‚¡ã‚¤ãƒ«æ‹¡å¼µå­ã®é …ç›®ã‚’è¿½åŠ ã—ã¦ãã ã•ã„ã€‚<br />
+lexer.*.conf=conf<br />LexOthers ã«è¿½åŠ ã™ã‚‹ã®ã§ã¯ãªãæ–°ã—ã„è§£æå™¨ãƒ•ã‚¡ã‚¤ãƒ«ã‚’ä½œã£ã¦ã„ã‚‹å ´åˆã¯ã€scite/src/others.properties ã‚’è¤‡è£½ã—ã¦æ–°ã—ã„å±æ€§ãƒ•ã‚¡ã‚¤ãƒ«ã‚’ä½œã‚‹ã¹ãã§ã™ã€‚ã“ã®ãƒ•ã‚¡ã‚¤ãƒ«ã«ã¯æ¬¡ã®ã‚ˆã†ãªå¤‰æ›´ã‚’è¡Œã„ã¾ã™ã€‚</span><div class="eng">
 To the scite/src/others.properties add an entry to associate the file
 extension with the lexer:<br />
 lexer.*.conf=conf<br />
@@ -82,9 +82,9 @@ lexer.*.conf=conf<br />
 new properties file should be created by cloning scite/src/others.properties
 and modifying that file in the following steps.
 </div></li>
-<li><span>‘®‚ğ—pˆÓ‚µ‚Ü‚·B<br /># Šî–{ó‘Ô<br />
+<li><span>æ›¸å¼ã‚’ç”¨æ„ã—ã¾ã™ã€‚<br /># åŸºæœ¬çŠ¶æ…‹<br />
 style.conf.0=fore:#FF0000,bold<br />
-# ’ß<br />
+# æ³¨é‡ˆ<br />
 style.conf.1=fore:#007F7F,$(font.comment)<br />
 </span><div class="eng">
 Set up the styles:<br />
@@ -93,29 +93,29 @@ style.conf.0=fore:#FF0000,bold<br />
 # Comment<br />
 style.conf.1=fore:#007F7F,$(font.comment)<br />
 </div></li>
-<li><span>Windows ‚Å‚Í scite/src/others.properties ‚É conf ƒtƒ@ƒCƒ‹—p‚ÌƒtƒBƒ‹ƒ^‚ğ’Ç‰Á‚µ‚Ü‚·B‚±‚Ì‹@”\‚Í«—ˆ GTK+ ‚Å‚à“®ì‚³‚¹‚é—\’è‚Å‚·B<br />filter.conf=Configuration (.conf)|*.conf|</span><div class="eng">
+<li><span>Windows ã§ã¯ scite/src/others.properties ã« conf ãƒ•ã‚¡ã‚¤ãƒ«ç”¨ã®ãƒ•ã‚£ãƒ«ã‚¿ã‚’è¿½åŠ ã—ã¾ã™ã€‚ã“ã®æ©Ÿèƒ½ã¯å°†æ¥ GTK+ ã§ã‚‚å‹•ä½œã•ã›ã‚‹äºˆå®šã§ã™ã€‚<br />filter.conf=Configuration (.conf)|*.conf|</span><div class="eng">
 If on Windows (someday this may work on GTK+ too), a filter should be
 added for conf files in scite/src/others.properties:
 filter.conf=Configuration (.conf)|*.conf|
 </div></li>
-<li><span>scite/src/SciTEGlobal.properties ‚É open.filter ’è‹`—p‚Ì $(filter.conf) ‚ğ’Ç‰Á‚µ‚Ä‚­‚¾‚³‚¢B</span><div class="eng">
+<li><span>scite/src/SciTEGlobal.properties ã« open.filter å®šç¾©ç”¨ã® $(filter.conf) ã‚’è¿½åŠ ã—ã¦ãã ã•ã„ã€‚</span><div class="eng">
 In scite/src/SciTEGlobal.properties add $(filter.conf) to the definition
 of open.filter.
 </div></li>
-<li><span>menu.language ‘®«‚É€–Ú‚ğ’Ç‰Á‚µ‚Ä SciTE ‚Ì•¶‘‚Ìí—Şƒƒjƒ…[‚É‚±‚Ì•¶‘í‚ğ‘‚â‚µ‚Ä‚­‚¾‚³‚¢B•¶‘í‚Ì–¼‘O‚Æ‚»‚Ì•¶‘‚Éˆê”Ô‚æ‚­—p‚¢‚ç‚ê‚éŠg’£q‚ğw’è‚µ‚Ü‚·B</span><div class="eng">
+<li><span>menu.language å±æ€§ã«é …ç›®ã‚’è¿½åŠ ã—ã¦ SciTE ã®æ–‡æ›¸ã®ç¨®é¡ãƒ¡ãƒ‹ãƒ¥ãƒ¼ã«ã“ã®æ–‡æ›¸ç¨®ã‚’å¢—ã‚„ã—ã¦ãã ã•ã„ã€‚æ–‡æ›¸ç¨®ã®åå‰ã¨ãã®æ–‡æ›¸ã«ä¸€ç•ªã‚ˆãç”¨ã„ã‚‰ã‚Œã‚‹æ‹¡å¼µå­ã‚’æŒ‡å®šã—ã¾ã™ã€‚</span><div class="eng">
 To add this language to the Language menu of SciTE, add an entry to the menu.language
 property including the name of the language and the file extension used most commonly
 for it.
 </div></li>
-<li><span>Scintilla ‚Æ SciTE ‚ğƒrƒ‹ƒh‚µ‚Ü‚·B</span><div class="eng">
+<li><span>Scintilla ã¨ SciTE ã‚’ãƒ“ãƒ«ãƒ‰ã—ã¾ã™ã€‚</span><div class="eng">
 Build both Scintilla and SciTE.
 </div></li>
-<li><span>‹¤—LàY‚É‚µ‚Ä‚¨Šy‚µ‚İ‚­‚¾‚³‚¢B</span><div class="eng">
+<li><span>å…±æœ‰è²¡ç”£ã«ã—ã¦ãŠæ¥½ã—ã¿ãã ã•ã„ã€‚</span><div class="eng">
 Share and enjoy
 </div></li>
 </ol>
-<p>‰ğÍŠí‚ğì‚é‚É‚ ‚½‚èA‚æ‚èL”ÍˆÍ‚Èî•ñ‚Í <a href ="http://www.scintilla.org/ScintillaDoc.html#BuildingScintilla">
-Scintilla ‰ğà‘“à‚Ìw¦</a>‚ğQÆ‚­‚¾‚³‚¢B</p><p class="eng">
+<p>è§£æå™¨ã‚’ä½œã‚‹ã«ã‚ãŸã‚Šã€ã‚ˆã‚Šåºƒç¯„å›²ãªæƒ…å ±ã¯ <a href ="http://www.scintilla.org/ScintillaDoc.html#BuildingScintilla">
+Scintilla è§£èª¬æ›¸å†…ã®æŒ‡ç¤º</a>ã‚’å‚ç…§ãã ã•ã„ã€‚</p><p class="eng">
 For more extensive information on building lexers, see the
 <a href ="http://www.scintilla.org/ScintillaDoc.html#BuildingScintilla">
 instructions in the Scintilla documentation</a>.

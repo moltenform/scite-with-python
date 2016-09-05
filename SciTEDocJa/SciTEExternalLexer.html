@@ -1,12 +1,12 @@
-<?xml version="1.0" encoding="Shift_JIS"?>
+<?xml version="1.0" encoding="Utf-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja">
   <head>
     <meta name="generator" content="SciTE" />
-    <meta http-equiv="Content-Type" content="text/html; charset=Shift_Jis" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <title>
-      SciTE Lua ŠO•”‰ğÍŠí
+      SciTE Lua å¤–éƒ¨è§£æå™¨
     </title>
   <link href="translation.css" rel="stylesheet" type="text/css" />
   </head>
@@ -19,16 +19,16 @@
         </td>
         <td>
           <a href="index.html" style="color:white;text-decoration:none"><font size="5">
-	  <span>SciTE ‚ÉŠO•”‰ğÍŠí‚ğ‰Á‚¦‚é</span><span class="eng">Add an external lexer to SciTE</span></font></a>
+	  <span>SciTE ã«å¤–éƒ¨è§£æå™¨ã‚’åŠ ãˆã‚‹</span><span class="eng">Add an external lexer to SciTE</span></font></a>
         </td>
       </tr>
     </table>
-    <h2><span>‰ğÍŠí‚Ì’Ç‰Á</span><span class="eng">Lexer addition.</span>
+    <h2><span>è§£æå™¨ã®è¿½åŠ </span><span class="eng">Lexer addition.</span>
     </h2>
-     <p>‚±‚Ì•¶‘‚Í‚·‚Å‚É‰ğÍŠí‚ğ’m‚Á‚Ä‚¢‚é•ûŒü‚¯‚É‘‚©‚ê‚½•¨‚Å‚·BŠO•”‰ğÍŠí‚Æ‚µ‚Ä“®ì‚³‚¹‚é‚½‚ß‚Ì•K—v‚È•ÏX‚É“Á‰»‚µ‚½î•ñ‚ğ‹L‚µ‚Ä‚¢‚Ü‚·B</p><p class="eng">This document assumes you know how to create a lexer.&nbsp; It only 
+     <p>ã“ã®æ–‡æ›¸ã¯ã™ã§ã«è§£æå™¨ã‚’çŸ¥ã£ã¦ã„ã‚‹æ–¹å‘ã‘ã«æ›¸ã‹ã‚ŒãŸç‰©ã§ã™ã€‚å¤–éƒ¨è§£æå™¨ã¨ã—ã¦å‹•ä½œã•ã›ã‚‹ãŸã‚ã®å¿…è¦ãªå¤‰æ›´ã«ç‰¹åŒ–ã—ãŸæƒ…å ±ã‚’è¨˜ã—ã¦ã„ã¾ã™ã€‚</p><p class="eng">This document assumes you know how to create a lexer.&nbsp; It only 
 		covers information specific to making the changes necessary for that 
 		lexer to work as an external lexer.</p>
-<p>‰ğÍŠí‚Íl‚Â‚ÌŠÖ”‚ğƒGƒNƒXƒ|[ƒg‚µ‚È‚­‚Ä‚Í‚È‚è‚Ü‚¹‚ñBWindows ‚Å‚ÍŠÖ”–¼‚ª³‚µ‚­ƒGƒNƒXƒ|[ƒg‚³‚ê‚é‚æ‚¤‚Éƒ‚ƒWƒ…[ƒ‹’è‹`ƒtƒ@ƒCƒ‹‚ğì‚é•K—v‚ª‚ ‚è‚Ü‚·BˆÈ‰º‚É‚»‚ê‚ç‚ÌŠÖ”‚Ì—Œ`‚ğ¦‚µ‚Ü‚·BExternalLexer.h ‚ğƒCƒ“ƒNƒ‹[ƒh‚·‚é‚±‚Æ‚Å EXT_LEXER_DECL ‚ª‰ğŒˆ‚³‚ê‚Ü‚·B</p><p class="eng">The lexer must export 4 functions (On Windows, it is necessary to create a 
+<p>è§£æå™¨ã¯å››ã¤ã®é–¢æ•°ã‚’ã‚¨ã‚¯ã‚¹ãƒãƒ¼ãƒˆã—ãªãã¦ã¯ãªã‚Šã¾ã›ã‚“ã€‚Windows ã§ã¯é–¢æ•°åãŒæ­£ã—ãã‚¨ã‚¯ã‚¹ãƒãƒ¼ãƒˆã•ã‚Œã‚‹ã‚ˆã†ã«ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«å®šç¾©ãƒ•ã‚¡ã‚¤ãƒ«ã‚’ä½œã‚‹å¿…è¦ãŒã‚ã‚Šã¾ã™ã€‚ä»¥ä¸‹ã«ãã‚Œã‚‰ã®é–¢æ•°ã®é››å½¢ã‚’ç¤ºã—ã¾ã™ã€‚ExternalLexer.h ã‚’ã‚¤ãƒ³ã‚¯ãƒ«ãƒ¼ãƒ‰ã™ã‚‹ã“ã¨ã§ EXT_LEXER_DECL ãŒè§£æ±ºã•ã‚Œã¾ã™ã€‚</p><p class="eng">The lexer must export 4 functions (On Windows, it is necessary to create a 
 module definition file to export the symbols correctly).&nbsp; Below are the 
 proto-types for those functions (ExternalLexer.h must be included so that 
 EXT_LEXER_DECL can be resolved):</p>
@@ -49,7 +49,7 @@ void EXT_LEXER_DECL Fold(
     int initStyle,
     char *words[],
     WindowID window, char *props);</code></pre>
-<p>Lex ŠÖ”‚Í‰ğÍ‚ÌÀs‚ğ—v‹‚µ‚½‚Æ‚«‚Éí‚ÉŒÄ‚Ño‚³‚ê‚Ü‚·BÅ‰‚É’Ê’m‚³‚ê“¾‚é‚Ì‚ÍA‘®‚ğ’è‚ß‚éƒAƒNƒZƒTƒIƒuƒWƒFƒNƒg‚Ì•s‘«‚Å‚·BWindowsAccessor ƒIƒuƒWƒFƒNƒg‚Í WindowID ‚Æ props ƒIƒuƒWƒFƒNƒg‚©‚ç¶¬‚³‚ê‚Ü‚·BPropSet ƒIƒuƒWƒFƒNƒg‚Í•K‚¸ props ‚©‚ç¶¬‚³‚ê‚Ü‚·BŸ‚É PropSet ‚Æ WindowID ‚ª WindowAccessor ‚ğì‚é‚½‚ß‚Ég‚í‚ê‚Ü‚·B‚±‚ê‚É‰Á‚¦‚Ä“Æ©‚Ì WordList ‚ğì‚ç‚È‚­‚Ä‚Í‚È‚è‚Ü‚¹‚ñB’PŒê—ñ‚ÌÅŒã‚Í NULL ƒ|ƒCƒ“ƒ^‚È‚Ì‚ÅAÅŒã‚Ì—ñ‚Ü‚Åˆê“x“Ç‚Ş‚±‚Æ‚Å‰½—ñ‚ ‚é‚©‚ğˆÀ‘S‚É’è‚ß‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·BWordList ‚Æ Accessor ‚ğŠ—L‚µ‚½‚çA“à‘ ‰ğÍŠí‚ğg‚¤‚Æ‚«‚Æ“¯—l‚É‚»‚ê‚ğ‰ğÍŠÖ”‚É“n‚·‚±‚Æ‚ª‚Å‚«‚Ü‚·B—Bˆê‚Ìˆá‚¢‚Í‚É Accessor::Flush() ‚ğŒÄ‚Ño‚·•K—v‚ª‚ ‚é‚Æ‚¢‚¤‚±‚Æ‚Å‚·BŠÖ” Lex ‚©‚ç§Œä‚ğ•Ô‚³‚ê‚é‘O‚â‘S‚Ä‚ÌƒeƒLƒXƒg‚ªXV‚³‚ê‚é‘O‚ÉŒÄ‚Ño‚³‚È‚¯‚ê‚Î‚È‚ç‚È‚¢‚±‚Æ‚ª‚ ‚è‚Ü‚·B‚±‚ê‚Í Scintilla ‚ªƒoƒbƒtƒ@‚ğ‚Â‚½‚ß‚Å‚·B</p><p class="eng">Lex - This function is called whenever lexing needs to be done.&nbsp; The 
+<p>Lex é–¢æ•°ã¯è§£æã®å®Ÿè¡Œã‚’è¦æ±‚ã—ãŸã¨ãã«å¸¸ã«å‘¼ã³å‡ºã•ã‚Œã¾ã™ã€‚æœ€åˆã«é€šçŸ¥ã•ã‚Œå¾—ã‚‹ã®ã¯ã€æ›¸å¼ã‚’å®šã‚ã‚‹ã‚¢ã‚¯ã‚»ã‚µã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®ä¸è¶³ã§ã™ã€‚WindowsAccessor ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã¯ WindowID ã¨ props ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‹ã‚‰ç”Ÿæˆã•ã‚Œã¾ã™ã€‚PropSet ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã¯å¿…ãš props ã‹ã‚‰ç”Ÿæˆã•ã‚Œã¾ã™ã€‚æ¬¡ã« PropSet ã¨ WindowID ãŒ WindowAccessor ã‚’ä½œã‚‹ãŸã‚ã«ä½¿ã‚ã‚Œã¾ã™ã€‚ã“ã‚Œã«åŠ ãˆã¦ç‹¬è‡ªã® WordList ã‚’ä½œã‚‰ãªãã¦ã¯ãªã‚Šã¾ã›ã‚“ã€‚å˜èªåˆ—ã®æœ€å¾Œã¯ NULL ãƒã‚¤ãƒ³ã‚¿ãªã®ã§ã€æœ€å¾Œã®åˆ—ã¾ã§ä¸€åº¦èª­ã‚€ã“ã¨ã§ä½•åˆ—ã‚ã‚‹ã‹ã‚’å®‰å…¨ã«å®šã‚ã‚‹ã“ã¨ãŒã§ãã¾ã™ã€‚WordList ã¨ Accessor ã‚’æ‰€æœ‰ã—ãŸã‚‰ã€å†…è”µè§£æå™¨ã‚’ä½¿ã†ã¨ãã¨åŒæ§˜ã«ãã‚Œã‚’è§£æé–¢æ•°ã«æ¸¡ã™ã“ã¨ãŒã§ãã¾ã™ã€‚å”¯ä¸€ã®é•ã„ã¯æ™‚ã« Accessor::Flush() ã‚’å‘¼ã³å‡ºã™å¿…è¦ãŒã‚ã‚‹ã¨ã„ã†ã“ã¨ã§ã™ã€‚é–¢æ•° Lex ã‹ã‚‰åˆ¶å¾¡ã‚’è¿”ã•ã‚Œã‚‹å‰ã‚„å…¨ã¦ã®ãƒ†ã‚­ã‚¹ãƒˆãŒæ›´æ–°ã•ã‚Œã‚‹å‰ã«å‘¼ã³å‡ºã•ãªã‘ã‚Œã°ãªã‚‰ãªã„ã“ã¨ãŒã‚ã‚Šã¾ã™ã€‚ã“ã‚Œã¯ Scintilla ãŒãƒãƒƒãƒ•ã‚¡ã‚’æŒã¤ãŸã‚ã§ã™ã€‚</p><p class="eng">Lex - This function is called whenever lexing needs to be done.&nbsp; The 
 first thing you may notice is the lack of an Accessor object to style with.&nbsp; 
 A WindowAccessor object can be created from the WindowID and props objects.&nbsp; 
 A PropSet object must be created from props, first, then that PropSet and the 
@@ -60,11 +60,11 @@ Once you have the WordList and Accessor, you can pass them to your lexing
 function just like using a built-in lexer.&nbsp; The only other difference is 
 you need to call Accessor::Flush() sometime before Lex returns, or not all text 
 may be updated.&nbsp; This is due to Scintilla's buffering.</p>
-<p>GetLexerCount ŠÖ”‚Í“Æ©ƒ‚ƒWƒ…[ƒ‹‚ª‚¢‚­‚Â‚Ì“Æ—§‚µ‚½‰ğÍŠí‚ğ‚Á‚Ä‚¢‚é‚©‚ğ•Ô‚µ‚Ü‚·B</p><p class="eng">GetLexerCount - This returns the number of individual lexers you want to 
+<p>GetLexerCount é–¢æ•°ã¯ç‹¬è‡ªãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ãŒã„ãã¤ã®ç‹¬ç«‹ã—ãŸè§£æå™¨ã‚’æŒã£ã¦ã„ã‚‹ã‹ã‚’è¿”ã—ã¾ã™ã€‚</p><p class="eng">GetLexerCount - This returns the number of individual lexers you want to 
 export from your module.</p>
-<p>GetLexerName ‰ğÍŠí‚Ì–¼‘O‚Å–¼Ì˜g‚ğ–‚½‚µ‚Ü‚·B‚±‚ê‚Í SciTE ‚Ì‘®«“à‚Å‹æ•Ê‚·‚é•û–@‚Æ‚µ‚Ä—p‚¢‚ç‚ê‚Ü‚·B</p><p class="eng">GetLexerName - Fill in the name field with the name of the lexer.&nbsp; This 
+<p>GetLexerName è§£æå™¨ã®åå‰ã§åç§°æ ã‚’æº€ãŸã—ã¾ã™ã€‚ã“ã‚Œã¯ SciTE ã®å±æ€§å†…ã§åŒºåˆ¥ã™ã‚‹æ–¹æ³•ã¨ã—ã¦ç”¨ã„ã‚‰ã‚Œã¾ã™ã€‚</p><p class="eng">GetLexerName - Fill in the name field with the name of the lexer.&nbsp; This 
 is how it is later identified in SciTE properties.</p>
-<p>Fold ŠÖ”‚Í SciTE ‚ªÜ‚è‚½‚½‚İ‚ğs‚¤‚Æ‚«‚Éí‚ÉŒÄ‚Ño‚³‚ê‚Ü‚·BLex ŠÖ”‚É“¯‚¶î•ñ‚ª‚ ‚è‚Ü‚·BWindowsAccessor ‚ğì‚Á‚½‚Æ‚«‚Æ“¯‚¶î•ñ‚ğ‚±‚±‚Å—^‚¦‚Ü‚·B</p><p class="eng">Fold - The function called whenever SciTE requests folding be performed.&nbsp; 
+<p>Fold é–¢æ•°ã¯ SciTE ãŒæŠ˜ã‚ŠãŸãŸã¿ã‚’è¡Œã†ã¨ãã«å¸¸ã«å‘¼ã³å‡ºã•ã‚Œã¾ã™ã€‚Lex é–¢æ•°ã«åŒã˜æƒ…å ±ãŒã‚ã‚Šã¾ã™ã€‚WindowsAccessor ã‚’ä½œã£ãŸã¨ãã¨åŒã˜æƒ…å ±ã‚’ã“ã“ã§ä¸ãˆã¾ã™ã€‚</p><p class="eng">Fold - The function called whenever SciTE requests folding be performed.&nbsp; 
 The same information found in Lex for creating a WindowAccessor apply here, too.</p>
 </body>
 </html>

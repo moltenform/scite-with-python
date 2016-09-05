@@ -1,24 +1,25 @@
+<?xml version="1.0" encoding="Utf-8"?>
 <!DOCTYPE html  PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja">
 <head>
-<title>‰ğÍŠí ( Œ´•¶‚Í Lexer.txt )</title>
+<title>è§£æå™¨ ( åŸæ–‡ã¯ Lexer.txt )</title>
 <meta name="GENERATOR" content="SciTE - www.Scintilla.org" />
 <link href="translation.css" rel="stylesheet" type="text/css" />
-<meta http-equiv="Content-Type" content="text/html; charset=Shift_Jis" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 </head>
 <body>
-<h3><span>Scintilla —p‰ğÍŠí‚Ì‘‚«•û</span><span class="eng">How to write a scintilla lexer</span></h3>
+<h3><span>Scintilla ç”¨è§£æå™¨ã®æ›¸ãæ–¹</span><span class="eng">How to write a scintilla lexer</span></h3>
 
-<p>Œ¾Œê–ˆ‚É—pˆÓ‚³‚ê‚é‰ğÍŠí‚ÍAw’è”ÍˆÍ‚Ì•¶š—ñ‚ğ‚Ç‚¤F‚Ã‚¯‚·‚é‚×‚«‚©‚ğ’è‚ß‚Ü‚·B‰ğÍŠí‚É‹‚ß‚ç‚ê‚é‚±‚Æ‚Íuw’è‚³‚ê‚½v•¶š—ñ‚ÉF‚ğ•t‚¯‚é‚Æ‚¢‚¤‚±‚Æ‚¾‚¯‚Å‚·‚Ì‚ÅA‰ğÍŠí‚ğ‘‚­‚Ì‚Í”äŠr“IŠÈ’P‚Èì‹Æ‚Å‚·BF‚Ã‚¯‚Ì”»’f‚É•K—v‚È•¶š—ñ‚Í‚Ç‚ê‚È‚Ì‚©‚ğ’è‚ß‚é‚Æ‚¢‚¤“ï‚µ‚¢ì‹Æ‚Í Scintilla ©g‚ªs‚¢A‚»‚¤‚µ‚Ä‰ğÍŠí‚ğŒÄ‚Ño‚µ‚Ü‚·B</p><p class="eng">A lexer for a particular language determines how a specified range of
+<p>è¨€èªæ¯ã«ç”¨æ„ã•ã‚Œã‚‹è§£æå™¨ã¯ã€æŒ‡å®šç¯„å›²ã®æ–‡å­—åˆ—ã‚’ã©ã†è‰²ã¥ã‘ã™ã‚‹ã¹ãã‹ã‚’å®šã‚ã¾ã™ã€‚è§£æå™¨ã«æ±‚ã‚ã‚‰ã‚Œã‚‹ã“ã¨ã¯ã€ŒæŒ‡å®šã•ã‚ŒãŸã€æ–‡å­—åˆ—ã«è‰²ã‚’ä»˜ã‘ã‚‹ã¨ã„ã†ã“ã¨ã ã‘ã§ã™ã®ã§ã€è§£æå™¨ã‚’æ›¸ãã®ã¯æ¯”è¼ƒçš„ç°¡å˜ãªä½œæ¥­ã§ã™ã€‚è‰²ã¥ã‘ã®åˆ¤æ–­ã«å¿…è¦ãªæ–‡å­—åˆ—ã¯ã©ã‚Œãªã®ã‹ã‚’å®šã‚ã‚‹ã¨ã„ã†é›£ã—ã„ä½œæ¥­ã¯ Scintilla è‡ªèº«ãŒè¡Œã„ã€ãã†ã—ã¦è§£æå™¨ã‚’å‘¼ã³å‡ºã—ã¾ã™ã€‚</p><p class="eng">A lexer for a particular language determines how a specified range of
 text shall be colored.  Writing a lexer is relatively straightforward
 because the lexer need only color given text.  The harder job of
 determining how much text actually needs to be colored is handled by
 Scintilla itself, that is, the lexer's caller.</p>
 
 
-<h4><span>”}‰î•Ï”</span><span class="eng">Parameters</span></h4>
+<h4><span>åª’ä»‹å¤‰æ•°</span><span class="eng">Parameters</span></h4>
 
-<p>LLL ‚ÆŒ¾‚¤Œ¾Œê‚Ì‰ğÍŠí‚ğ‘‚­‚½‚ß‚Ì—Œ`‚ÍŸ‚Ì‚æ‚¤‚É‚È‚è‚Ü‚·B</p><p class="eng">The lexer for language LLL has the following prototype:</p>
+<p>LLL ã¨è¨€ã†è¨€èªã®è§£æå™¨ã‚’æ›¸ããŸã‚ã®é››å½¢ã¯æ¬¡ã®ã‚ˆã†ã«ãªã‚Šã¾ã™ã€‚</p><p class="eng">The lexer for language LLL has the following prototype:</p>
 <pre><code>
     static void ColouriseLLLDoc (
         unsigned int startPos, int length,
@@ -26,23 +27,23 @@ Scintilla itself, that is, the lexer's caller.</p>
         WordList *keywordlists[],
         Accessor &amp;styler);
 </code></pre>
-<p>ƒXƒ^ƒCƒ‹•t‚¯‚ğÀÛ‚És‚¤‚Ì‚Í Accessor ƒIƒuƒWƒFƒNƒg‚Å‚·B‰ğÍŠí‚Í‚±‚ê‚ğ—p‚¢‚ÄF‚ğ•t‚¯‚é•¶š—ñ‚ÉƒAƒNƒZƒX‚µ‚È‚­‚Ä‚Í‚È‚è‚Ü‚¹‚ñB‰ğÍŠí‚Í styler.SafeGetCharAt(•¶š‚ÌˆÊ’u) ‚Æ‚¢‚¤•û–@‚Å“Á’èˆÊ’u‚Ì•¶š‚ğ“¾‚Ü‚·B</p><p class="eng">The styler parameter is an Accessor object.  The lexer must use this
+<p>ã‚¹ã‚¿ã‚¤ãƒ«ä»˜ã‘ã‚’å®Ÿéš›ã«è¡Œã†ã®ã¯ Accessor ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã§ã™ã€‚è§£æå™¨ã¯ã“ã‚Œã‚’ç”¨ã„ã¦è‰²ã‚’ä»˜ã‘ã‚‹æ–‡å­—åˆ—ã«ã‚¢ã‚¯ã‚»ã‚¹ã—ãªãã¦ã¯ãªã‚Šã¾ã›ã‚“ã€‚è§£æå™¨ã¯ styler.SafeGetCharAt(æ–‡å­—ã®ä½ç½®) ã¨ã„ã†æ–¹æ³•ã§ç‰¹å®šä½ç½®ã®æ–‡å­—ã‚’å¾—ã¾ã™ã€‚</p><p class="eng">The styler parameter is an Accessor object.  The lexer must use this
 object to access the text to be colored.  The lexer gets the character
 at position i using styler.SafeGetCharAt(i);</p>
 
-<p>startPos ‚Æ length ‚ÍF‚ğ•t‚¯’¼‚·•¶š—ñ‚Ì”ÍˆÍ‚ğ¦‚µ‚Ä‚¢‚Ü‚·B‰ğÍŠí‚Í‚±‚Ì”ÍˆÍ‚Ì•¶š‚·‚×‚Ä‚É“KØ‚ÈF‚ğ’è‚ß‚È‚­‚Ä‚Í‚È‚è‚Ü‚¹‚ñBstartPos ‚©‚ç startPos+length ‚Ü‚Å‚ª‚»‚Ì”ÍˆÍ‚Å‚·B</p><p class="eng">The startPos and length parameters indicate the range of text to be
+<p>startPos ã¨ length ã¯è‰²ã‚’ä»˜ã‘ç›´ã™æ–‡å­—åˆ—ã®ç¯„å›²ã‚’ç¤ºã—ã¦ã„ã¾ã™ã€‚è§£æå™¨ã¯ã“ã®ç¯„å›²ã®æ–‡å­—ã™ã¹ã¦ã«é©åˆ‡ãªè‰²ã‚’å®šã‚ãªãã¦ã¯ãªã‚Šã¾ã›ã‚“ã€‚startPos ã‹ã‚‰ startPos+length ã¾ã§ãŒãã®ç¯„å›²ã§ã™ã€‚</p><p class="eng">The startPos and length parameters indicate the range of text to be
 recolored; the lexer must determine the proper color for all characters
 in positions startPos through startPos+length.</p>
 
-<p>initStyle ‚Í startPos ‚Ì’¼‘O‚Ì•¶š‚ÌƒXƒ^ƒCƒ‹‚ğ•\‚µA“¯‚É—^‚¦‚ç‚ê‚½”ÍˆÍ‚Ì•¶š—ñ‚ÌF‚Ã‚¯•û–@‚ğ‚à¦‚µ‚Ä‚¢‚Ü‚·B</p><p class="eng">The initStyle parameter indicates the initial state, that is, the state
+<p>initStyle ã¯ startPos ã®ç›´å‰ã®æ–‡å­—ã®ã‚¹ã‚¿ã‚¤ãƒ«ã‚’è¡¨ã—ã€åŒæ™‚ã«ä¸ãˆã‚‰ã‚ŒãŸç¯„å›²ã®æ–‡å­—åˆ—ã®è‰²ã¥ã‘æ–¹æ³•ã‚’ã‚‚ç¤ºã—ã¦ã„ã¾ã™ã€‚</p><p class="eng">The initStyle parameter indicates the initial state, that is, the state
 at the character before startPos. States also indicate the coloring to
 be used for a particular range of text.</p>
 
-<p>’ˆÓ: StartPos ‚É‚ ‚é•¶š‚Ís‚Ìæ“ª‚Å‚ ‚é‚Æ‰¼’è‚³‚ê‚Ä‚¢‚Ü‚·B‚Å‚·‚©‚çA‰üs‚É‚æ‚è initStyle ‚Ìó‘Ô‚ªI—¹‚·‚é‚Ì‚Å‚ ‚ê‚Î‰ğÍŠí‚ÍŠî–{ƒXƒ^ƒCƒ‹‚© initStyle ‚É‘±‚­‚×‚«‚È‚ñ‚ç‚©‚ÌƒXƒ^ƒCƒ‹‚É–ß‚é‚×‚«‚Æ‚¢‚¤‚±‚Æ‚É‚È‚è‚Ü‚·B</p><p class="eng">Note:  the character at StartPos is assumed to start a line, so if a
+<p>æ³¨æ„: StartPos ã«ã‚ã‚‹æ–‡å­—ã¯è¡Œã®å…ˆé ­ã§ã‚ã‚‹ã¨ä»®å®šã•ã‚Œã¦ã„ã¾ã™ã€‚ã§ã™ã‹ã‚‰ã€æ”¹è¡Œã«ã‚ˆã‚Š initStyle ã®çŠ¶æ…‹ãŒçµ‚äº†ã™ã‚‹ã®ã§ã‚ã‚Œã°è§£æå™¨ã¯åŸºæœ¬ã‚¹ã‚¿ã‚¤ãƒ«ã‹ initStyle ã«ç¶šãã¹ããªã‚“ã‚‰ã‹ã®ã‚¹ã‚¿ã‚¤ãƒ«ã«æˆ»ã‚‹ã¹ãã¨ã„ã†ã“ã¨ã«ãªã‚Šã¾ã™ã€‚</p><p class="eng">Note:  the character at StartPos is assumed to start a line, so if a
 newline terminates the initStyle state the lexer should enter its
 default state (or whatever state should follow initStyle).</p>
 
-<p>keywordlist ‚Í‰ğÍŠí‚ª—‰ğ‚µ‚È‚­‚Ä‚Í‚È‚ç‚È‚¢ƒL[ƒ[ƒh‚Ìˆê——‚Å‚·BWordlist ƒNƒ‰ƒXƒIƒuƒWƒFƒNƒg‚ÍƒL[ƒ[ƒhŒŸo‚ğŠÈ’P‚É‚·‚éƒƒ\ƒbƒh‚ğ‚Á‚Ä‚¢‚Ü‚·BŠù‘¶‚Ì‰ğÍŠí‚ÍƒL[ƒ[ƒh‚ğŒŸo‚·‚é‚½‚ß‚Ì classifyWordLLL ‚Æ‚¢‚¤ŠÖ”‚ğ‚Á‚Ä‚¢‚Ü‚·B‚±‚ê‚ç‚ÌŠÖ”‚ğ’²‚×‚ê‚Î keywordlist ‚ğg‚Á‚½ŒŸo‚ª‚Ç‚Ì‚æ‚¤‚És‚í‚ê‚é‚©‚ª‚í‚©‚è‚Ü‚·B‚±‚Ì•¶‘‚Å‚ÍƒL[ƒ[ƒh‚É‚Â‚¢‚Ä‚ÌÚ×‚Í‹L‚µ‚Ü‚¹‚ñB</p><p class="eng">The keywordlists parameter specifies the keywords that the lexer must
+<p>keywordlist ã¯è§£æå™¨ãŒç†è§£ã—ãªãã¦ã¯ãªã‚‰ãªã„ã‚­ãƒ¼ãƒ¯ãƒ¼ãƒ‰ã®ä¸€è¦§ã§ã™ã€‚Wordlist ã‚¯ãƒ©ã‚¹ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã¯ã‚­ãƒ¼ãƒ¯ãƒ¼ãƒ‰æ¤œå‡ºã‚’ç°¡å˜ã«ã™ã‚‹ãƒ¡ã‚½ãƒƒãƒ‰ã‚’æŒã£ã¦ã„ã¾ã™ã€‚æ—¢å­˜ã®è§£æå™¨ã¯ã‚­ãƒ¼ãƒ¯ãƒ¼ãƒ‰ã‚’æ¤œå‡ºã™ã‚‹ãŸã‚ã® classifyWordLLL ã¨ã„ã†é–¢æ•°ã‚’æŒã£ã¦ã„ã¾ã™ã€‚ã“ã‚Œã‚‰ã®é–¢æ•°ã‚’èª¿ã¹ã‚Œã° keywordlist ã‚’ä½¿ã£ãŸæ¤œå‡ºãŒã©ã®ã‚ˆã†ã«è¡Œã‚ã‚Œã‚‹ã‹ãŒã‚ã‹ã‚Šã¾ã™ã€‚ã“ã®æ–‡æ›¸ã§ã¯ã‚­ãƒ¼ãƒ¯ãƒ¼ãƒ‰ã«ã¤ã„ã¦ã®è©³ç´°ã¯è¨˜ã—ã¾ã›ã‚“ã€‚</p><p class="eng">The keywordlists parameter specifies the keywords that the lexer must
 recognize.  A WordList class object contains methods that make simplify
 the recognition of keywords.  Present lexers use a helper function
 called classifyWordLLL to recognize keywords.  These functions show how
@@ -50,55 +51,55 @@ to use the keywordlists parameter to recognize keywords.  This
 documentation will not discuss keywords further.</p>
 
 
-<h4><span>‰ğÍŠí‚ÌƒR[ƒh</span><span class="eng">The lexer code</span></h4>
+<h4><span>è§£æå™¨ã®ã‚³ãƒ¼ãƒ‰</span><span class="eng">The lexer code</span></h4>
 
-<p>‰ğÍŠí‚Ì–ğ–Ú‚ÍŠÈŒ‰‚É—v–ñ‚Å‚«‚Ü‚·B“¯‚¶F‚Ã‚¯‚ğ”ÍˆÍ r ‚Ì•¶š‚És‚¤ê‡A‰ğÍŠí‚ÍŸ‚ÌŒÄ‚Ño‚µ‚ğs‚¢‚Ü‚·B</p><p class="eng">The task of a lexer can be summarized briefly: for each range r of
+<p>è§£æå™¨ã®å½¹ç›®ã¯ç°¡æ½”ã«è¦ç´„ã§ãã¾ã™ã€‚åŒã˜è‰²ã¥ã‘ã‚’ç¯„å›² r ã®æ–‡å­—ã«è¡Œã†å ´åˆã€è§£æå™¨ã¯æ¬¡ã®å‘¼ã³å‡ºã—ã‚’è¡Œã„ã¾ã™ã€‚</p><p class="eng">The task of a lexer can be summarized briefly: for each range r of
 characters that are to be colored the same, the lexer should call</p>
 <pre><code>
     styler.ColourTo(i, state)
         
 </code></pre>
-<p>i ‚Í”ÍˆÍ r ‚ÌÅŒã‚Ì•¶š‚ÌˆÊ’u‚Å‚·B•Ï” state ‚É‚ÍˆÊ’u i ‚ÌF‚Ã‚¯‚Ì“à—e‚ğw’è‚µA‚±‚ê‚ğ—v‹‚³‚ê‚½”ÍˆÍ‚Ì‘S‘Ì‚É‘Î‚µ‚Äs‚¢‚Ü‚·B</p><p class="eng">where i is the position of the last character of the range r.  The lexer
+<p>i ã¯ç¯„å›² r ã®æœ€å¾Œã®æ–‡å­—ã®ä½ç½®ã§ã™ã€‚å¤‰æ•° state ã«ã¯ä½ç½® i ã®è‰²ã¥ã‘ã®å†…å®¹ã‚’æŒ‡å®šã—ã€ã“ã‚Œã‚’è¦æ±‚ã•ã‚ŒãŸç¯„å›²ã®å…¨ä½“ã«å¯¾ã—ã¦è¡Œã„ã¾ã™ã€‚</p><p class="eng">where i is the position of the last character of the range r.  The lexer
 should set the state variable to the coloring state of the character at
 position i and continue until the entire text has been colored.</p>
 
-<p>’ˆÓ1: styler ( Accessor ) ƒIƒuƒWƒFƒNƒg‚Í“¯‚¶ŠÖ”‚Ì‘O‰ñ‚ÌŒÄ‚Ño‚µ‚É‚¨‚¯‚é i ‚Ì’l‚ğŠo‚¦‚Ä‚¢‚Ü‚·‚Ì‚ÅAI’[‚Ì i ‚¾‚¯‚ğw’è‚·‚ê‚Î•¶š‚Ì”ÍˆÍ‚ğ¦‚·‚±‚Æ‚ª‚Å‚«‚Ü‚·B</p><p class="eng">Note 1:  the styler (Accessor) object remembers the i parameter in the
+<p>æ³¨æ„1: styler ( Accessor ) ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã¯åŒã˜é–¢æ•°ã®å‰å›ã®å‘¼ã³å‡ºã—ã«ãŠã‘ã‚‹ i ã®å€¤ã‚’è¦šãˆã¦ã„ã¾ã™ã®ã§ã€çµ‚ç«¯ã® i ã ã‘ã‚’æŒ‡å®šã™ã‚Œã°æ–‡å­—ã®ç¯„å›²ã‚’ç¤ºã™ã“ã¨ãŒã§ãã¾ã™ã€‚</p><p class="eng">Note 1:  the styler (Accessor) object remembers the i parameter in the
 previous calls to styler.ColourTo, so the single i parameter suffices to
 indicate a range of characters.</p>
 
-<p>’ˆÓ2: styler.ColourTo(i,state) ‚ÌŒÄ‚Ño‚µ‚É‚æ‚é•Ê‚ÌŒø‰Ê‚ÍAScintilla ‚ªŒã‘±‚ÌŒÄ‚Ño‚µ‚Å initStyle ‚ğ³‚µ‚­İ’è‚Å‚«‚é‚±‚Æ‚Å‚·B‚±‚ê‚Í”ÍˆÍ“à‚ÌF‚Ã‚¯ó‘Ô‚ğ‚·‚×‚Ä‹L‰¯‚Å‚«‚é‚±‚Æ‚É‚æ‚è‚Ü‚·B</p><p class="eng">Note 2: As a side effect of calling styler.ColourTo(i,state), the
+<p>æ³¨æ„2: styler.ColourTo(i,state) ã®å‘¼ã³å‡ºã—ã«ã‚ˆã‚‹åˆ¥ã®åŠ¹æœã¯ã€Scintilla ãŒå¾Œç¶šã®å‘¼ã³å‡ºã—ã§ initStyle ã‚’æ­£ã—ãè¨­å®šã§ãã‚‹ã“ã¨ã§ã™ã€‚ã“ã‚Œã¯ç¯„å›²å†…ã®è‰²ã¥ã‘çŠ¶æ…‹ã‚’ã™ã¹ã¦è¨˜æ†¶ã§ãã‚‹ã“ã¨ã«ã‚ˆã‚Šã¾ã™ã€‚</p><p class="eng">Note 2: As a side effect of calling styler.ColourTo(i,state), the
 coloring states of all characters in the range are remembered so that
 Scintilla may set the initStyle parameter correctly on future calls to
 the
 lexer.</p>
 
 
-<h4><span>‰ğÍŠí‚Ì\¬</span><span class="eng">Lexer organization</span></h4>
+<h4><span>è§£æå™¨ã®æ§‹æˆ</span><span class="eng">Lexer organization</span></h4>
 
-<p>‰ğÍŠí‚Ì\¬‚Æ‚µ‚Ä‚ÍA­‚È‚­‚Æ‚à“ñ’Ê‚è‚ğl‚¦‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·BŠù‘¶‚Ì‰ğÍŠí‚Íu•¶šƒx[ƒXv‚Ìl‚¦•û‚ğg‚Á‚Ä‚¢‚Ü‚·BŸ‚Ì—á‚ÅŠO‘¤‚Ìƒ‹[ƒv‚Í•¶š’PˆÊ‚ÌŒJ‚è•Ô‚µ‚ğs‚Á‚Ä‚¢‚Ü‚·B</p><p class="eng">There are at least two ways to organize the code of each lexer.  Present
+<p>è§£æå™¨ã®æ§‹æˆã¨ã—ã¦ã¯ã€å°‘ãªãã¨ã‚‚äºŒé€šã‚Šã‚’è€ƒãˆã‚‹ã“ã¨ãŒã§ãã¾ã™ã€‚æ—¢å­˜ã®è§£æå™¨ã¯ã€Œæ–‡å­—ãƒ™ãƒ¼ã‚¹ã€ã®è€ƒãˆæ–¹ã‚’ä½¿ã£ã¦ã„ã¾ã™ã€‚æ¬¡ã®ä¾‹ã§å¤–å´ã®ãƒ«ãƒ¼ãƒ—ã¯æ–‡å­—å˜ä½ã®ç¹°ã‚Šè¿”ã—ã‚’è¡Œã£ã¦ã„ã¾ã™ã€‚</p><p class="eng">There are at least two ways to organize the code of each lexer.  Present
 lexers use what might be called a "character-based" approach: the outer
 loop iterates over characters, like this:</p>
 <pre><code>
   lengthDoc = startPos + length ;
   for (unsigned int i = startPos; i &lt; lengthDoc; i++) {
     chNext = styler.SafeGetCharAt(i + 1);
-    // “Á•Ê‚Èê‡‚ğˆ—‚·‚é <span class="eng">&lt;&lt; handle special cases &gt;&gt;</span>
+    // ç‰¹åˆ¥ãªå ´åˆã‚’å‡¦ç†ã™ã‚‹ <span class="eng">&lt;&lt; handle special cases &gt;&gt;</span>
     switch(state) {
-      // ch ‚Æ chNext ‚É‚Â‚¢‚Ä‚¾‚¯s‚¤B
-	  // ó‘Ô‚ª•Ï‚í‚Á‚½‚Æ‚«‚Í styler.ColorTo(i,state) ‚ğŒÄ‚Ño‚·B 
+      // ch ã¨ chNext ã«ã¤ã„ã¦ã ã‘è¡Œã†ã€‚
+	  // çŠ¶æ…‹ãŒå¤‰ã‚ã£ãŸã¨ãã¯ styler.ColorTo(i,state) ã‚’å‘¼ã³å‡ºã™ã€‚ 
       // Handlers examine only ch and chNext.
       // Handlers call styler.ColorTo(i,state) if the state changes.
-      case state_1: // state 1 ‚ğˆ— <span class="eng">&lt;&lt; handle ch in state 1 &gt;&gt;</span>
-      case state_2: // state 2 ‚ğˆ— <span class="eng">&lt;&lt; handle ch in state 2 &gt;&gt;</span>
+      case state_1: // state 1 ã‚’å‡¦ç† <span class="eng">&lt;&lt; handle ch in state 1 &gt;&gt;</span>
+      case state_2: // state 2 ã‚’å‡¦ç† <span class="eng">&lt;&lt; handle ch in state 2 &gt;&gt;</span>
       ...
-      case state_n: // state n ‚ğˆ— <span class="eng">&lt;&lt; handle ch in state n &gt;&gt;</span>
+      case state_n: // state n ã‚’å‡¦ç† <span class="eng">&lt;&lt; handle ch in state n &gt;&gt;</span>
     }
     chPrev = ch;
   }
   styler.ColourTo(lengthDoc - 1, state);
 </code></pre>
 
-<p>‚à‚¤ˆê‚Â‚Ì•û–@‚Íuó‘Ôƒx[ƒXv‚Ìl‚¦•û‚ğg‚¢‚Ü‚·BŠO‘¤‚Ìƒ‹[ƒv‚Íó‘Ô‚²‚Æ‚ÌŒJ‚è•Ô‚µ‚Æ‚È‚Á‚Ä‚¢‚Ü‚·B</p><p class="eng">An alternative would be to use a "state-based" approach.  The outer loop
+<p>ã‚‚ã†ä¸€ã¤ã®æ–¹æ³•ã¯ã€ŒçŠ¶æ…‹ãƒ™ãƒ¼ã‚¹ã€ã®è€ƒãˆæ–¹ã‚’ä½¿ã„ã¾ã™ã€‚å¤–å´ã®ãƒ«ãƒ¼ãƒ—ã¯çŠ¶æ…‹ã”ã¨ã®ç¹°ã‚Šè¿”ã—ã¨ãªã£ã¦ã„ã¾ã™ã€‚</p><p class="eng">An alternative would be to use a "state-based" approach.  The outer loop
 would iterate over states, like this:</p>
 <pre><code>
   lengthDoc = startPos+lenth ;
@@ -106,67 +107,67 @@ would iterate over states, like this:</p>
     char ch = styler.SafeGetCharAt(i);
     int new_state = 0 ;
     switch ( state ) {
-      // ”»’èƒR[ƒh‚ªŸ‚Ìó‘Ô‚ğŒŸo‚µ‚Ä‚¢‚½‚ç new_state ‚ªİ’è‚³‚ê‚Ä‚¢‚é B
+      // åˆ¤å®šã‚³ãƒ¼ãƒ‰ãŒæ¬¡ã®çŠ¶æ…‹ã‚’æ¤œå‡ºã—ã¦ã„ãŸã‚‰ new_state ãŒè¨­å®šã•ã‚Œã¦ã„ã‚‹ ã€‚
       <span class="eng">// scanners set new_state if they set the next state.</span>
-      case state_1: /* state 1 ‚ÌI‚í‚è‚ğ’T‚· <span class="eng">&lt;&lt; scan to the end of state 1 &gt;&gt;</span> */ break ;
-      case state_2: /* state 2 ‚ÌI‚í‚è‚ğ’T‚· <span class="eng">&lt;&lt; scan to the end of state 2 &gt;&gt;</span> */ break ;
+      case state_1: /* state 1 ã®çµ‚ã‚ã‚Šã‚’æ¢ã™ <span class="eng">&lt;&lt; scan to the end of state 1 &gt;&gt;</span> */ break ;
+      case state_2: /* state 2 ã®çµ‚ã‚ã‚Šã‚’æ¢ã™ <span class="eng">&lt;&lt; scan to the end of state 2 &gt;&gt;</span> */ break ;
       case default_state:
-        // Ÿ‚ÌŠî–{ó‘Ô‚Å‚Í‚È‚¢•”•ª‚ğ’T‚µ‚Ä new_state ‚ğİ’è‚·‚éB
+        // æ¬¡ã®åŸºæœ¬çŠ¶æ…‹ã§ã¯ãªã„éƒ¨åˆ†ã‚’æ¢ã—ã¦ new_state ã‚’è¨­å®šã™ã‚‹ã€‚
         <span class="eng">&lt;&lt; scan to the next non-default state and set new_state &gt;&gt;</span>
     }
     styler.ColourTo(i, state);
     if ( i &gt;= lengthDoc ) break ;
     if ( ! new_state ) {
       ch = styler.SafeGetCharAt(i);
-      // Šî–{ó‘Ô‚É‚ ‚é ch ‚ÉŠî‚Ã‚¢‚½İ’è‚ğs‚¤B
+      // åŸºæœ¬çŠ¶æ…‹ã«ã‚ã‚‹ ch ã«åŸºã¥ã„ãŸè¨­å®šã‚’è¡Œã†ã€‚
       <span class="eng">&lt;&lt; set state based on ch in the default state &gt;&gt;</span>
     }
   }
   styler.ColourTo(lengthDoc - 1, state);
 </code></pre>
-<p>‚±‚¿‚ç‚Ì•û‚ª©‘R‚ÉŒ©‚¦‚é‚©‚à‚µ‚ê‚Ü‚¹‚ñBó‘ÔŒŸo‚Í•¶š‚ÌŒŸo‚æ‚è‚à‚â‚é‚±‚Æ‚ª­‚È‚­’Pƒ‚É‚È‚è‚Ü‚·B—á‚¦‚Î C Œ¾Œê‚Ì’ß•”•ª‚ğˆ—‚µ‚Ä‚¢‚é’†‚Å C Œ¾Œê•¶š—ñ‚ÌŠJn•”•ª‚Å‚ ‚é‚©‚Ç‚¤‚©‚ğ’²‚×‚é•K—v‚ª‚ ‚è‚Ü‚¹‚ñB‚Ü‚½‚±‚Ì•û–@‚É‚æ‚¯‚¿‚Î•¡”‚ÌŒŸo•”‚ª‹¤—p‚Å‚«‚éA—á‚¦‚Î scanToEndOfLine ‚Æ‚¢‚Á‚½‚à‚Ì‚ğ©‘R‚ÈŒ`‚Å’è‹`‚Å‚«‚Ü‚·B</p><p class="eng">This approach might seem to be more natural.  State scanners are simpler
+<p>ã“ã¡ã‚‰ã®æ–¹ãŒè‡ªç„¶ã«è¦‹ãˆã‚‹ã‹ã‚‚ã—ã‚Œã¾ã›ã‚“ã€‚çŠ¶æ…‹æ¤œå‡ºã¯æ–‡å­—ã®æ¤œå‡ºã‚ˆã‚Šã‚‚ã‚„ã‚‹ã“ã¨ãŒå°‘ãªãå˜ç´”ã«ãªã‚Šã¾ã™ã€‚ä¾‹ãˆã° C è¨€èªã®æ³¨é‡ˆéƒ¨åˆ†ã‚’å‡¦ç†ã—ã¦ã„ã‚‹ä¸­ã§ C è¨€èªæ–‡å­—åˆ—ã®é–‹å§‹éƒ¨åˆ†ã§ã‚ã‚‹ã‹ã©ã†ã‹ã‚’èª¿ã¹ã‚‹å¿…è¦ãŒã‚ã‚Šã¾ã›ã‚“ã€‚ã¾ãŸã“ã®æ–¹æ³•ã«ã‚ˆã‘ã¡ã°è¤‡æ•°ã®æ¤œå‡ºéƒ¨ãŒå…±ç”¨ã§ãã‚‹ã€ä¾‹ãˆã° scanToEndOfLine ã¨ã„ã£ãŸã‚‚ã®ã‚’è‡ªç„¶ãªå½¢ã§å®šç¾©ã§ãã¾ã™ã€‚</p><p class="eng">This approach might seem to be more natural.  State scanners are simpler
 than character scanners because less needs to be done.  For example,
 there is no need to test for the start of a C string inside the scanner
 for a C comment.  Also this way makes it natural to define routines that
 could be used by more than one scanner; for example, a scanToEndOfLine
 routine.</p>
 
-<p>ˆê•û‚ÅAó‘Ôƒx[ƒX‚Ìl‚¦•û‚É‚æ‚éƒƒCƒ“ƒ‹[ƒv‚Å‚ÍAó‘ÔŒŸoŠí‚Ì‚»‚ê‚¼‚ê‚ª“Áê‚ÈŒ`‚ğˆµ‚í‚È‚­‚Ä‚Í‚È‚ç‚È‚¢‚Å‚µ‚å‚¤B]‚Á‚ÄA‚Ç‚¿‚ç‚É‚à’·Š‚ª‚ ‚è‚Ü‚·B“Áê‚ÈŒ`‚Æ‚¢‚¤‚Ì‚ÍŸ‚Ì‚à‚Ì‚Å‚·B</p><p>(–ó’:‘æˆê•¶‚Í‚¨‚»‚ç‚­Œ´•¶‚Ì character-based ‚ª‚Ü‚¿‚ª‚Á‚Ä‚¢‚éB)</p><p class="eng">However, the special cases handled in the main loop in the
+<p>ä¸€æ–¹ã§ã€çŠ¶æ…‹ãƒ™ãƒ¼ã‚¹ã®è€ƒãˆæ–¹ã«ã‚ˆã‚‹ãƒ¡ã‚¤ãƒ³ãƒ«ãƒ¼ãƒ—ã§ã¯ã€çŠ¶æ…‹æ¤œå‡ºå™¨ã®ãã‚Œãã‚ŒãŒç‰¹æ®Šãªå½¢ã‚’æ‰±ã‚ãªãã¦ã¯ãªã‚‰ãªã„ã§ã—ã‚‡ã†ã€‚å¾“ã£ã¦ã€ã©ã¡ã‚‰ã«ã‚‚é•·æ‰€ãŒã‚ã‚Šã¾ã™ã€‚ç‰¹æ®Šãªå½¢ã¨ã„ã†ã®ã¯æ¬¡ã®ã‚‚ã®ã§ã™ã€‚</p><p>(è¨³æ³¨:ç¬¬ä¸€æ–‡ã¯ãŠãã‚‰ãåŸæ–‡ã® character-based ãŒã¾ã¡ãŒã£ã¦ã„ã‚‹ã€‚)</p><p class="eng">However, the special cases handled in the main loop in the
 character-based approach would have to be handled by each state scanner,
 so both approaches have advantages.  These special cases are discussed
 below.</p>
 
-<h4><span>“ÁêƒP[ƒX: DBCS ‚ÌæsƒIƒNƒeƒbƒg</span><span class="eng">Special case: Lead characters</span></h4>
+<h4><span>ç‰¹æ®Šã‚±ãƒ¼ã‚¹: DBCS ã®å…ˆè¡Œã‚ªã‚¯ãƒ†ãƒƒãƒˆ</span><span class="eng">Special case: Lead characters</span></h4>
 
-<p>æsƒIƒNƒeƒbƒg(lead byte)‚Æ‚Í“ú–{Œê‚Ì‚æ‚¤‚ÈŒ¾Œê‚Ì DBCS ˆ—‚Ìˆê•”‚Å‚·BShift_JIS ‚Ì‚æ‚¤‚ÈƒGƒ“ƒR[ƒfƒBƒ“ƒO‚Í 16 ƒrƒbƒg‚ÉŠg’£‚³‚ê‚½•¶š‚ªæsƒIƒNƒeƒbƒg‚ÆŒã‘±ƒIƒNƒeƒbƒg(trail byte)‚É•ª‚¯‚ÄƒR[ƒh‰»‚³‚ê‚Ü‚·B</p><p class="eng">Lead bytes are part of DBCS processing for languages such as Japanese
+<p>å…ˆè¡Œã‚ªã‚¯ãƒ†ãƒƒãƒˆ(lead byte)ã¨ã¯æ—¥æœ¬èªã®ã‚ˆã†ãªè¨€èªã® DBCS å‡¦ç†ã®ä¸€éƒ¨ã§ã™ã€‚Shift_JIS ã®ã‚ˆã†ãªã‚¨ãƒ³ã‚³ãƒ¼ãƒ‡ã‚£ãƒ³ã‚°ã¯ 16 ãƒ“ãƒƒãƒˆã«æ‹¡å¼µã•ã‚ŒãŸæ–‡å­—ãŒå…ˆè¡Œã‚ªã‚¯ãƒ†ãƒƒãƒˆã¨å¾Œç¶šã‚ªã‚¯ãƒ†ãƒƒãƒˆ(trail byte)ã«åˆ†ã‘ã¦ã‚³ãƒ¼ãƒ‰åŒ–ã•ã‚Œã¾ã™ã€‚</p><p class="eng">Lead bytes are part of DBCS processing for languages such as Japanese
 using an encoding such as Shift-JIS. In these encodings, extended
 (16-bit) characters are encoded as a lead byte followed by a trail byte.</p>
 
-<p>æsƒIƒNƒeƒbƒg‚Í‰ğÍãˆÓ–¡‚ğ‚Â‚±‚Æ‚Í–Å‘½‚É‚È‚­A’Êí‚Í•¶š—ñ‚©’ß‚É‚Ì‚İŒ»‚ê‚Ü‚·B‚±‚ê‚ç‚Ìˆ—‚Ì’†‚Å‚Í styler.IsLeadByte(ch) ‚ª FALSE ‚ğ•Ô‚µ‚½‚Æ‚«‚É ch ‚ğ–³‹‚·‚×‚«‚Å‚·B</p><p>(–ó’: ‘æ“ñ•¶A‚±‚ê‚àŒ´•¶‚ª‹t‚¶‚á‚È‚¢‚©‚Æv‚Á‚½‚í‚¯‚¾‚ªB)</p><p class="eng">Lead bytes are rarely of any lexical significance, normally only being
+<p>å…ˆè¡Œã‚ªã‚¯ãƒ†ãƒƒãƒˆã¯è§£æä¸Šæ„å‘³ã‚’æŒã¤ã“ã¨ã¯æ»…å¤šã«ãªãã€é€šå¸¸ã¯æ–‡å­—åˆ—ã‹æ³¨é‡ˆã«ã®ã¿ç¾ã‚Œã¾ã™ã€‚ã“ã‚Œã‚‰ã®å‡¦ç†ã®ä¸­ã§ã¯ styler.IsLeadByte(ch) ãŒ FALSE ã‚’è¿”ã—ãŸã¨ãã« ch ã‚’ç„¡è¦–ã™ã¹ãã§ã™ã€‚</p><p>(è¨³æ³¨: ç¬¬äºŒæ–‡ã€ã“ã‚Œã‚‚åŸæ–‡ãŒé€†ã˜ã‚ƒãªã„ã‹ã¨æ€ã£ãŸã‚ã‘ã ãŒã€‚)</p><p class="eng">Lead bytes are rarely of any lexical significance, normally only being
 allowed within strings and comments. In such contexts, lexers should
 ignore ch if styler.IsLeadByte(ch) returns TRUE.</p>
 
 
-<p>’ˆÓ: UTF-8 ‚Í Shift_JIS ‚æ‚è‚àŠÈ’P‚È\‘¢‚È‚Ì‚Å“Áê‚Èˆµ‚¢‚Í•K—v‚ ‚è‚Ü‚¹‚ñBUTF-8 ‚ÌŠg’£•¶š‚Í‚·‚×‚Ä 128 ˆÈã‚ÌƒR[ƒh‚Å‚ ‚èAƒvƒƒOƒ‰ƒ~ƒ“ƒOŒ¾Œê‚Ì•¶–@‰ğÍ‚ÅˆÓ–¡‚ğ‚Â‚±‚Æ‚Í‚ ‚è‚Ü‚¹‚ñBŒ»İ‚ÌŠAƒvƒƒOƒ‰ƒ~ƒ“ƒOŒ¾Œê‚Ì‰‰Zq‚â’ß‚ğ¦‚·•„†‚È‚Ç‚Í‚·‚×‚Ä ASCII •¶š‚Å‘‚©‚ê‚Ä‚¢‚é‚©‚ç‚Å‚·B</p><p class="eng">Note: UTF-8 is simpler than Shift-JIS, so no special handling is
+<p>æ³¨æ„: UTF-8 ã¯ Shift_JIS ã‚ˆã‚Šã‚‚ç°¡å˜ãªæ§‹é€ ãªã®ã§ç‰¹æ®Šãªæ‰±ã„ã¯å¿…è¦ã‚ã‚Šã¾ã›ã‚“ã€‚UTF-8 ã®æ‹¡å¼µæ–‡å­—ã¯ã™ã¹ã¦ 128 ä»¥ä¸Šã®ã‚³ãƒ¼ãƒ‰ã§ã‚ã‚Šã€ãƒ—ãƒ­ã‚°ãƒ©ãƒŸãƒ³ã‚°è¨€èªã®æ–‡æ³•è§£æã§æ„å‘³ã‚’æŒã¤ã“ã¨ã¯ã‚ã‚Šã¾ã›ã‚“ã€‚ç¾åœ¨ã®æ‰€ã€ãƒ—ãƒ­ã‚°ãƒ©ãƒŸãƒ³ã‚°è¨€èªã®æ¼”ç®—å­ã‚„æ³¨é‡ˆã‚’ç¤ºã™ç¬¦å·ãªã©ã¯ã™ã¹ã¦ ASCII æ–‡å­—ã§æ›¸ã‹ã‚Œã¦ã„ã‚‹ã‹ã‚‰ã§ã™ã€‚</p><p class="eng">Note: UTF-8 is simpler than Shift-JIS, so no special handling is
 applied for it. All UTF-8 extended characters are &gt;= 128 and none are
 lexically significant in programming languages which, so far, use only
 characters in ASCII for operators, comment markers, etc.</p>
-<p>(–ó’/ŒÂl“I‚ÈˆÓŒ©: Scintilla ‚Ì‰ğà‚Æ‚¢‚¤ŠÏ“_‚©‚ç‚Í­X’Eü‚µ‚½˜b‚É‚È‚é‚ªA•êŒê‚É‚æ‚é¯•Êq‚ğg‚¦‚él‚ªˆê•”(‰pŒê‚ª•êŒê‚Ìl)‚ÉŒÀ‚ç‚ê‚é‚Ì‚ÍƒAƒ“ƒtƒFƒA‚Å‚Í‚È‚¢‚©H‚Æ‚¢‚¤“_‚ğu‰pŒê‚ğ•êŒê‚Æ‚µ‚È‚¢lv‚È‚ç‚Îˆê“x‚Í‚æ‚­l‚¦‚Ä‚İ‚Ä‚Ù‚µ‚¢B)</p>
+<p>(è¨³æ³¨/å€‹äººçš„ãªæ„è¦‹: Scintilla ã®è§£èª¬ã¨ã„ã†è¦³ç‚¹ã‹ã‚‰ã¯å°‘ã€…è„±ç·šã—ãŸè©±ã«ãªã‚‹ãŒã€æ¯èªã«ã‚ˆã‚‹è­˜åˆ¥å­ã‚’ä½¿ãˆã‚‹äººãŒä¸€éƒ¨(è‹±èªãŒæ¯èªã®äºº)ã«é™ã‚‰ã‚Œã‚‹ã®ã¯ã‚¢ãƒ³ãƒ•ã‚§ã‚¢ã§ã¯ãªã„ã‹ï¼Ÿã¨ã„ã†ç‚¹ã‚’ã€Œè‹±èªã‚’æ¯èªã¨ã—ãªã„äººã€ãªã‚‰ã°ä¸€åº¦ã¯ã‚ˆãè€ƒãˆã¦ã¿ã¦ã»ã—ã„ã€‚)</p>
 
-<h4><span>“ÁêƒP[ƒX: Ü‚è‚½‚½‚İ</span><span class="eng">Special case: Folding</span></h4>
+<h4><span>ç‰¹æ®Šã‚±ãƒ¼ã‚¹: æŠ˜ã‚ŠãŸãŸã¿</span><span class="eng">Special case: Folding</span></h4>
 
-<p>Ü‚è‚½‚½‚İ‚Í‰ğÍŠí‚ÌŠÖ”“à‚Åˆ—‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B‚â‚Á‚©‚¢‚È‘ŠŒİì—p‚ğ”ğ‚¯‚éˆÓ–¡‚ÅA•¶š‘•ü‚Ìˆ—‚ÆÜ‚è‚½‚½‚İ‚Ìˆ—‚Í•ª—£‚µ‚ÄÀ‘•‚·‚é‚Ù‚¤‚ª‚æ‚¢‚Ì‚Å‚·BÜ‚è‚½‚½‚İ‚ª—LŒø‚Å‚ ‚ê‚ÎAÜ‚è‚½‚½‚İŠÖ˜A‚ÌŠÖ”‚Í‰ğÍŠÖ”‚æ‚è‚àŒã‚ÅÀs‚³‚ê‚Ü‚·B‚±‚Ìß‚Å‚Í‰ğÍŠÖ”‚Ì‚È‚©‚Å‚Ç‚Ì‚æ‚¤‚É‚µ‚ÄÜ‚è‚½‚½‚İ‚ÌÀ‘•‚ğs‚¤‚©‚ğ‰ğà‚µ‚Ü‚·B</p><p class="eng">Folding may be performed in the lexer function. It is better to use a 
+<p>æŠ˜ã‚ŠãŸãŸã¿ã¯è§£æå™¨ã®é–¢æ•°å†…ã§å‡¦ç†ã™ã‚‹ã“ã¨ãŒã§ãã¾ã™ã€‚ã‚„ã£ã‹ã„ãªç›¸äº’ä½œç”¨ã‚’é¿ã‘ã‚‹æ„å‘³ã§ã€æ–‡å­—è£…é£¾ã®å‡¦ç†ã¨æŠ˜ã‚ŠãŸãŸã¿ã®å‡¦ç†ã¯åˆ†é›¢ã—ã¦å®Ÿè£…ã™ã‚‹ã»ã†ãŒã‚ˆã„ã®ã§ã™ã€‚æŠ˜ã‚ŠãŸãŸã¿ãŒæœ‰åŠ¹ã§ã‚ã‚Œã°ã€æŠ˜ã‚ŠãŸãŸã¿é–¢é€£ã®é–¢æ•°ã¯è§£æé–¢æ•°ã‚ˆã‚Šã‚‚å¾Œã§å®Ÿè¡Œã•ã‚Œã¾ã™ã€‚ã“ã®ç¯€ã§ã¯è§£æé–¢æ•°ã®ãªã‹ã§ã©ã®ã‚ˆã†ã«ã—ã¦æŠ˜ã‚ŠãŸãŸã¿ã®å®Ÿè£…ã‚’è¡Œã†ã‹ã‚’è§£èª¬ã—ã¾ã™ã€‚</p><p class="eng">Folding may be performed in the lexer function. It is better to use a 
 separate folder function as that avoids some troublesome interaction 
 between styling and folding. The folder function will be run after the
 lexer function if folding is enabled. The rest of this section explains
 how to perform folding within the lexer function.</p>
 
-<p>‰Šú‰»‚Ì’†‚ÅÜ‚è‚½‚½‚İ‚É‘Î‰‚·‚é‰ğÍŠí‚ÍŸ‚Ìİ’è‚ğs‚¢‚Ü‚·B</p><p class="eng">During initialization, lexers that support folding set</p>
+<p>åˆæœŸåŒ–ã®ä¸­ã§æŠ˜ã‚ŠãŸãŸã¿ã«å¯¾å¿œã™ã‚‹è§£æå™¨ã¯æ¬¡ã®è¨­å®šã‚’è¡Œã„ã¾ã™ã€‚</p><p class="eng">During initialization, lexers that support folding set</p>
 <pre><code>
     bool fold = styler.GetPropertyInt("fold");
         
 </code></pre>
-<p>ƒGƒfƒBƒ^‚ÅÜ‚è‚½‚½‚İ‚ª—LŒø‚É‚È‚ê‚Î fold ‚Í TRUE ‚Æ‚È‚èAŠes‚ÌI‚í‚è‚ÆI—¹‚Ì’¼‘O‚É‰ğÍŠí‚ÍŸ‚ÌŒÄ‚Ño‚µ‚ğ‚·‚×‚«ó‘Ô‚É‚È‚è‚Ü‚·B</p><p class="eng">If folding is enabled in the editor, fold will be TRUE and the lexer
+<p>ã‚¨ãƒ‡ã‚£ã‚¿ã§æŠ˜ã‚ŠãŸãŸã¿ãŒæœ‰åŠ¹ã«ãªã‚Œã° fold ã¯ TRUE ã¨ãªã‚Šã€å„è¡Œã®çµ‚ã‚ã‚Šã¨çµ‚äº†ã®ç›´å‰ã«è§£æå™¨ã¯æ¬¡ã®å‘¼ã³å‡ºã—ã‚’ã™ã¹ãçŠ¶æ…‹ã«ãªã‚Šã¾ã™ã€‚</p><p class="eng">If folding is enabled in the editor, fold will be TRUE and the lexer
 should call:</p>
 <pre><code>
     styler.SetLevel(line, level);
@@ -174,17 +175,17 @@ should call:</p>
 </code></pre>
 <p class="eng">at the end of each line and just before exiting.</p>
 
-<p>line ‚Í‰üs‚ªŒ©‚¦‚é’Pƒ‚È”‚Å‚·B‰Šú’l‚Í styler.GetLine(startPos) ‚ÅA‰üs‚ªo‚Ä‚­‚é‚½‚Ñ‚É styler.SetLevel ŒÄ‚Ño‚µ–ˆ‚É‘‚¦‚Ä‚¢‚«‚Ü‚·B</p><p class="eng">The line parameter is simply the count of the number of newlines seen. 
+<p>line ã¯æ”¹è¡ŒãŒè¦‹ãˆã‚‹å˜ç´”ãªæ•°ã§ã™ã€‚åˆæœŸå€¤ã¯ styler.GetLine(startPos) ã§ã€æ”¹è¡ŒãŒå‡ºã¦ãã‚‹ãŸã³ã« styler.SetLevel å‘¼ã³å‡ºã—æ¯ã«å¢—ãˆã¦ã„ãã¾ã™ã€‚</p><p class="eng">The line parameter is simply the count of the number of newlines seen. 
 It's initial value is styler.GetLine(startPos) and it is incremented
 (after calling styler.SetLevel) whenever a newline is seen.</p>
 
-<p>level ‚Ì‰ºˆÊ 12 ƒrƒbƒg‚É‚Í—v‹‚³‚ê‚½š‰º‚°‚Ì[‚³‚ª“ü‚Á‚Ä‚¢‚Ü‚·BãˆÊ 4 ƒrƒbƒg‚Íƒtƒ‰ƒO‚Å‚·Bš‰º‚°‚Ì[‚³‚ÍŒ¾Œê‚ÉˆË‘¶‚µ‚Ü‚·BC++ Œü‚¯‚É‚ÍA‰ğÍŠí‚ª '{' ‚ğŒŸo‚µ‚½‚Æ‚«‚É‘‚¦A'}' ‚ğŒŸo‚µ‚½‚Æ‚«‚ÉŒ¸‚é’l‚Æ‚È‚è‚Ü‚·B‚à‚¿‚ë‚ñ•¶š—ñ‚â’ß“à‚Ì { ‚â } ‚Í•Ê‚Ìˆµ‚¢‚É‚µ‚Ü‚·B</p><p class="eng">The level parameter is the desired indentation level in the low 12 bits,
+<p>level ã®ä¸‹ä½ 12 ãƒ“ãƒƒãƒˆã«ã¯è¦æ±‚ã•ã‚ŒãŸå­—ä¸‹ã’ã®æ·±ã•ãŒå…¥ã£ã¦ã„ã¾ã™ã€‚ä¸Šä½ 4 ãƒ“ãƒƒãƒˆã¯ãƒ•ãƒ©ã‚°ã§ã™ã€‚å­—ä¸‹ã’ã®æ·±ã•ã¯è¨€èªã«ä¾å­˜ã—ã¾ã™ã€‚C++ å‘ã‘ã«ã¯ã€è§£æå™¨ãŒ '{' ã‚’æ¤œå‡ºã—ãŸã¨ãã«å¢—ãˆã€'}' ã‚’æ¤œå‡ºã—ãŸã¨ãã«æ¸›ã‚‹å€¤ã¨ãªã‚Šã¾ã™ã€‚ã‚‚ã¡ã‚ã‚“æ–‡å­—åˆ—ã‚„æ³¨é‡ˆå†…ã® { ã‚„ } ã¯åˆ¥ã®æ‰±ã„ã«ã—ã¾ã™ã€‚</p><p class="eng">The level parameter is the desired indentation level in the low 12 bits,
 along with flag bits in the upper four bits. The indentation level
 depends on the language.  For C++, it is incremented when the lexer sees
 a '{' and decremented when the lexer sees a '}' (outside of strings and
 comments, of course).</p>
 
-<p>Scintilla.h ‚É’è‹`‚³‚ê‚Ä‚¢‚éƒtƒ‰ƒOƒrƒbƒg‚Í flags •Ï”‚ÉƒZƒbƒg‚ ‚é‚¢‚ÍƒNƒŠƒA‚³‚ê‚Ä‚¢‚Ü‚·B<br />SC_FOLDLEVELWHITEFLAG ‚Í‰ğÍŠí‚ªƒzƒƒCƒgƒXƒy[ƒX‚µ‚©ŠÜ‚ñ‚Å‚¢‚È‚¢s‚¾‚Æ”»’f‚µ‚½‚Æ‚«‚ÉƒZƒbƒg‚³‚ê‚Ü‚·B<br />SC_FOLDLEVELHEADERFLAG ‚Í‘ÎÛ‚Ìs‚ªÜ‚è‚½‚½‚İŠî€“_‚Å‚ ‚é‚±‚Æ‚ğ¦‚µ‚Ü‚·B’ÊíA‚±‚ê‚ÍŸ‚Ìs‚ª‚æ‚è[‚¢Ü‚è‚½‚½‚İŠK‘w‚É‚È‚é‚±‚Æ‚ğˆÓ–¡‚µ‚Ü‚·‚ªA‰ğÍŠí‚Í•Ê‚ÌŠî€‚ÅÜ‚è‚½‚½‚İ‚ğ’è‹`‚·‚é‚±‚Æ‚à‚Å‚«‚Ü‚·B—á‚¦‚ÎAŠÖ”’è‹`‚ÌÅŒã‚Ìs‚Å‚Í‚È‚­Å‰‚Ìs‚ğÜ‚è‚½‚½‚İŠî€“_‚É‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B</p><p class="eng">The following flag bits, defined in Scintilla.h, may be set or cleared
+<p>Scintilla.h ã«å®šç¾©ã•ã‚Œã¦ã„ã‚‹ãƒ•ãƒ©ã‚°ãƒ“ãƒƒãƒˆã¯ flags å¤‰æ•°ã«ã‚»ãƒƒãƒˆã‚ã‚‹ã„ã¯ã‚¯ãƒªã‚¢ã•ã‚Œã¦ã„ã¾ã™ã€‚<br />SC_FOLDLEVELWHITEFLAG ã¯è§£æå™¨ãŒãƒ›ãƒ¯ã‚¤ãƒˆã‚¹ãƒšãƒ¼ã‚¹ã—ã‹å«ã‚“ã§ã„ãªã„è¡Œã ã¨åˆ¤æ–­ã—ãŸã¨ãã«ã‚»ãƒƒãƒˆã•ã‚Œã¾ã™ã€‚<br />SC_FOLDLEVELHEADERFLAG ã¯å¯¾è±¡ã®è¡ŒãŒæŠ˜ã‚ŠãŸãŸã¿åŸºæº–ç‚¹ã§ã‚ã‚‹ã“ã¨ã‚’ç¤ºã—ã¾ã™ã€‚é€šå¸¸ã€ã“ã‚Œã¯æ¬¡ã®è¡ŒãŒã‚ˆã‚Šæ·±ã„æŠ˜ã‚ŠãŸãŸã¿éšå±¤ã«ãªã‚‹ã“ã¨ã‚’æ„å‘³ã—ã¾ã™ãŒã€è§£æå™¨ã¯åˆ¥ã®åŸºæº–ã§æŠ˜ã‚ŠãŸãŸã¿ã‚’å®šç¾©ã™ã‚‹ã“ã¨ã‚‚ã§ãã¾ã™ã€‚ä¾‹ãˆã°ã€é–¢æ•°å®šç¾©ã®æœ€å¾Œã®è¡Œã§ã¯ãªãæœ€åˆã®è¡Œã‚’æŠ˜ã‚ŠãŸãŸã¿åŸºæº–ç‚¹ã«ã™ã‚‹ã“ã¨ãŒã§ãã¾ã™ã€‚</p><p class="eng">The following flag bits, defined in Scintilla.h, may be set or cleared
 in the flags parameter. The SC_FOLDLEVELWHITEFLAG flag is set if the
 lexer considers that the line contains nothing but whitespace.  The
 SC_FOLDLEVELHEADERFLAG flag indicates that the line is a fold point. 
@@ -193,42 +194,42 @@ line.  However, the lexer may have some other basis for determining a
 fold point.  For example, a lexer might create a header line for the
 first line of a function definition rather than the last.</p>
 
-<p>SC_FOLDLEVELNUMBERMASK ƒ}ƒXƒN‚Í level •Ï”‚Ì‰ºˆÊ‚Ì 12 ƒrƒbƒg‚É‚ ‚é[‚³‚Ì’l‚ÌŠİ‚ğ•\‚µ‚Ä‚¢‚Ü‚·Bƒtƒ‰ƒO‚ÆÜ‚è‚½‚½‚İ[‚³‚Ì’l‚ğ•ª—£‚·‚é‚±‚Æ‚É—˜—p‚Å‚«‚Ü‚·B</p><p class="eng">The SC_FOLDLEVELNUMBERMASK mask denotes the level number in the low 12
+<p>SC_FOLDLEVELNUMBERMASK ãƒã‚¹ã‚¯ã¯ level å¤‰æ•°ã®ä¸‹ä½ã® 12 ãƒ“ãƒƒãƒˆã«ã‚ã‚‹æ·±ã•ã®å€¤ã®æ‰€åœ¨ã‚’è¡¨ã—ã¦ã„ã¾ã™ã€‚ãƒ•ãƒ©ã‚°ã¨æŠ˜ã‚ŠãŸãŸã¿æ·±ã•ã®å€¤ã‚’åˆ†é›¢ã™ã‚‹ã“ã¨ã«åˆ©ç”¨ã§ãã¾ã™ã€‚</p><p class="eng">The SC_FOLDLEVELNUMBERMASK mask denotes the level number in the low 12
 bits of the level param. This mask may be used to isolate either flags
 or level numbers.</p>
 
-<p>C++ ‰ğÍŠí‚Í‰üs‚ªo‚Ä‚«‚½‚Æ‚«‚ÉŸ‚Ì‚æ‚¤‚ÈƒR[ƒh‚ğg‚Á‚Ä‚¢‚Ü‚·B</p><p class="eng">For example, the C++ lexer contains the following code when a newline is
+<p>C++ è§£æå™¨ã¯æ”¹è¡ŒãŒå‡ºã¦ããŸã¨ãã«æ¬¡ã®ã‚ˆã†ãªã‚³ãƒ¼ãƒ‰ã‚’ä½¿ã£ã¦ã„ã¾ã™ã€‚</p><p class="eng">For example, the C++ lexer contains the following code when a newline is
 seen:</p>
 <pre><code>
   if (fold) {
     int lev = levelPrev;
-    // ‹ós‚Ìê‡‚Íu‚·‚×‚ÄƒzƒƒCƒgƒXƒy[ƒXv‚ğˆÓ–¡‚·‚éƒrƒbƒg‚ğ—§‚Ä‚éB
+    // ç©ºè¡Œã®å ´åˆã¯ã€Œã™ã¹ã¦ãƒ›ãƒ¯ã‚¤ãƒˆã‚¹ãƒšãƒ¼ã‚¹ã€ã‚’æ„å‘³ã™ã‚‹ãƒ“ãƒƒãƒˆã‚’ç«‹ã¦ã‚‹ã€‚
     <span class="eng">// Set the "all whitespace" bit if the line is blank.</span>
     if (visChars == 0)
       lev |= SC_FOLDLEVELWHITEFLAG;
 
-    // •K—v‚È‚çuƒwƒbƒ_vƒrƒbƒg‚ğ—§‚Ä‚éB
+    // å¿…è¦ãªã‚‰ã€Œãƒ˜ãƒƒãƒ€ã€ãƒ“ãƒƒãƒˆã‚’ç«‹ã¦ã‚‹ã€‚
     <span class="eng">// Set the "header" bit if needed.</span>
     if ((levelCurrent &gt; levelPrev) &amp;&amp; (visChars &gt; 0))
       lev |= SC_FOLDLEVELHEADERFLAG;
       styler.SetLevel(lineCurrent, lev);
 
-    // Œ»İs‚É‚Â‚¢‚Ä‚ÌÜ‚è‚½‚½‚İ•Ï”‚ğÄ‰Šú‰»‚·‚é
+    // ç¾åœ¨è¡Œã«ã¤ã„ã¦ã®æŠ˜ã‚ŠãŸãŸã¿å¤‰æ•°ã‚’å†åˆæœŸåŒ–ã™ã‚‹
     <span class="eng">// reinitialize the folding vars describing the present line.</span>
     lineCurrent++;
-    visChars = 0;  // ‚»‚Ìs‚ÌƒzƒƒCƒgƒXƒy[ƒX‚Å‚Í‚È‚¢•¶š‚Ì”
+    visChars = 0;  // ãã®è¡Œã®ãƒ›ãƒ¯ã‚¤ãƒˆã‚¹ãƒšãƒ¼ã‚¹ã§ã¯ãªã„æ–‡å­—ã®æ•°
                    <span class="eng">// Number of non-whitespace characters on the line.</span>
     levelPrev = levelCurrent;
   }
 </code></pre>
-<p> C++ ‰ğÍŠí‚Å‚ÍI—¹’¼‘O‚ÉŸ‚Ì‚æ‚¤‚ÈƒR[ƒh‚ª‚ ‚è‚Ü‚·B</p><p class="eng">The following code appears in the C++ lexer just before exit:
+<p> C++ è§£æå™¨ã§ã¯çµ‚äº†ç›´å‰ã«æ¬¡ã®ã‚ˆã†ãªã‚³ãƒ¼ãƒ‰ãŒã‚ã‚Šã¾ã™ã€‚</p><p class="eng">The following code appears in the C++ lexer just before exit:
 <pre><code>
-  // Œ»İ‚Ìƒtƒ‰ƒO‚ÅŸ‚Ìs‚ÌÀÛ‚ÌÜ‚è‚½‚½‚İ‚Ì[‚³î•ñ‚ğ–‚½‚·B
-  // ‚±‚ê‚ÍŒã‚©‚ç–‚½‚·‘ã‚í‚è‚És‚í‚ê‚éB
+  // ç¾åœ¨ã®ãƒ•ãƒ©ã‚°ã§æ¬¡ã®è¡Œã®å®Ÿéš›ã®æŠ˜ã‚ŠãŸãŸã¿ã®æ·±ã•æƒ…å ±ã‚’æº€ãŸã™ã€‚
+  // ã“ã‚Œã¯å¾Œã‹ã‚‰æº€ãŸã™ä»£ã‚ã‚Šã«è¡Œã‚ã‚Œã‚‹ã€‚
   <span class="eng">// Fill in the real level of the next line, keeping the current flags</span>
   <span class="eng">// as they will be filled in later.</span>
   if (fold) {
-    // [‚³î•ñ‚ğƒ}ƒXƒN‚µ‚Ä—‚Æ‚µAˆÈ‘O‚Ìƒtƒ‰ƒO‚Ì‚İ‚ğc‚·B
+    // æ·±ã•æƒ…å ±ã‚’ãƒã‚¹ã‚¯ã—ã¦è½ã¨ã—ã€ä»¥å‰ã®ãƒ•ãƒ©ã‚°ã®ã¿ã‚’æ®‹ã™ã€‚
     <span class="eng">// Mask off the level number, leaving only the previous flags.</span>
     int flagsNext = styler.LevelAt(lineCurrent);
     flagsNext &amp;= ~SC_FOLDLEVELNUMBERMASK;
@@ -236,9 +237,9 @@ seen:</p>
   }
         
 </code></pre>
-<h4><span>«”\‚ÌS”z‚Í‚µ‚È‚­‚Ä‚æ‚¢</span><span class="eng">Don't worry about performance</span></h4>
+<h4><span>æ€§èƒ½ã®å¿ƒé…ã¯ã—ãªãã¦ã‚ˆã„</span><span class="eng">Don't worry about performance</span></h4>
 
-<p>‰ğÍŠí‚ÌƒR[ƒh‚ğ‘‚­‚Æ‚«‚É«”\‚Ìl—¶‚Í‚µ‚È‚­‚Ä‚à\‚¢‚Ü‚¹‚ñB‰æ–Ê‚ÌÄ•`‰æƒRƒXƒg‚ÍŠÖ”ŒÄ‚Ño‚µ‚È‚Ç‚É”ä‚×‚Ä‰½”{‚à‘å‚«‚¢‚à‚Ì‚Å‚·B‚»‚ÌãAScintilla ‚Íd—v‚ÈÅ“K‰»‚Ì‚·‚×‚Ä‚ğs‚¢‚Ü‚·BScintilla ‚Í‰ğÍŠí‚ªF‚Ã‚¯‚Ì‚â‚è’¼‚µ‚Ì‚İ‚Ì‚½‚ß‚ÉŒÄ‚Ño‚³‚êA‚»‚ê‚¾‚¯‚ª—v‹‚³‚ê‚é‚±‚Æ‚ğ•ÛØ‚µ‚Ü‚·B‘¼•û styler.ColourTo ‚Ì—]•ª‚ÈŒÄ‚Ño‚µ‚ğ‹C‚ÉŒœ‚¯‚é•K—v‚à‚ ‚è‚Ü‚¹‚ñBstyler ƒIƒuƒWƒFƒNƒg‚Ìƒoƒbƒtƒ@‚Í ColourTo ‚ÉŒÄ‚Ño‚³‚êA‰æ–Ê‚Ì‘½dXV‚ğ–h‚¬‚Ü‚·B</p><p class="eng">The writer of a lexer may safely ignore performance considerations: the
+<p>è§£æå™¨ã®ã‚³ãƒ¼ãƒ‰ã‚’æ›¸ãã¨ãã«æ€§èƒ½ã®è€ƒæ…®ã¯ã—ãªãã¦ã‚‚æ§‹ã„ã¾ã›ã‚“ã€‚ç”»é¢ã®å†æç”»ã‚³ã‚¹ãƒˆã¯é–¢æ•°å‘¼ã³å‡ºã—ãªã©ã«æ¯”ã¹ã¦ä½•å€ã‚‚å¤§ãã„ã‚‚ã®ã§ã™ã€‚ãã®ä¸Šã€Scintilla ã¯é‡è¦ãªæœ€é©åŒ–ã®ã™ã¹ã¦ã‚’è¡Œã„ã¾ã™ã€‚Scintilla ã¯è§£æå™¨ãŒè‰²ã¥ã‘ã®ã‚„ã‚Šç›´ã—ã®ã¿ã®ãŸã‚ã«å‘¼ã³å‡ºã•ã‚Œã€ãã‚Œã ã‘ãŒè¦æ±‚ã•ã‚Œã‚‹ã“ã¨ã‚’ä¿è¨¼ã—ã¾ã™ã€‚ä»–æ–¹ styler.ColourTo ã®ä½™åˆ†ãªå‘¼ã³å‡ºã—ã‚’æ°—ã«æ‡¸ã‘ã‚‹å¿…è¦ã‚‚ã‚ã‚Šã¾ã›ã‚“ã€‚styler ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®ãƒãƒƒãƒ•ã‚¡ã¯ ColourTo ã«å‘¼ã³å‡ºã•ã‚Œã€ç”»é¢ã®å¤šé‡æ›´æ–°ã‚’é˜²ãã¾ã™ã€‚</p><p class="eng">The writer of a lexer may safely ignore performance considerations: the
 cost of redrawing the screen is several orders of magnitude greater than
 the cost of function calls, etc.  Moreover, Scintilla performs all the
 important optimizations; Scintilla ensures that a lexer will be called
@@ -247,6 +248,6 @@ is not necessary to avoid extra calls to styler.ColourTo: the sytler
 object buffers calls to ColourTo to avoid multiple updates of the
 screen.</p>
 
-<p>‚±‚Ìƒy[ƒW‚Í Edward K. Ream ‚³‚ñ‚É‚æ‚èŠñ‘¡‚³‚ê‚Ü‚µ‚½B</p><p class="eng">Page contributed by </p>
+<p>ã“ã®ãƒšãƒ¼ã‚¸ã¯ Edward K. Ream ã•ã‚“ã«ã‚ˆã‚Šå¯„è´ˆã•ã‚Œã¾ã—ãŸã€‚</p><p class="eng">Page contributed by </p>
 </body>
 </html>

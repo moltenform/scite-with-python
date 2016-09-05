@@ -1,13 +1,13 @@
-<?xml version="1.0" encoding="Shift_JIS"?>
+<?xml version="1.0" encoding="Utf-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja">
   <head>
     <meta name="generator" content="SciTE" />
-    <meta http-equiv="Content-Type" content="text/html; charset=Shift_Jis" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 	<link href="translation.css" rel="stylesheet" type="text/css" />
 	<title>
-      Scintilla �� SciTE �̖]�܂����R�[�f�B���O�X�^�C��
+      Scintilla と SciTE の望ましいコーディングスタイル
     </title>
 	<style>
 	.S0 {
@@ -91,22 +91,22 @@
         </td>
       </tr>
     </table>
-    <h2><span>�R�[�f�B���O�X�^�C��</span>
+    <h2><span>コーディングスタイル</span>
     <span class="eng">
        Code Style
     </span></h2>
-    <h3><span>�͂��߂�</span>
+    <h3><span>はじめに</span>
     <span class="eng">
        Introduction
     </span></h3>
-	<p>Scintilla �� SciTE �̃\�[�X�R�[�h�͎��̃X�^�C���ɏ]���ď�����Ă��܂��B�������̋K��͔C�ӂ̂��̂ŁA���̍D�݂Ɋ�Â������̂ł��B�Ƃ͂����A���ꂪ�N������������悤�Ȍ`�ł͂Ȃ������Ƃ��Ă��A�S�ẴR�[�h�������悤�Ȍ`�ŏ�����Ă��邱�Ƃ͂悢���Ƃł��B</p>
+	<p>Scintilla と SciTE のソースコードは私のスタイルに従って書かれています。いくつかの規定は任意のもので、私の好みに基づいたものです。とはいえ、それが誰もが満足するような形ではなかったとしても、全てのコードが同じような形で書かれていることはよいことです。</p>
     <p class="eng">
 	The source code of Scintilla and SciTE follow my preferences. 
 	Some of these decisions are arbitrary and based on my sense of aesthetics
 	but its good to have all the code look the same even if its not exactly how
 	everyone would prefer.
 	</p>
-	<p>���̋K��ɉ���Ȃ��R�[�h�������Ă��\���܂��񂪁A���Ԃ̌o�߂ƂƂ��ɋK��ɏ]���悤�ɏ�����������ł��傤�BScintilla �̃R�[�h�� SciTE ���������߂ɋK��ɏ]���Ă��܂��B������ SciTE �̂Ȃ��ł���͊�(lexer)�́A���ΓI�ɓƗ��������W���[���Ȃ̂ŗ�O�ł��B�x���ɑ΂���C������ȊO�́A���̐l�X�ɕێ炳��Ă����͊�͂��̂܂܂ɂ��Ă��܂��B���̌��ʃv���W�F�N�g�S�̂Ƃ��Ă̓G���[���N�������ɃR���p�C�����ł��܂��B</p>
+	<p>この規定に沿わないコードがあっても構いませんが、時間の経過とともに規定に従うように書き換えられるでしょう。Scintilla のコードは SciTE よりも厳しめに規定に従っています。ただし SciTE のなかでも解析器(lexer)は、相対的に独立したモジュールなので例外です。警告に対する修正する以外は、他の人々に保守されている解析器はそのままにしています。この結果プロジェクト全体としてはエラーを起こさずにコンパイルができます。</p>
     <p class="eng">
 	Code that does not follow these conventions will be accepted, but will be modified
 	as time goes by to fit the conventions. Scintilla code follows the conventions more 
@@ -114,18 +114,18 @@
 	Lexers that are maintained by others are left as they are submitted except that
 	warnings will be fixed so the whole project can compile cleanly.
 	</p>
-	<p>'-tapO' �������w�肵�� <a href="http://astyle.sourceforge.net/">Astyle</a> ���������v���O�����́AAstyle �ɂ��������r��������̂̂����悻�̂Ƃ���Ő��������삵�܂��B scite/scripts/Fixer.py �ɂ���X�N���v�g�� Astyle �� C++ �\�[�X�t�@�C���ɓK�p���A���������r���C�����܂��B</p>
+	<p>'-tapO' 引数を指定した <a href="http://astyle.sourceforge.net/">Astyle</a> 書式準拠プログラムは、Astyle にいくつか瑕疵があるもののおおよそのところで正しく動作します。 scite/scripts/Fixer.py にあるスクリプトは Astyle を C++ ソースファイルに適用し、それらの瑕疵を修正します。</p>
     <p class="eng">
 	The <a href="http://astyle.sourceforge.net/">AStyle</a> formatting 
 	program with a '-tapO' argument formats code in much the right way although 
 	there are a few bugs in AStyle. The scite/scripts/Fixer.py script will run AStyle
 	over a C++ source file and fix up some of those bugs.
 	</p>
-    <h3><span>����̋@�\</span>
+    <h3><span>言語の機能</span>
     <span class="eng">
        Language features
     </span></h3>
-	<p>Scintilla �� SciTE �̖ڕW�̈�ɁA���낢��Ȋ���̌��ݗ��p�\�� C++ �R���p�C�������p�\�ŁA�������\�ƒႢ���\�[�X�����ۂ��Ƃ�����܂��BScintilla �� SciTE ��茵���������v��������܂��BWindows CE �� PalmOS �̂悤�ȏ����̌��������ɂ��ڐA����Ă��邩��ł��BSciTE �͂�������������������₩�ɂȂ�܂��B</p>
+	<p>Scintilla と SciTE の目標の一つに、いろいろな環境上の現在利用可能な C++ コンパイラが利用可能で、高い性能と低いリソース消費を保つことがあります。Scintilla は SciTE より厳しい可搬性要求があります。Windows CE や PalmOS のような条件の厳しい環境にも移植されているからです。SciTE はこれよりも多少条件がゆるやかになります。</p>
     <p class="eng">
 	Design goals for Scintilla and SciTE include portability to currently available C++ 
 	compilers on diverse platforms with high performance and low resource usage.
@@ -133,7 +133,7 @@
 	low capability platforms such as Windows CE or PalmOS but it is less likely
 	SciTE will be.
 	</p>
-	<p>�ڐA�������߂邽�߁AC++ �̈ꕔ�̋@�\�������g���܂��B���ɂ���Ă͗�O�������ł��܂���(Windows CE �Ȃ�)�B����ɔ����W�� C++ ���C�u�����͎g���Ȃ����ƂɂȂ�܂��B�R���p�C���ɂ���Ă̓e���v���[�g�̋������Ⴄ���߁AScintilla �ł͎g���܂���B�������ASciTE �ł͒P���ȃe���v���[�g�͎g����悤�ɂ��Ă��܂��B���s���^���̓�����������邽�ߎg���Ȃ����Ƃɂ��܂��B���O��Ԃ͎g���܂���B</p>
+	<p>移植性を高めるため、C++ の一部の機能だけを使います。環境によっては例外処理ができません(Windows CE など)。これに伴い標準 C++ ライブラリは使えないことになります。コンパイラによってはテンプレートの挙動が違うため、Scintilla では使えません。ただし、SciTE では単純なテンプレートは使えるようにしています。実行時型情報はメモリを消費するため使えないことにします。名前空間は使いません。</p>
     <p class="eng">
 	To achieve portability, only a subset of C++ features are used. Exceptions are 
 	not available on some platforms such as Windows CE so exceptions are not used
@@ -143,57 +143,57 @@
 	Run-time type information adds to memory use so is turned off. 
 	Name spaces are not used.
 	</p>
-	<p>���̏��߂Ă̎d���ł����� FORTRAN �v���O�����̕ێ�͂Ђǂ��v���o�ł����̂� goto ���͎g���܂���B���p�̂͌^���S��������錳�ƂȂ邽�ߎg���܂���B</p>
+	<p>私の初めての仕事であった FORTRAN プログラムの保守はひどい思い出でしたので goto 文は使いません。共用体は型安全性が崩れる元となるため使いません。</p>
     <p class="eng">
 	The goto statement is not used because of bad memories from my first job 
 	maintaining FORTRAN programs. The union feature is not used as it can lead to 
 	non-type-safe value access.
 	</p>
-    <h3><span>�L���X�g�ɂ���</span>
+    <h3><span>キャストについて</span>
     <span class="eng">
        Casting
     </span></h3>
-	<p>(char *)s �̂悤�ȁAC ����Ŏg���Ă��������̌Â��L���X�g�͎g�p�֎~�ł��Bconst_cast&lt;char *&gt;(s) �Ƃ����悤�� C++ �ŐV�݂��ꂽ�L���X�g�����̍ł������������̂��̂��g���Ă��������B�\�Ȍ��� reinterpret_cast ���� static_cast �� const_cast ���g���܂��B���s���^�����g�p�s�ɂ��ăR���p�C�����܂��̂ŁAdynamic_cast �͓��삵�Ȃ��ł��傤�B</p>
+	<p>(char *)s のような、C 言語で使われていた方式の古いキャストは使用禁止です。const_cast&lt;char *&gt;(s) というように C++ で新設されたキャストうちの最も厳しい条件のものを使ってください。可能な限り reinterpret_cast よりも static_cast と const_cast を使います。実行時型情報を使用不可にしてコンパイルしますので、dynamic_cast は動作しないでしょう。</p>
     <p class="eng">
 	Do not use old C style casts like (char *)s. Instead use the most strict form of C++ 
 	cast possible like const_cast&lt;char *&gt;(s). Use static_cast and const_cast 
 	where possible rather than reinterpret_cast. Because the code is compiled with 
 	run-time type information turned off, dynamic_cast will not work.
 	</p>
-	<p>�V�����`�̃L���X�g���g�����ƂŁA�ǂ̂悤�Ȃ悭�Ȃ����Ƃ��N���Ă��邩�̏ڍׂ��͂����肵�A���ݓI�ɂ͊댯�Ȃ��Ƃ��s���Ă��邱�Ƃ̈�Ƃ��Ė��ɗ����܂��B</p>
+	<p>新しい形のキャストを使うことで、どのようなよくないことが起きているかの詳細がはっきりし、潜在的には危険なことが行われていることの印として役に立ちます。</p>
     <p class="eng">
 	The benefit to using the new style casts is that they explicitly detail what evil is
 	occurring and act as signals that something potentially unsafe is being done.
 	</p>
-	<p>const �𒚔J�Ɉ����R�[�h�͐l�ԂɂƂ��Ă��R���p�C���ɑ΂��Ă��傫�Ȑ����̗͂������܂��B�ł����� const_cast ������� const �ϐ���p���Ă��������B</p>
+	<p>const を丁寧に扱うコードは人間にとってもコンパイラに対しても大きな説明の力を持ちます。ですから const_cast を避けて const 変数を用いてください。</p>
     <p class="eng">
 	Code that treats const seriously is easier to reason about both for humans
 	and compilers, so use const parameters and avoid const_cast.
 	</p>
-    <h3><span>�x���ɂ���</span>
+    <h3><span>警告について</span>
     <span class="eng">
        Warnings
     </span></h3>
-	<p>�������菑���ꂽ�����̂���R�[�h�ł��邱�Ƃ�ۏ؂��邽�߂ɁA�قڑS�Ă̌x���@�\��L���ɂ��ăR���p�C�����܂��B���̌��ʁA�S�����̂Ȃ��R�[�h�ɑ΂��Čx�����o�邱�Ƃ�����܂����A�x�����o�Ȃ��悤�ɏC������ق�����ʓI�ɂ͍������ɂȂ�A�ǐ����قƂ�Ǘ����܂���B</p>
-	<p>(��: ������ false positives ���l���ɓ����Ɓu�ς��ƌ��ɂ͗��s�s������ǂ����͈Ӗ��������Đ������v�Ƃ����悤�ȃC���e��������R�[�h�͂�߂Ƃ��A�Ƃ�����|�Ǝv���܂��B���̐߂Ɍ���܂��񂪁AC ���� C++ �̗��O�ɋ߂����̂ƌ�����ł��傤�B�j</p>
+	<p>しっかり書かれた可搬性のあるコードであることを保証するために、ほぼ全ての警告機能を有効にしてコンパイルします。この結果、全く問題のないコードに対して警告が出ることがありますが、警告が出ないように修正するほうが一般的には高速化になり、可読性もほとんど落ちません。</p>
+	<p>(訳注: 原文の false positives も考慮に入れると「ぱっと見には理不尽だけれども実は意味があって正しい」というようなインテリすぎるコードはやめとけ、という趣旨と思われます。この節に限りませんが、C よりも C++ の理念に近いものと言えるでしょう。）</p>
     <p class="eng">
 	To help ensure code is well written and portable, it is compiled with almost all
 	warnings turned on. This sometimes results in warnings about code that is 
 	completely good (false positives) but changing the code to avoid the warnings 
 	is generally fast and has little impact on readability. 
 	</p>
-	<p>�S�Ă̕ϐ��͖����I�ɏ��������A�ϐ��̗L���͈͉͂\�Ȍ��菬�������Ă��������B���p���钼�O�ɕϐ����`���Ă����΂�����O�̃R�[�h�Ō���Ă��̕ϐ����g�����Ƃ͂Ȃ��Ȃ�܂��BC++ �W���ƌ��ݗ��p�ł���R���p�C���œ������������J��Ԃ��\����p���܂��傤�B</p>
+	<p>全ての変数は明示的に初期化し、変数の有効範囲は可能な限り小さくしてください。利用する直前に変数を定義しておけばそれより前のコードで誤ってその変数を使うことはなくなります。C++ 標準と現在利用できるコンパイラで同じ動作をする繰り返し構文を用いましょう。</p>
     <p class="eng">
 	Initialise all variables and minimise the scope of variables. If a variable is defined
 	just before its use then it can't be misused by code before that point.
 	Use loop declarations that are compatible with both the C++ standard and currently 
 	available compilers. 
 	</p>
-    <h3><span>���������蓖�Ăɂ���</span>
+    <h3><span>メモリ割り当てについて</span>
     <span class="eng">
        Allocation
     </span></h3>
-	<p>��O�����͎g���܂���̂ŁA���������\�[�X�̌͊����N���肦�܂��B����͌������ꐧ�䂳���ׂ��ł��� Scintilla �� SciTE �̎��ɑ�ʂ̃R�[�h�͂�����s���Ă��܂���B</p>
+	<p>例外処理は使いませんので、メモリリソースの枯渇が起こりえます。これは検査され制御されるべきですが Scintilla と SciTE の実に大量のコードはこれを行っていません。</p>
     <p class="eng">
 	As exceptions are not used, memory exhaustion can occur. 
 	This should be checked for and handled but there is quite a lot of Scintilla and
@@ -202,16 +202,16 @@
 	worry about memory exhaustion but then require that buffer lengths are 
 	respected. 
 	</p>
-	<p>�^���S���Ƃ������R����AC++ �� new �� delete ���Z�q�� C �� malloc �� free ���D�܂�܂��B</p>
+	<p>型安全性という理由から、C++ の new と delete 演算子が C の malloc と free より好まれます。</p>
     <p class="eng">
 	The C++ new and delete operators are preferred over C's malloc and free
 	as new and delete are type safe.
 	</p>
-    <h3><span>(�g)���ʂ̏������ɂ���</span>
+    <h3><span>(波)括弧の書き方について</span>
     <span class="eng">
        Bracketing
     </span></h3>
-	<p>�J���g���� '{' �͐���\�����n�܂�s�ɒu�����ׂ��ł��B�܂����g���� '}' �͊J�n�s�Ɠ����������ʒu�ɏ������ׂ��ł��Belse �߂�����ꍇ�� '}' �Ɠ����s�ɒu���܂��B���̌`����邱�ƂŁA���̏K�������s�������炵���ʓ��ɂ�������̃R�[�h��\�������邱�Ƃ��ł��܂��B���S�Ȕg���ʂɂ�鐧��\�����D�܂�܂��B�ύX���������s���AScintilla �̐܂肽���݂����삷�邩��ł��B</p><p>return ���͊��ʂȂ��ŁA�܂�֐��Ƃ��Ăł͂Ȃ��L�[���[�h�Ƃ��Ďg���܂��B</p>
+	<p>開き波括弧 '{' は制御構造が始まる行に置かれるべきです。また閉じ波括弧 '}' は開始行と同じ字下げ位置に書かれるべきです。else 節がある場合は '}' と同じ行に置きます。この形を取ることで、他の習慣よりも行数を減らし一画面内にたくさんのコードを表示させることができます。完全な波括弧による制御構造が好まれます。変更が正しく行われ、Scintilla の折りたたみが動作するからです。</p><p>return 文は括弧なしで、つまり関数としてではなくキーワードとして使います。</p>
     <p class="eng">
 	Start brackets, '{', should be located on the line of the control structure they
 	start and end brackets, '}', should be at the indented start of a line. When there is
@@ -232,17 +232,17 @@
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</SPAN><SPAN class=S5>return</SPAN><SPAN class=S0>&nbsp;</SPAN><SPAN class=S10>!</SPAN><SPAN class=S11>a</SPAN><SPAN class=S10>;</SPAN><SPAN class=S0><BR>
 </SPAN><SPAN class=S10>}</SPAN><SPAN class=S0><BR>
 </SPAN>
-<h3><span>�󔒂ɂ���</span>
+<h3><span>空白について</span>
     <span class="eng">
        Spacing
     </span></h3>
 	<p>
-	'=' �̗����Ɣ�r���Z�q�̗����ɒu���܂��B'=' ����ׂ邱�Ƃ͂��܂���(��:������̘A���Ȃǂŏc�ɕ��ׂ�ꍇ�̘b��)�B<br />
-	�Ăяo���Ɏg�� '(' �̑O��ɂ͒u���܂���B',' �̌�ɂ͒u���܂��B<br />
-	�Z���g�[�N���ǂ����̊Ԃɂ͒u���܂��񂪁A�����g�[�N��������ꍇ�͒u�����Ƃ�����܂��B<br />
-	'{' �̑O�ɂ͒u���܂��B':' �̑O�ɂ͒u���܂���B<br />
-	�|�C���^�� '*' �̌�ɂ͒u���܂���B'[' �� ']' �̌�ɂ͒u���܂���B<br />
-	�\���� '(' �̊Ԃɂ͒u���܂��B
+	'=' の両側と比較演算子の両側に置きます。'=' を並べることはしません(訳注:代入文の連続などで縦に並べる場合の話か)。<br />
+	呼び出しに使う '(' の前後には置きません。',' の後には置きます。<br />
+	短いトークンどうしの間には置きませんが、長いトークンがある場合は置くこともあります。<br />
+	'{' の前には置きます。':' の前には置きません。<br />
+	ポインタの '*' の後には置きません。'[' と ']' の後には置きません。<br />
+	予約語と '(' の間には置きます。
 	</p>
     <p class="eng">
 	Spaces on both sides of '=' and comparison operators and no attempt to line up '='. 
@@ -258,11 +258,11 @@
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</SPAN><SPAN class=S11>Store</SPAN><SPAN class=S10>(</SPAN><SPAN class=S11>s</SPAN><SPAN class=S10>,</SPAN><SPAN class=S0>&nbsp;</SPAN><SPAN class=S11>baseSegment</SPAN><SPAN class=S10>,</SPAN><SPAN class=S0>&nbsp;</SPAN><SPAN class=S6>"html"</SPAN><SPAN class=S10>);</SPAN><SPAN class=S0><BR>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</SPAN><SPAN class=S10>}</SPAN><SPAN class=S0><BR>
 </SPAN><SPAN class=S10>}</SPAN>
-    <h3><span>���O�ɂ���</span>
+    <h3><span>名前について</span>
     <span class="eng">
        Names
     </span></h3>
-	<p>���ʎq�͑啶���������������Ďg���A���������͎g���܂���B�N���X�E�֐��E���\�b�h�̖��O�͑啶���Ŏn�܂�A���̌�͒P��̐擪���ɑ啶�����g���܂��B�ϐ��͏������Ŏn�܂�A����Ȍ�͂�͂�P��̐擪���ɑ啶���ɂ��܂��B�����J�E���^�⓯��̕ϐ��� 'i' �Ƃ������P���Ȗ��O���g�����Ƃ��ł��܂��B���\�b�h�Ăяo���Ƃ����łȂ��L��֐��Ăяo������ʂł���悤�ɂ��ׂ��ł��B'::' ����n�܂�\���ōL��X�R�[�v�֐��ł��邱�Ƃ������Ă��������B</p>
+	<p>識別子は大文字小文字を混ぜて使い、下線文字は使いません。クラス・関数・メソッドの名前は大文字で始まり、その後は単語の先頭毎に大文字を使います。変数は小文字で始まり、それ以後はやはり単語の先頭毎に大文字にします。反復カウンタや同種の変数は 'i' といった単純な名前を使うことができます。メソッド呼び出しとそうでない広域関数呼び出しを区別できるようにすべきです。'::' から始まる表現で広域スコープ関数であることを示してください。</p>
     <p class="eng">
 	Identifiers use mixed case and no underscores.
 	Class, function and method names start with an uppercase letter and use

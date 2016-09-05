@@ -1,12 +1,13 @@
+<?xml version="1.0" encoding="Utf-8"?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
-<html><head><meta content="text/html; charset=Shift_Jis" http-equiv="Content-Type"><title>Windows ‚É‚¨‚¯‚é Scintilla ƒGƒfƒBƒbƒgƒRƒ“ƒgƒ[ƒ‹‚Ìg‚¢•û</title><link href="translation.css" rel="stylesheet" type="text/css" /></head><body bgcolor="#ffffff">
-	<h2><span>Windows ‚É‚¨‚¯‚é Scintilla ƒGƒfƒBƒbƒgƒRƒ“ƒgƒ[ƒ‹‚Ìg‚¢•û</span><span class="eng">How to use the Scintilla Edit Control in windows?</span></h2>
-		<p>‚±‚±‚Å‚Í Windows ŠÂ‹«‚Å Scintilla ‚Ìg‚¢•û‚ğˆê•à‚¸‚Â—‰ğ‚µ‚Ä‚¢‚«‚Ü‚µ‚å‚¤B</p>
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=Utf-8" /><title>Windows ã«ãŠã‘ã‚‹ Scintilla ã‚¨ãƒ‡ã‚£ãƒƒãƒˆã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«ã®ä½¿ã„æ–¹</title><link href="translation.css" rel="stylesheet" type="text/css" /></head><body bgcolor="#ffffff">
+	<h2><span>Windows ã«ãŠã‘ã‚‹ Scintilla ã‚¨ãƒ‡ã‚£ãƒƒãƒˆã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«ã®ä½¿ã„æ–¹</span><span class="eng">How to use the Scintilla Edit Control in windows?</span></h2>
+		<p>ã“ã“ã§ã¯ Windows ç’°å¢ƒã§ Scintilla ã®ä½¿ã„æ–¹ã‚’ä¸€æ­©ãšã¤ç†è§£ã—ã¦ã„ãã¾ã—ã‚‡ã†ã€‚</p>
 <p class="eng">
 			This should be a little step by step explanation how to use Scintilla in the windows environment.
 </p>
-<h2><span>Scintilla ƒGƒfƒBƒbƒgƒRƒ“ƒgƒ[ƒ‹‚Ìì‚è•û</span><span class="eng">How to create Scintilla Edit Control?</span></h2>
-		<p>‚Ü‚¸AScintilla ‚Ì DLL ‚ğ“Ç‚İo‚³‚È‚­‚Ä‚Í‚È‚è‚Ü‚¹‚ñB</p>
+<h2><span>Scintilla ã‚¨ãƒ‡ã‚£ãƒƒãƒˆã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«ã®ä½œã‚Šæ–¹</span><span class="eng">How to create Scintilla Edit Control?</span></h2>
+		<p>ã¾ãšã€Scintilla ã® DLL ã‚’èª­ã¿å‡ºã•ãªãã¦ã¯ãªã‚Šã¾ã›ã‚“ã€‚</p>
 <p class="eng">
 			First of all, load the Scintilla DLL with something like:
 		</p>
@@ -21,12 +22,12 @@
 			MB_OK | MB_ICONERROR);
 		}
 		</pre>
-		<p>DLL ‚ğ–³–‚É“Ç‚İo‚·‚±‚Æ‚ª‚Å‚«‚½“_‚ÅA‚·‚Å‚É©“®“I‚ÉV‚µ‚¢ƒEƒBƒ“ƒhƒEƒNƒ‰ƒX‚ª“o˜^‚³‚ê‚Ä‚¢‚Ü‚·BV‚µ‚¢ƒNƒ‰ƒX‚Í &quot;Scintilla&quot; ‚Æ‚¢‚¤–¼‘O‚ÌƒGƒfƒBƒbƒgƒRƒ“ƒgƒ[ƒ‹‚Å‚·B</p>
+		<p>DLL ã‚’ç„¡äº‹ã«èª­ã¿å‡ºã™ã“ã¨ãŒã§ããŸæ™‚ç‚¹ã§ã€ã™ã§ã«è‡ªå‹•çš„ã«æ–°ã—ã„ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã‚¯ãƒ©ã‚¹ãŒç™»éŒ²ã•ã‚Œã¦ã„ã¾ã™ã€‚æ–°ã—ã„ã‚¯ãƒ©ã‚¹ã¯ &quot;Scintilla&quot; ã¨ã„ã†åå‰ã®ã‚¨ãƒ‡ã‚£ãƒƒãƒˆã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«ã§ã™ã€‚</p>
 <p class="eng">
 			If the DLL was loaded successfully, then the DLL has registered (yes, by itself) a new
 			window class. The new class called &quot;Scintilla&quot; is the new scintilla edit control.
 		</p>
-		<p>‘¼‚ÌƒEƒBƒ“ƒhƒEƒRƒ“ƒgƒ[ƒ‹“¯—l‚Ég‚¤‚±‚Æ‚ª‚Å‚«‚é‚æ‚¤‚É‚È‚Á‚Ä‚¢‚Ü‚·B</p>
+		<p>ä»–ã®ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«åŒæ§˜ã«ä½¿ã†ã“ã¨ãŒã§ãã‚‹ã‚ˆã†ã«ãªã£ã¦ã„ã¾ã™ã€‚</p>
 <p class="eng">
 			Now you can use this new control just like any other windows control.
 		</p>
@@ -36,25 +37,25 @@
 		&quot;Scintilla&quot;,&quot;&quot;, WS_CHILD|WS_VISIBLE|WS_TABSTOP,
 		10,10,500,400,hwndParent,(HMENU)GuiID, hInstance,NULL);
 		</pre>
-		<p>&quot;Scintilla&quot; ‚ªV‚µ‚¢ƒNƒ‰ƒX–¼‚Å‚·B‚±‚Ì“_‚ÅÀÛ‚É Scintilla ƒGƒfƒBƒbƒgƒRƒ“ƒgƒ[ƒ‹‚ª‚²©g‚Ì Windows —pƒvƒƒOƒ‰ƒ€‚ÉŠÜ‚Ü‚ê‚½‚±‚Æ‚É‚È‚è‚Ü‚·B</p>
+		<p>&quot;Scintilla&quot; ãŒæ–°ã—ã„ã‚¯ãƒ©ã‚¹åã§ã™ã€‚ã“ã®æ™‚ç‚¹ã§å®Ÿéš›ã« Scintilla ã‚¨ãƒ‡ã‚£ãƒƒãƒˆã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«ãŒã”è‡ªèº«ã® Windows ç”¨ãƒ—ãƒ­ã‚°ãƒ©ãƒ ã«å«ã¾ã‚ŒãŸã“ã¨ã«ãªã‚Šã¾ã™ã€‚</p>
 <p class="eng">
 			Note the new window class name: &quot;Scintilla&quot;. By reaching this point you actually included
 			a Scintilla Edit Control to your windows program.
 		</p>
-<h2><span>Scintilla ƒGƒfƒBƒbƒgƒRƒ“ƒgƒ[ƒ‹‚Ì§Œä</span><span class="eng">How to control the Scintilla Edit Control?</span></h2>
-<p>Scintilla ‚Í‚»‚ÌƒGƒfƒBƒbƒgƒRƒ“ƒgƒ[ƒ‹‚ÉƒRƒ}ƒ“ƒh‚ğ‘—‚é‚±‚Æ‚Å§Œä‚Å‚«‚Ü‚·B•û–@‚Í“ñ’Ê‚è‚ ‚è‚Ü‚·BŠÈ’P‚È•û–@‚Æ‘¬‚¢•û–@‚Å‚·B</p>
+<h2><span>Scintilla ã‚¨ãƒ‡ã‚£ãƒƒãƒˆã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«ã®åˆ¶å¾¡</span><span class="eng">How to control the Scintilla Edit Control?</span></h2>
+<p>Scintilla ã¯ãã®ã‚¨ãƒ‡ã‚£ãƒƒãƒˆã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«ã«ã‚³ãƒãƒ³ãƒ‰ã‚’é€ã‚‹ã“ã¨ã§åˆ¶å¾¡ã§ãã¾ã™ã€‚æ–¹æ³•ã¯äºŒé€šã‚Šã‚ã‚Šã¾ã™ã€‚ç°¡å˜ãªæ–¹æ³•ã¨é€Ÿã„æ–¹æ³•ã§ã™ã€‚</p>
 <p class="eng">
 			You can control Scintilla by sending commands to the Edit Control.
 			There a 2 ways of doing this. A simple and fast way.
 		</p>
-<h3><span>Scintilla ‚ğ§Œä‚·‚éŠÈ’P‚È•û–@</span><span class="eng">The simple way to control Scintilla</span></h3>
-			<p>ŠÈ’P‚È•û–@‚Æ‚¢‚¤‚Ì‚Í‘¼‚Ì Windows ƒRƒ“ƒgƒ[ƒ‹‚É‘Î‚·‚é‚à‚Ì‚Æ“¯—l‚ÌŒ`‚Å‚·BScintilla ƒGƒfƒBƒbƒgƒRƒ“ƒgƒ[ƒ‹‚ÉƒƒbƒZ[ƒW‚ğ‘—‚èAƒRƒ“ƒgƒ[ƒ‹‚©‚ç‚Í’Ê’m‚ğó‚¯æ‚è‚Ü‚·B’Ê’m‚Í Scintilla ƒGƒfƒBƒbƒgƒRƒ“ƒgƒ[ƒ‹‚ÌeƒEƒBƒ“ƒhƒE‚É‘—‚ç‚ê‚é‚±‚Æ‚É’ˆÓ‚µ‚Ü‚µ‚å‚¤B</p>
+<h3><span>Scintilla ã‚’åˆ¶å¾¡ã™ã‚‹ç°¡å˜ãªæ–¹æ³•</span><span class="eng">The simple way to control Scintilla</span></h3>
+			<p>ç°¡å˜ãªæ–¹æ³•ã¨ã„ã†ã®ã¯ä»–ã® Windows ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«ã«å¯¾ã™ã‚‹ã‚‚ã®ã¨åŒæ§˜ã®å½¢ã§ã™ã€‚Scintilla ã‚¨ãƒ‡ã‚£ãƒƒãƒˆã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«ã«ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚’é€ã‚Šã€ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«ã‹ã‚‰ã¯é€šçŸ¥ã‚’å—ã‘å–ã‚Šã¾ã™ã€‚é€šçŸ¥ã¯ Scintilla ã‚¨ãƒ‡ã‚£ãƒƒãƒˆã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«ã®è¦ªã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã«é€ã‚‰ã‚Œã‚‹ã“ã¨ã«æ³¨æ„ã—ã¾ã—ã‚‡ã†ã€‚</p>
 <p class="eng">
 				The simple way is just like with any other windows control. You can send messages to the
 				Scintilla Edit Control and receive notifications from the control. (Note that the notifications
 				are sent to the parent window of the Scintilla Edit Control.)
 			</p>
-			<p>Scintilla ƒGƒfƒBƒbƒgƒRƒ“ƒgƒ[ƒ‹‚ÍŠeƒRƒ}ƒ“ƒh‚²‚Æ‚Ì“Á•Ê‚ÈƒƒbƒZ[ƒW‚ğ’m‚Á‚Ä‚¢‚Ü‚·(–ó’:Œë–ó‚©‚à)BSendMessage ŠÖ”‚Å Scintilla ƒGƒfƒBƒbƒgƒRƒ“ƒgƒ[ƒ‹‚ÉƒRƒ}ƒ“ƒh‚ğ‘—‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B</p>
+			<p>Scintilla ã‚¨ãƒ‡ã‚£ãƒƒãƒˆã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«ã¯å„ã‚³ãƒãƒ³ãƒ‰ã”ã¨ã®ç‰¹åˆ¥ãªãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚’çŸ¥ã£ã¦ã„ã¾ã™(è¨³æ³¨:èª¤è¨³ã‹ã‚‚)ã€‚SendMessage é–¢æ•°ã§ Scintilla ã‚¨ãƒ‡ã‚£ãƒƒãƒˆã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«ã«ã‚³ãƒãƒ³ãƒ‰ã‚’é€ã‚‹ã“ã¨ãŒã§ãã¾ã™ã€‚</p>
 <p class="eng">
 				The Scintilla Edit Control knows a special message for each command.
 				To send commands to the Scintilla Edit Control you can use the SendMessage function.
@@ -63,7 +64,7 @@
 
 	SendMessage(hwndScintilla,sci_command,wparam,lparam);
 			</pre>
-			<p>—á‚¦‚ÎAŸ‚Ì‚æ‚¤‚É‚È‚è‚Ü‚·B</p>
+			<p>ä¾‹ãˆã°ã€æ¬¡ã®ã‚ˆã†ã«ãªã‚Šã¾ã™ã€‚</p>
 <p class="eng">
 				like:
 			</p>
@@ -71,25 +72,25 @@
 
 	SendMessage(hwndScintilla,SCI_CREATEDOCUMENT, 0, 0);
 			</pre>
-			<p>‚¢‚­‚Â‚©‚ÌƒRƒ}ƒ“ƒh‚Í’l‚ğ•Ô‚µ‚Ü‚·Bg‚í‚È‚¢ˆø”‚Í NULL ‚É‚µ‚Ä‚¨‚­‚×‚«‚Å‚·B</p>
+			<p>ã„ãã¤ã‹ã®ã‚³ãƒãƒ³ãƒ‰ã¯å€¤ã‚’è¿”ã—ã¾ã™ã€‚ä½¿ã‚ãªã„å¼•æ•°ã¯ NULL ã«ã—ã¦ãŠãã¹ãã§ã™ã€‚</p>
 <p class="eng">
 				Some of the commands will return a value and unused parameters should be set to NULL.
 			</p>
-<h3><span>Scintilla ‚ğ‘¬‚­§Œä‚·‚é•û–@</span><span class="eng">The fast way to control Scintilla</span></h3>
-			<p>Scintilla ƒGƒfƒBƒbƒgƒRƒ“ƒgƒ[ƒ‹‚ğ‘¬‚­§Œä‚·‚é•û–@‚ÍA©•ª‚ÅƒƒbƒZ[ƒWˆ—ŠÖ”‚ğ‚æ‚Ñ‚¾‚·‚Æ‚¢‚¤‚à‚Ì‚Å‚·BScintilla ƒGƒfƒBƒbƒgƒRƒ“ƒgƒ[ƒ‹‚ÌƒƒbƒZ[ƒWˆ—ŠÖ”‚Ö‚Ìƒ|ƒCƒ“ƒ^‚ğæ“¾‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·‚Ì‚ÅAƒRƒ}ƒ“ƒh‚ğÀs‚³‚¹‚é‚Æ‚«‚É’¼Ú‚±‚ê‚ğŒÄ‚Ño‚µ‚Ü‚·BSendMessage() ‚É‚æ‚é•û–@‚æ‚è‚¤‚ñ‚Æ‚‘¬‰»‚Å‚«‚Ü‚·B</p>
+<h3><span>Scintilla ã‚’é€Ÿãåˆ¶å¾¡ã™ã‚‹æ–¹æ³•</span><span class="eng">The fast way to control Scintilla</span></h3>
+			<p>Scintilla ã‚¨ãƒ‡ã‚£ãƒƒãƒˆã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«ã‚’é€Ÿãåˆ¶å¾¡ã™ã‚‹æ–¹æ³•ã¯ã€è‡ªåˆ†ã§ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸å‡¦ç†é–¢æ•°ã‚’ã‚ˆã³ã ã™ã¨ã„ã†ã‚‚ã®ã§ã™ã€‚Scintilla ã‚¨ãƒ‡ã‚£ãƒƒãƒˆã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«ã®ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸å‡¦ç†é–¢æ•°ã¸ã®ãƒã‚¤ãƒ³ã‚¿ã‚’å–å¾—ã™ã‚‹ã“ã¨ãŒã§ãã¾ã™ã®ã§ã€ã‚³ãƒãƒ³ãƒ‰ã‚’å®Ÿè¡Œã•ã›ã‚‹ã¨ãã«ç›´æ¥ã“ã‚Œã‚’å‘¼ã³å‡ºã—ã¾ã™ã€‚SendMessage() ã«ã‚ˆã‚‹æ–¹æ³•ã‚ˆã‚Šã†ã‚“ã¨é«˜é€ŸåŒ–ã§ãã¾ã™ã€‚</p>
 <p class="eng">
 				The fast way of controlling the Scintilla Edit Control  is to call message handling function by yourself.
 				You can retrieve a pointer to the message handling function of the Scintilla Edit Control and
 				call it directly to execute a command. This way is much more faster than the SendMessage() way.
 			</p>
-			<p>‚Ü‚¸ASCI_GETDIRECTFUNCTION ‚ğ—p‚¢‚Ä‚»‚ÌŠÖ”‚Ö‚Ìƒ|ƒCƒ“ƒ^‚ğæ“¾‚µASCI_GETDIRECTPOINTER ‚ğ—p‚¢‚Ä•K‚¸‚»‚Ì‘æˆêˆø”‚Æ‚È‚éƒ|ƒCƒ“ƒ^‚ğæ“¾‚µ‚Ü‚·B‚±‚Ì•”•ª‚Í SendMessage ‚ğg‚í‚È‚­‚Ä‚Í‚È‚è‚Ü‚¹‚ñ :)</p>
+			<p>ã¾ãšã€SCI_GETDIRECTFUNCTION ã‚’ç”¨ã„ã¦ãã®é–¢æ•°ã¸ã®ãƒã‚¤ãƒ³ã‚¿ã‚’å–å¾—ã—ã€SCI_GETDIRECTPOINTER ã‚’ç”¨ã„ã¦å¿…ãšãã®ç¬¬ä¸€å¼•æ•°ã¨ãªã‚‹ãƒã‚¤ãƒ³ã‚¿ã‚’å–å¾—ã—ã¾ã™ã€‚ã“ã®éƒ¨åˆ†ã¯ SendMessage ã‚’ä½¿ã‚ãªãã¦ã¯ãªã‚Šã¾ã›ã‚“ :)</p>
 <p class="eng">
 				1st you have to use the SCI_GETDIRECTFUNCTION and SCI_GETDIRECTPOINTER commands to
 				retrieve the pointer to the function and a pointer which must be the first parameter when calling the retrieved
 				function pointer.
 				You have to do this with the SendMessage way :)
 			</p>
-			<p>‚±‚Ìè‘±‚«‚ÍŸ‚Ì‚æ‚¤‚É‚È‚è‚Ü‚·B</p>
+			<p>ã“ã®æ‰‹ç¶šãã¯æ¬¡ã®ã‚ˆã†ã«ãªã‚Šã¾ã™ã€‚</p>
 <p class="eng">
 				The whole thing has to look like this:
 			</p>
@@ -105,20 +106,20 @@
 
 	canundo = fn(ptr,SCI_CANUNDO,0,0);
 			</pre>
-			<p>&quot;ptr&quot; ‚ª•K‚¸‘æˆêˆø”‚Æ‚È‚éƒ|ƒCƒ“ƒ^‚Å‚·BˆÈ~‚Ìˆø”‚ª Scintilla ‚Ö‚ÌƒRƒ}ƒ“ƒh‚Æ(‚ ‚ê‚Î)‚»‚Ì“ñ‚Â‚Ìˆø”‚Æ‚È‚è‚Ü‚·B&quot;fn&quot; ‚Ì‚Ù‚¤‚ª Scintilla ƒRƒ“ƒgƒ[ƒ‹‚ÌƒƒbƒZ[ƒWˆ—ŠÖ”‚Ö‚Ìƒ|ƒCƒ“ƒ^‚Æ‚È‚è‚Ü‚·B</p>
+			<p>&quot;ptr&quot; ãŒå¿…ãšç¬¬ä¸€å¼•æ•°ã¨ãªã‚‹ãƒã‚¤ãƒ³ã‚¿ã§ã™ã€‚ä»¥é™ã®å¼•æ•°ãŒ Scintilla ã¸ã®ã‚³ãƒãƒ³ãƒ‰ã¨(ã‚ã‚Œã°)ãã®äºŒã¤ã®å¼•æ•°ã¨ãªã‚Šã¾ã™ã€‚&quot;fn&quot; ã®ã»ã†ãŒ Scintilla ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«ã®ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸å‡¦ç†é–¢æ•°ã¸ã®ãƒã‚¤ãƒ³ã‚¿ã¨ãªã‚Šã¾ã™ã€‚</p>
 <p class="eng">
 				with &quot;fn&quot; as the function pointer to the message handling function of the Scintilla Control
 				and &quot;ptr&quot; as the pointer that must be used as 1st parameter.
 				The next parameters are the Scintilla Command with its two (optional) parameters.
 			</p>
-<p class="eng"><h3><span>Scintilla ‚©‚ç’Ê’m‚ğó‚¯‚é•û–@</span><span class="eng">How will I receive notifications?</span></h3>
-			<p>Scintilla ‚ª‰½‚ç‚©‚Ìî•ñ‚ğ’ñ‹Ÿ‚µ‚æ‚¤‚Æ‚·‚é‚ÆA•K‚¸ƒCƒxƒ“ƒg‚ª”­¶‚µ‚Ü‚·BScintilla ƒGƒfƒBƒbƒgƒRƒ“ƒgƒ[ƒ‹‚Í‚»‚ÌeƒEƒBƒ“ƒhƒE‚É’Ê’m‚ğs‚¢‚Ü‚·B’Ê’m‚É‚Í WM_NOTIFY ƒƒbƒZ[ƒW‚ª—˜—p‚³‚ê‚Ü‚·B‚»‚ÌƒƒbƒZ[ƒW‚ğó‚¯æ‚Á‚½‚ç xxx \‘¢‘Ì‚Ì’†‚É‚ ‚éÀÛ‚ÌƒƒbƒZ[ƒW‚ğŒ©‚é•K—v‚ª‚ ‚è‚Ü‚·B</p>
+<p class="eng"><h3><span>Scintilla ã‹ã‚‰é€šçŸ¥ã‚’å—ã‘ã‚‹æ–¹æ³•</span><span class="eng">How will I receive notifications?</span></h3>
+			<p>Scintilla ãŒä½•ã‚‰ã‹ã®æƒ…å ±ã‚’æä¾›ã—ã‚ˆã†ã¨ã™ã‚‹ã¨ã€å¿…ãšã‚¤ãƒ™ãƒ³ãƒˆãŒç™ºç”Ÿã—ã¾ã™ã€‚Scintilla ã‚¨ãƒ‡ã‚£ãƒƒãƒˆã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«ã¯ãã®è¦ªã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã«é€šçŸ¥ã‚’è¡Œã„ã¾ã™ã€‚é€šçŸ¥ã«ã¯ WM_NOTIFY ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ãŒåˆ©ç”¨ã•ã‚Œã¾ã™ã€‚ãã®ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚’å—ã‘å–ã£ãŸã‚‰ xxx æ§‹é€ ä½“ã®ä¸­ã«ã‚ã‚‹å®Ÿéš›ã®ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚’è¦‹ã‚‹å¿…è¦ãŒã‚ã‚Šã¾ã™ã€‚</p>
 <p class="eng">
 				Whenever an event occurs where Scintilla wants to inform you about something, the Scintilla Edit Control
 				will send notification to the parent window. This is done by a WM_NOTITY message.
 				When receiving that message, you have to look in the xxx struct for the actual message.
 			</p>
-			<p>‚Å‚·‚©‚ç Scintilla ‚ÌeƒEƒBƒ“ƒhƒE‚ÌƒƒbƒZ[ƒWˆ—ŠÖ”‚Ì’†‚ÉŸ‚Ì‚æ‚¤‚ÈƒR[ƒh‚ª•K—v‚Æ‚È‚è‚Ü‚·B</p>
+			<p>ã§ã™ã‹ã‚‰ Scintilla ã®è¦ªã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã®ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸å‡¦ç†é–¢æ•°ã®ä¸­ã«æ¬¡ã®ã‚ˆã†ãªã‚³ãƒ¼ãƒ‰ãŒå¿…è¦ã¨ãªã‚Šã¾ã™ã€‚</p>
 <p class="eng">
 				So in Scintillas parent window message handling function you have to include some code like this:
 			</p>
@@ -135,8 +136,8 @@
 			switch(lpnmhdr-&gt;code)
 			{
 				case SCN_CHARADDED:
-					/* Scintilla ‚ª‚¨‚Ì‚ê‚ÉV‚µ‚¢•¶š‚ğ’Ç‰Á‚µ‚½Œ¾‚¤‚Ä‚Ü‚ñ‚ÅB
-					  ‚È‚ñ‚¼ƒCƒJ‚µ‚½•¶š‚É‚Å‚à‚µ‚Ä‚â‚ë‚©(–ó’:Œë–ó‚©‚à) */
+					/* Scintilla ãŒãŠã®ã‚Œã«æ–°ã—ã„æ–‡å­—ã‚’è¿½åŠ ã—ãŸè¨€ã†ã¦ã¾ã‚“ã§ã€‚
+					  ãªã‚“ãã‚¤ã‚«ã—ãŸæ–‡å­—ã«ã§ã‚‚ã—ã¦ã‚„ã‚ã‹(è¨³æ³¨:èª¤è¨³ã‹ã‚‚) */
 					<span class="eng">/* Hey, Scintilla just told me that a new */
 					/* character was added to the Edit Control.*/
 					/* Now i do something cool with that char. */</span>
@@ -145,7 +146,7 @@
 		}
 	break;
 			</pre>
-    <p><i>‚±‚Ìƒy[ƒW‚Í Holger Schmidt ‚³‚ñ‚æ‚èŠñ‘¡‚³‚ê‚Ü‚µ‚½B</i></p>
+    <p><i>ã“ã®ãƒšãƒ¼ã‚¸ã¯ Holger Schmidt ã•ã‚“ã‚ˆã‚Šå¯„è´ˆã•ã‚Œã¾ã—ãŸã€‚</i></p>
 <p class="eng">
        <i>Page contributed by Holger Schmidt.</i>
     </p>
