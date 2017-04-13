@@ -1,0 +1,173 @@
+| Keyboard Shortcut (Linux)  | Result  |
+| ------------- | ------------- |
+| Ctrl+' | Insert accented character |
+| Ctrl+\* | Toggle current fold |
+| Ctrl+. | Stop executing |
+| Ctrl+/ | Word part left |
+| Ctrl+Shift+/ | Extend selection word part left |
+| Alt+1 | Open tab 1 |
+| Ctrl+1 | Copy current folder |
+| Alt+2 | Open tab 2 |
+| Alt+3 | Open tab 3 |
+| Alt+Shift+3 | Line numbers |
+| Ctrl+Shift+3 | Word count/sum |
+| Alt+4 | Open tab 4 |
+| Alt+5 | Open tab 5 |
+| Alt+6 | Open tab 6 |
+| Alt+7 | Open tab 7 |
+| Alt+8 | Open tab 8 |
+| Alt+9 | Open tab 9 |
+| Ctrl+Shift+: | Open user options file |
+| Ctrl+; | Open global options file |
+| Ctrl+A | Select all |
+| Ctrl+Shift+A | View whitespace |
+| Ctrl+Add | Zoom in |
+| Ctrl+B | Expand abbreviation |
+| Ctrl+Shift+B | Box comment |
+| Backspace | Delete back |
+| Shift+Backspace | Delete back |
+| Alt+Backspace | Undo |
+| Ctrl+Backspace | Delete word left |
+| Ctrl+Shift+Backspace | Delete line left |
+| Ctrl+C | Copy |
+| Ctrl+D | Duplicate |
+| Ctrl+Shift+D | Select current word |
+| Delete | Delete |
+| Shift+Delete | Cut |
+| Ctrl+Delete | Delete word right |
+| Ctrl+Shift+Delete | Delete line right |
+| Ctrl+Divide | Set zoom |
+| Down | Line down |
+| Shift+Down | Extend selection line down |
+| Alt+Down | Move line down |
+| Alt+Shift+Down | Extend rectangular selection line down rect |
+| Ctrl+Down | Line scroll down |
+| Ctrl+E | Match brace |
+| Ctrl+Shift+E | Select to brace |
+| End | Line end |
+| Shift+End | Extend selection line end |
+| Alt+End | Line end display |
+| Alt+Shift+End | Extend rectangular selection line end rect |
+| Ctrl+End | Document end |
+| Ctrl+Shift+End | Extend selection document end |
+| Ctrl+Enter | Complete word |
+| Escape | Cancel |
+| Ctrl+F | Find |
+| Ctrl+Shift+F | Find in files |
+| F1 | Help |
+| Ctrl+Shift+F10 | Switch to file in corresponding folder |
+| F11 | Full screen |
+| Shift+F11 | Set language text |
+| Ctrl+F11 | Use monospaced font |
+| F12 | Search for selected term (definition) |
+| Shift+F12 | Search for selected term (all references) |
+| Ctrl+F12 | Search for selected term (declaration) |
+| F2 | Next bookmark |
+| Shift+F2 | Previous bookmark |
+| Alt+F2 | Bookmark next select |
+| Alt+Shift+F2 | Bookmark prev select |
+| Ctrl+F2 | Toggle bookmark |
+| F3 | Find next |
+| Shift+F3 | Find previous |
+| Ctrl+F3 | Find selected text |
+| Ctrl+Shift+F3 | Find selected text upwards |
+| F4 | Next message |
+| Shift+F4 | Previous message |
+| Ctrl+F4 | Close |
+| Ctrl+Alt+F4 | Close all |
+| F5 | Go |
+| Shift+F5 | Clear output |
+| F6 | Next tab |
+| Shift+F6 | Prev tab |
+| Ctrl+F6 | Switch pane |
+| F7 | Build |
+| Shift+F7 | Clean |
+| Alt+F7 | Spellcheck selected text |
+| Ctrl+F7 | Compile |
+| F8 | Output |
+| Ctrl+G | Go to |
+| Ctrl+Shift+G | Search filenames |
+| Ctrl+H | Replace |
+| Ctrl+Alt+H | Switch to header |
+| Home | VS-style home |
+| Shift+Home | Extend selection vs-style home |
+| Alt+Home | Home display |
+| Alt+Shift+Home | Extend rectangular selection vs-style home rect |
+| Ctrl+Home | Document start |
+| Ctrl+Shift+Home | Extend selection document start |
+| Ctrl+I | Change lines |
+| Ctrl+Shift+I | Coding reference |
+| Ctrl+Alt+I | Incremental search |
+| Insert | Edit toggle overtype |
+| Shift+Insert | Paste |
+| Ctrl+Insert | Copy |
+| Ctrl+J | Prev match (C-preprocessor) |
+| Ctrl+Shift+J | Selecttoprev match (C-preprocessor) |
+| Ctrl+K | Next match (C-preprocessor) |
+| Ctrl+Shift+K | Selecttonext match (C-preprocessor) |
+| Ctrl+L | Line delete |
+| Ctrl+Shift+L | Line delete |
+| Left | Char left |
+| Shift+Left | Extend selection char left |
+| Alt+Shift+Left | Extend rectangular selection char left rect |
+| Ctrl+Left | Word left |
+| Ctrl+Shift+Left | Extend selection word left |
+| Ctrl+M | Commonly opened files |
+| Ctrl+Shift+M | Open in new window |
+| Ctrl+N | New |
+| Ctrl+Shift+N | End of line |
+| PageDown | Page down |
+| Shift+PageDown | Extend selection page down |
+| Alt+Shift+PageDown | Extend rectangular selection page down rect |
+| Ctrl+O | Open |
+| Ctrl+Shift+O | Open selected filename |
+| Ctrl+P | Print |
+| Ctrl+Shift+P | Save a copy |
+| Ctrl+PageDown | Next tab |
+| Ctrl+PageUp | Prev tab |
+| PageUp | Page up |
+| Shift+PageUp | Extend selection page up |
+| Alt+Shift+PageUp | Extend rectangular selection page up rect |
+| Ctrl+Q | Block comment or uncomment |
+| Ctrl+Shift+Q | Stream comment |
+| Ctrl+R | Wrap |
+| Ctrl+Shift+R | Revert |
+| Return | New line |
+| Shift+Return | New line |
+| Ctrl+Return | Complete word |
+| Right | Char right |
+| Shift+Right | Extend selection char right |
+| Alt+Shift+Right | Extend rectangular selection char right rect |
+| Ctrl+Right | Word right |
+| Ctrl+Shift+Right | Extend selection word right |
+| Ctrl+S | Save |
+| Ctrl+Shift+S | Save as |
+| Ctrl+Space | Complete symbol |
+| Ctrl+Shift+Space | Show calltip |
+| Ctrl+Subtract | Zoom out |
+| Ctrl+T | Line transpose |
+| Ctrl+Shift+T | Change indentation settings |
+| Tab | Tab |
+| Shift+Tab | Back tab |
+| Ctrl+Tab | Next tab |
+| Ctrl+Shift+Tab | Prev tab |
+| Ctrl+U | Change casing |
+| Ctrl+Shift+U | Make selection uppercase |
+| Up | Line up |
+| Shift+Up | Extend selection line up |
+| Alt+Up | Move line up |
+| Alt+Shift+Up | Extend rectangular selection line up rect |
+| Ctrl+Up | Line scroll up |
+| Ctrl+V | Paste |
+| Ctrl+W | Close |
+| Ctrl+X | Cut |
+| Ctrl+Y | Redo |
+| Ctrl+Shift+Y | Print current variable (Python) |
+| Ctrl+Z | Undo |
+| Ctrl+[ | Prev paragraph |
+| Ctrl+Shift+[ | Extend selection prev paragraph |
+| Ctrl+\\ | Word part right |
+| Ctrl+Shift+\\ | Extend selection word part right |
+| Ctrl+] | Next paragraph |
+| Ctrl+Shift+] | Extend selection next paragraph |
+
