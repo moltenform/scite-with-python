@@ -1,3 +1,7 @@
+# SciTE Python Extension
+# Ben Fisher, 2016
+# Released under the GNU General Public License version 3
+
 import os
 import sys
 import codecs
@@ -38,7 +42,6 @@ def go(path):
     
     with codecs.open(path, 'wb', dest) as fout:
         fout.write(alltxt)
-    
 
 if __name__ == '__main__':
     if len(sys.argv) > 1 and os.path.isfile(sys.argv[1]):

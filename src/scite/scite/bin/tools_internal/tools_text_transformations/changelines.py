@@ -96,13 +96,21 @@ class ChangeLines(object):
     
     def sortcoln(self, lines, whichColToSort):
         def key(text):
-            # the idea is to move the desired column to the front as if it were the first
-            parts = text.split()
+            # copy the 'sort-by' column to the front, so that it's treated as the sort key
+            # if the line has tabs, let's treat it as tab-delimited
+            # otherwise, treat it as whitespace-delimited
+            if '\t' in text:
+                parts = text.split('\t')
+            elif ',' in text:
+                parts = text.split(',')
+            else:
+                parts = [text]
             
+            # e.g. if sorting by the 2nd col, put the value of the 2nd col in front
             if whichColToSort <= len(parts) - 1:
                 parts.insert(0, parts[whichColToSort])
             else:
-                # column is empty, so add empty to the front
+                # column is empty, so add empty string to the front
                 parts.insert(0, '')
             return parts
             
@@ -189,6 +197,13 @@ if __name__ == '__main__':
     assertEq(expectedSort2nd, sort2nd)
     assertEq(expectedSort3rd, sort3rd)
     
+    # tabs should take precedence over spaces when sorting by columns
+    test = '1\ta\tz\t3|1\ta\tz\t2|1\ta z\t1'.split('|')
+    obj = ChangeLines()
+    obj.sortcol2(test)
+    expectedSort2nd = ['1\ta\tz\t2', '1\ta\tz\t3', '1\ta z\t1']
+    assertEq(expectedSort2nd, test)
+    
     def testLines(expected, input, fn):
         arr = input.split('|')
         fn(arr)
@@ -228,5 +243,6 @@ if __name__ == '__main__':
     testLines('  a; b; c', '  a|b|c', obj.joinwithoutindentadddelim)
     testLines('  a; b; c', '  a|  b|  c', obj.joinwithoutindentadddelim)
     testLines('  a; b; c', '  a  |  b  |  c  ', obj.joinwithoutindentadddelim)
+    
     
     
