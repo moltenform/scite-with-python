@@ -514,10 +514,9 @@ void SciTEBase::SetAboutMessage(GUI::ScintillaWindow &wsci, const char *appTitle
 		AddStyledText(wsci, " Ben Fisher.\n", 2);
 		SetAboutStyle(wsci, 3, ColourRGB(0, 0, 0));
 		SetAboutStyle(wsci, 4, ColourRGB(0, 0x7f, 0x7f));
-		AddStyledText(wsci, "http://downpoured.github.io/scite-with-python/070\n", 4);
-		AddStyledText(wsci, "http://www.scintilla.org\n", 4);
+		AddStyledText(wsci, "http://github.com/downpoured/scite-with-python/wiki\n", 4);
 		AddStyledText(wsci, "Lua scripting language by TeCGraf, PUC-Rio\n", 3);
-		AddStyledText(wsci, "    http://www.lua.org\n", 4);
+		AddStyledText(wsci, "http://www.lua.org\n", 4);
 		if (translator.length()) {
 			AddStyledText(wsci, translator.c_str(), trsSty);
 			AddStyledText(wsci, "\n", 5);

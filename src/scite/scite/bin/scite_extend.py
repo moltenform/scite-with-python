@@ -1,7 +1,7 @@
 # SciTE Python Extension
 # Ben Fisher, 2016
 # Released under the GNU General Public License version 3
-# See documentation at https://downpoured.github.io/scite-with-python/070/writing_plugins.html
+# See documentation at https://github.com/downpoured/scite-with-python/wiki/Writing-a-plugin
 
 import SciTEModule
 
@@ -10,7 +10,7 @@ debugTracing = False
 class ScAppClass(object):
     '''
     Methods starting with "Cmd" are routed to SciTE,
-    See http://downpoured.github.io/scite-with-python/070/pythonapi.html for a list of supported methods.
+    See https://github.com/downpoured/scite-with-python/wiki/Writing-a-plugin:-API for a list of supported methods.
     example:
         from scite_extend_ui import ScApp
         ScApp.Trace('test')
@@ -111,7 +111,7 @@ class ScAppClass(object):
         raise RequestThatEventContinuesToPropagate()
         
     def __getattr__(self, s):
-        '''Run a command, see the full list in http://downpoured.github.io/scite-with-python/070/pythonapi.html'''
+        '''Run a command, see the full list in https://github.com/downpoured/scite-with-python/wiki/Writing-a-plugin:-API'''
         if s.startswith('Cmd'):
             # return a callable object; it looks like a method to the caller.
             commandName = s[len('Cmd'):]
@@ -128,7 +128,7 @@ class ScConstClass(object):
         ScEditor.SearchNext(matchType, 'a')
         color = ScConst.MakeColor(0, 250, 200)
         ScEditor.SetMarkerBack(1, color)
-    See http://downpoured.github.io/scite-with-python/070/pythonapi.html for a list of constants.
+    See https://github.com/downpoured/scite-with-python/wiki/Writing-a-plugin:-API for a list of constants.
     '''
     def __init__(self):
         self.eventTypeUnknown = 0
@@ -245,7 +245,7 @@ class ScPaneClass(object):
     represents a Scintilla window.
     ScEditor is an instance of this class representing the main code editor.
     ScOutput is an instance of this class representing the output pane.
-    See http://downpoured.github.io/scite-with-python/070/pythonapi.html for a list of supported methods.
+    See https://github.com/downpoured/scite-with-python/wiki/Writing-a-plugin:-API for a list of supported methods.
     example:
         from scite_extend_ui import ScEditor
         print('language is ' + ScEditor.GetLexerLanguage())
@@ -308,7 +308,7 @@ class ScPaneClass(object):
 
     # redirect most methods on this object to call into Scintilla.
     def __getattr__(self, sprop):
-        '''See http://downpoured.github.io/scite-with-python/070/pythonapi.html for a list of supported methods.'''
+        '''See https://github.com/downpoured/scite-with-python/wiki/Writing-a-plugin:-API for a list of supported methods.'''
         if sprop.startswith('_'):
             raise AttributeError()
         else:
