@@ -17,7 +17,6 @@ isfile = _os.path.isfile
 getsize = _os.path.getsize
 rmdir = _os.rmdir
 chdir = _os.chdir
-makedirs = _os.makedirs
 sep = _os.path.sep
 linesep = _os.linesep
 abspath = _os.path.abspath
@@ -48,27 +47,44 @@ def deletesure(s):
         delete(s)
     assert not exists(s)
     
-def makedir(s):
+def makedirs(s):
     try:
-        _os.mkdir(s)
+        _os.makedirs(s)
     except OSError:
         if isdir(s):
             return
         else:
             raise
-   
+
+def ensure_empty_directory(d):
+    if isfile(d):
+        raise IOError('file exists at this location ' + d)
+    
+    if isdir(d):
+        # delete all existing files in the directory
+        for s in _os.listdir(d):
+            if _os.path.isdir(join(d, s)):
+                _shutil.rmtree(join(d, s))
+            else:
+                _os.unlink(join(d, s))
+        
+        assertTrue(isemptydir(d))
+    else:
+        _os.makedirs(d)
+
 def copy(srcfile, destfile, overwrite):
     if not exists(srcfile):
         raise IOError('source path does not exist')
         
     if srcfile == destfile:
         pass
-    elif sys.platform == 'win32':
-        from ctypes import windll, c_wchar_p, c_int
+    elif sys.platform.startswith('win'):
+        from ctypes import windll, c_wchar_p, c_int, GetLastError
         failIfExists = c_int(0) if overwrite else c_int(1)
         res = windll.kernel32.CopyFileW(c_wchar_p(srcfile), c_wchar_p(destfile), failIfExists)
         if not res:
-            raise IOError('CopyFileW failed (maybe dest already exists?) ' +
+            err = GetLastError()
+            raise IOError('CopyFileW failed (maybe dest already exists?) err=%d' % err +
                 getPrintable(srcfile + '->' + destfile))
     else:
         if overwrite:
@@ -78,19 +94,29 @@ def copy(srcfile, destfile, overwrite):
 
     assertTrue(exists(destfile))
         
-def move(srcfile, destfile, overwrite):
+def move(srcfile, destfile, overwrite, warn_between_drives=False):
     if not exists(srcfile):
         raise IOError('source path does not exist')
         
     if srcfile == destfile:
         pass
-    elif sys.platform == 'win32':
-        from ctypes import windll, c_wchar_p, c_int
-        replaceExisting = c_int(1) if overwrite else c_int(0)
-        res = windll.kernel32.MoveFileExW(c_wchar_p(srcfile), c_wchar_p(destfile), replaceExisting)
+    elif sys.platform.startswith('win'):
+        from ctypes import windll, c_wchar_p, c_int, GetLastError
+        ERROR_NOT_SAME_DEVICE = 17
+        flags = 0
+        flags |= 1 if overwrite else 0
+        flags |= 0 if warn_between_drives else 2
+        res = windll.kernel32.MoveFileExW(c_wchar_p(srcfile), c_wchar_p(destfile), c_int(flags))
         if not res:
-            raise IOError('MoveFileExW failed (maybe dest already exists?) ' +
+            err = GetLastError()
+            if err == ERROR_NOT_SAME_DEVICE and warn_between_drives:
+                rinput('Note: moving file from one drive to another. ' +
+                    '%s %s Press Enter to continue.\r\n'%(srcfile, destfile))
+                return move(srcfile, destfile, overwrite, warn_between_drives=False)
+                
+            raise IOError('MoveFileExW failed (maybe dest already exists?) err=%d' % err +
                 getPrintable(srcfile + '->' + destfile))
+        
     elif sys.platform.startswith('linux') and overwrite:
         _os.rename(srcfile, destfile)
     else:
@@ -133,6 +159,7 @@ def writeall(s, txt, mode='w', unicodetype=None):
     f.write(txt)
     f.close()
 
+
 # use this to make the caller pass argument names,
 # allowing foo(param=False) but preventing foo(False)
 _enforceExplicitlyNamedParameters = object()
@@ -147,13 +174,14 @@ def listchildrenUnsorted(dir, _ind=_enforceExplicitlyNamedParameters, filenamesO
     for filename in _os.listdir(dir):
         if not allowedexts or getext(filename) in allowedexts:
             yield filename if filenamesOnly else (dir + _os.path.sep + filename, filename)
-    
-if sys.platform == 'win32':
+
+
+if sys.platform.startswith('win'):
     listchildren = listchildrenUnsorted
 else:
     def listchildren(*args, **kwargs):
         return sorted(listchildrenUnsorted(*args, **kwargs))
-    
+
 def listfiles(dir, _ind=_enforceExplicitlyNamedParameters, filenamesOnly=False, allowedexts=None):
     _checkNamedParameters(_ind)
     for full, name in listchildren(dir, allowedexts=allowedexts):
@@ -171,7 +199,7 @@ def recursefiles(root, _ind=_enforceExplicitlyNamedParameters, filenamesOnly=Fal
             dirnames[:] = newdirs
         
         if includeFiles:
-            for filename in (filenames if sys.platform == 'win32' else sorted(filenames)):
+            for filename in (filenames if sys.platform.startswith('win') else sorted(filenames)):
                 if not allowedexts or getext(filename) in allowedexts:
                     yield filename if filenamesOnly else (dirpath + _os.path.sep + filename, filename)
         
@@ -181,7 +209,56 @@ def recursefiles(root, _ind=_enforceExplicitlyNamedParameters, filenamesOnly=Fal
 def recursedirs(root, _ind=_enforceExplicitlyNamedParameters, filenamesOnly=False, fnFilterDirs=None, topdown=True):
     _checkNamedParameters(_ind)
     return recursefiles(root, filenamesOnly=filenamesOnly, fnFilterDirs=fnFilterDirs, includeFiles=False, includeDirs=True, topdown=topdown)
+
+class FileInfoEntryWrapper(object):
+    def __init__(self, obj):
+        self.obj = obj
+        self.path = obj.path
+        
+    def is_dir(self, *args):
+        return self.obj.is_dir(*args)
+        
+    def is_file(self, *args):
+        return self.obj.is_file(*args)
+        
+    def short(self):
+        return _os.path.split(self.path)[1]
+        
+    def size(self):
+        return self.obj.stat().st_size
+        
+    def mtime(self):
+        return self.obj.stat().st_mtime
     
+    def metadatachangetime(self):
+        assertTrue(not sys.platform.startswith('win'))
+        return self.obj.stat().st_ctime
+    
+    def createtime(self):
+        assertTrue(sys.platform.startswith('win'))
+        return self.obj.stat().st_ctime
+
+def recursefileinfo(root, recurse=True, followSymlinks=False, filesOnly=True):
+    assertTrue(isPy3OrNewer)
+    
+    # scandir's resources are released in destructor,
+    # do not create circular references holding it
+    for entry in _os.scandir(root):
+        if entry.is_dir(follow_symlinks=followSymlinks):
+            if not filesOnly:
+                yield FileInfoEntryWrapper(entry)
+            if recurse:
+                for subentry in recursefileinfo(entry.path, recurse=recurse,
+                        followSymlinks=followSymlinks, filesOnly=filesOnly):
+                    yield subentry
+        
+        if entry.is_file():
+            yield FileInfoEntryWrapper(entry)
+
+def listfileinfo(root, followSymlinks=False, filesOnly=True):
+    return recursefileinfo(root, recurse=False,
+        followSymlinks=followSymlinks, filesOnly=filesOnly)
+
 def isemptydir(dir):
     return len(_os.listdir(dir)) == 0
     
@@ -234,7 +311,7 @@ def findBinaryOnPath(binaryName):
     if _os.sep in binaryName:
         return binaryName if is_exe(binaryName) else None
 
-    if sys.platform == 'win32' and not binaryName.lower().endswith('.exe'):
+    if sys.platform.startswith('win') and not binaryName.lower().endswith('.exe'):
         binaryName += '.exe'
 
     for path in _os.environ["PATH"].split(_os.pathsep):
@@ -245,18 +322,30 @@ def findBinaryOnPath(binaryName):
 
     return None
 
-def computeHash(path, hasher=None):
-    import hashlib
-    hasher = hasher or hashlib.sha1()
-    f = open(path, 'rb')
-    while True:
-        # update the hash with the contents of the file, 256k at a time
-        buffer = f.read(0x40000)
-        if not buffer:
-            break
-        hasher.update(buffer)
-
-    return hasher.hexdigest()
+def computeHash(path, hasher=None, buffersize=0x40000):
+    if hasher == 'crc32':
+        import zlib
+        crc = zlib.crc32(bytes(), 0)
+        with open(path, 'rb') as f:
+            while True:
+                # update the hash with the contents of the file
+                buffer = f.read(buffersize)
+                if not buffer:
+                    break
+                crc = zlib.crc32(buffer, crc)
+        crc = crc & 0xffffffff
+        return '%08x' % crc
+    else:
+        import hashlib
+        hasher = hasher or hashlib.sha1()
+        with open(path, 'rb') as f:
+            while True:
+                # update the hash with the contents of the file
+                buffer = f.read(buffersize)
+                if not buffer:
+                    break
+                hasher.update(buffer)
+        return hasher.hexdigest()
 
 # returns tuple (returncode, stdout, stderr)
 def run(listArgs, _ind=_enforceExplicitlyNamedParameters, shell=False, createNoWindow=True,
@@ -266,7 +355,7 @@ def run(listArgs, _ind=_enforceExplicitlyNamedParameters, shell=False, createNoW
     _checkNamedParameters(_ind)
     kwargs = {}
     
-    if sys.platform == 'win32' and createNoWindow:
+    if sys.platform.startswith('win') and createNoWindow:
         kwargs['creationflags'] = 0x08000000
     
     if captureoutput and not wait:
@@ -320,7 +409,7 @@ def runWithoutWaitUnicode(listArgs):
     # https://bugs.python.org/issue1759845
     
     import subprocess
-    if sys.version_info[0] > 2 or sys.platform != 'win32' or all(isinstance(arg, str) for arg in listArgs):
+    if isPy3OrNewer or not sys.platform.startswith('win') or all(isinstance(arg, str) for arg in listArgs):
         # no workaround needed in Python3
         p = subprocess.Popen(listArgs, shell=False)
         return p.pid

@@ -1,6 +1,8 @@
 # BenPythonCommon,
 # 2015 Ben Fisher, released under the GPLv3 license.
 
+import sys
+
 class Bucket(object):
     "simple named-tuple; o.field looks nicer than o['field']. "
     def __init__(self, **kwargs):
@@ -8,7 +10,7 @@ class Bucket(object):
             object.__setattr__(self, key, kwargs[key])
 
     def __repr__(self):
-        return '\n\n\n'.join(('%s=%s'%(unicodestringtype(key), unicodestringtype(self.__dict__[key])) for key in sorted(self.__dict__)))
+        return '\n\n\n'.join(('%s=%s'%(ustr(key), ustr(self.__dict__[key])) for key in sorted(self.__dict__)))
             
 class SimpleEnum(object):
     "simple enum; prevents modification after creation."
@@ -35,7 +37,7 @@ class SimpleEnum(object):
         raise RuntimeError
     
 def getPrintable(s, okToIgnore=False):
-    if sys.version_info[0] <= 2:
+    if not isPy3OrNewer:
         if not isinstance(s, unicode):
             return str(s)
 
@@ -46,6 +48,8 @@ def getPrintable(s, okToIgnore=False):
         else:
             return s.encode('ascii', 'replace')
     else:
+        if isinstance(s, bytes):
+            return s.decode('ascii')
         if not isinstance(s, str):
             return str(s)
 
@@ -78,6 +82,7 @@ def warnWithOptionToContinue(s):
     if not common_ui.getInputBool('continue?'):
         raise RuntimeError()
 
+
 '''
 re.search(pattern, string, flags=0)
     look for at most one match starting anywhere
@@ -109,6 +114,16 @@ def truncateWithEllipsis(s, maxLength):
             return s[0:maxLength]
         else:
             return s[0:maxLength - len(ellipsis)] + ellipsis
+
+def formatSize(n):
+    if n >= 1024 * 1024 * 1024:
+        return '%.2fGB' % (n / (1024.0 * 1024.0 * 1024.0))
+    elif n >= 1024 * 1024:
+        return '%.2fMB' % (n / (1024.0 * 1024.0))
+    elif n >= 1024:
+        return '%.2fKB' % (n / (1024.0))
+    else:
+        return '%db' % n
 
 def getClipboardTextTk():
     from Tkinter import Tk
@@ -186,7 +201,8 @@ class TakeBatch(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         # if exiting normally (not by exception), run the callback
         if not exc_type:
-            self.callback(self.batch)
+            if len(self.batch):
+                self.callback(self.batch)
 
 class RecentlyUsedList(object):
     '''Keep a list of items without storing duplicates'''
@@ -321,11 +337,76 @@ def assertException(fn, excType, excTypeExpectedString=None, msg='', regexp=Fals
         assertTrue(passed, 'exception string check failed ' + msg +
             '\ngot exception string:\n' + str(e))
 
-import sys
-if sys.version_info[0] <= 2:
-    unicodestringtype = unicode
-    anystringtype = basestring
-else:
-    unicodestringtype = str
-    anystringtype = str
 
+# Python 2/3 compat, inspired by mutagen/_compat.py
+
+if sys.version_info[0] <= 2:
+    from StringIO import StringIO
+    BytesIO = StringIO
+    from cStringIO import StringIO as cBytesIO
+    from itertools import izip  # noqa: F401
+    
+    def endswith(a, b):
+        return a.endswith(b)
+    
+    def startswith(a, b):
+        return a.startswith(b)
+    
+    def iterbytes(b):
+        return iter(b)
+    
+    def bytes_to_string(b):
+        return b
+    
+    def asbytes(s):
+        return s
+    
+    rinput = raw_input
+    ustr = unicode
+    uchr = unichr
+    anystringtype = basestring
+    bytetype = str
+    xrange = xrange
+    isPy3OrNewer = False
+else:
+    from io import StringIO
+    StringIO = StringIO
+    from io import BytesIO
+    cBytesIO = BytesIO
+    
+    def endswith(a, b):
+        # use with either str or bytes
+        if isinstance(a, str):
+            if not isinstance(b, str):
+                b = b.decode("ascii")
+        else:
+            if not isinstance(b, bytes):
+                b = b.encode("ascii")
+        return a.endswith(b)
+    
+    def startswith(a, b):
+        # use with either str or bytes
+        if isinstance(a, str):
+            if not isinstance(b, str):
+                b = b.decode("ascii")
+        else:
+            if not isinstance(b, bytes):
+                b = b.encode("ascii")
+        return a.startswith(b)
+    
+    def iterbytes(b):
+        return (bytes([v]) for v in b)
+    
+    def bytes_to_string(b):
+        return b.decode('utf-8')
+    
+    def asbytes(s, encoding='ascii'):
+        return bytes(s, encoding)
+    
+    rinput = input
+    ustr = str
+    uchr = chr
+    anystringtype = str
+    bytetype = bytes
+    xrange = range
+    isPy3OrNewer = True
