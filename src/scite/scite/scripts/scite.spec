@@ -93,6 +93,6 @@ rm -rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %attr(0755,root,root)	%dir	/usr/share/scite
 %attr(0755,root,root)	/usr/bin/SciTE
 %attr(0644,root,root)	/usr/share/scite/*
-%attr(0644,root,root)	/usr/share/pixmaps/Sci48M.png
+%attr(0644,root,root)	/usr/share/pixmaps/Sci48Mpy.png
 %attr(0644,root,root)	/usr/share/gnome/apps/Development/SciTE.desktop
 %attr(0644,root,root)	/usr/share/man/man1/scite.1*

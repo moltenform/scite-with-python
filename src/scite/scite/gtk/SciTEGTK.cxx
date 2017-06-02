@@ -5160,7 +5160,7 @@ void SciTEGTK::FindIncrement() {
 }
 
 void SciTEGTK::SetIcon() {
-	FilePath pathPixmap(PIXMAP_PATH, "Sci48M.png");
+	FilePath pathPixmap(PIXMAP_PATH, "Sci48Mpy.png");
 	GError *err=0;
 	if (!gtk_window_set_icon_from_file(
 		GTK_WINDOW(PWidget(wSciTE)), pathPixmap.AsInternal(), &err)) {

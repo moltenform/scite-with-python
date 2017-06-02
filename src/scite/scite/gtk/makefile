@@ -128,7 +128,6 @@ include deps.mak
 
 # The two last install commands will fail if Gnome is not installed or is not at $(prefix).
 # This is OK - just means no SciTE in the Gnome Applications menu
-# Dead:	install -D SciTEGTK.properties $(SYSCONF_PATH)/SciTEGlobal.properties
 install:
 	$(INSTALL) -m 755 -d $(DESTDIR)$(bindir) $(DESTDIR)$(SYSCONF_PATH)
 
@@ -154,7 +153,7 @@ install:
 ifdef gnomeprefix
 	$(INSTALL) -m 755 -d $(DESTDIR)$(datadir)/applications $(DESTDIR)$(pixmapdir)
 	$(INSTALL) -m 755 SciTE_with_python.desktop $(DESTDIR)$(datadir)/applications/SciTE_with_python.desktop
-	$(INSTALL) -m 644 Sci48M.png $(DESTDIR)$(pixmapdir)/Sci48M.png
+	$(INSTALL) -m 644 Sci48Mpy.png $(DESTDIR)$(pixmapdir)/Sci48Mpy.png
 endif
 
 uninstall:
@@ -162,5 +161,5 @@ uninstall:
 	rm -rf $(DESTDIR)$(SYSCONF_PATH)
 ifdef gnomeprefix
 	rm -f $(DESTDIR)$(datadir)/applications/SciTE_with_python.desktop
-	rm -f $(DESTDIR)$(pixmapdir)/Sci48M.png
+	rm -f $(DESTDIR)$(pixmapdir)/Sci48Mpy.png
 endif
