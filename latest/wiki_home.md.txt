@@ -7,33 +7,33 @@ Also adds dozens of plugins and the following features: default keyboard binding
 
 ### Windows
 
-go to the [Python downloads page](https://www.python.org/downloads/windows/)
+* install [Python 2.7](https://www.python.org/downloads/windows/), use the Windows x86 MSI installer
 
-look for Python 2.7, and then run the Windows x86 MSI installer
+* download [scite_with_python_0_7_1_win32.zip](https://github.com/downpoured/scite-with-python/releases/download/v0.7.1/scite_with_python_0_7_1_win32.zip)
 
-download [scite_with_python_0_7_0_win32.zip](https://github.com/downpoured/scite-with-python/releases/download/v0.7.0/scite_with_python_0_7_0_win32.zip) and uncompress
+* uncompress everything in the .zip
 
-open SciTE.exe
+* open SciTE.exe (no "install" needed)
 
 ### Linux
 
-    # install prereqs
+    (install prereqs)
     sudo apt-get install libgtk2.0-dev
     sudo apt-get install python2.7-dev
-
-    # build scintilla
-    mkdir ~/scite-with-python
-    cd ~/scite-with-python
-    git clone https://github.com/downpoured/scite-with-python.git
-    cd scite-with-python/src/scite/scintilla/gtk
+    
+    (build scintilla)
+    cd ~/Downloads
+    wget https://github.com/downpoured/scite-with-python/archive/v0.7.1.tar.gz
+    tar -xzf v0.7.1.tar.gz
+    cd scite-with-python-0.7.1/src/scite/scintilla/gtk
     make
     
-    # build scite
+    (build scite)
     cd ../../scite/gtk
     make
     sudo make install
 
-    # run scite
+    (run scite)
     SciTE_with_python
 
 ### Building from source on Windows
