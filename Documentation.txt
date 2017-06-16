@@ -1,6 +1,7 @@
 
-SciTE-with-Python 0.7.0
-By Ben Fisher, 2016
+SciTE-with-Python 0.7.1
+By Ben Fisher, 2017
 
 The documentation for this project can be found online at 
-https://downpoured.github.io/scite-with-python/070
+https://github.com/downpoured/scite-with-python/wiki
+

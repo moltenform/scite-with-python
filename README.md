@@ -16,42 +16,44 @@ A fork of the SciTE code editor that lets you quickly write plugins in Python.
 
 * When multiple editor windows are open, the current search term is shared between processes
     
-* [Usage and features](https://downpoured.github.io/scite-with-python/070/usage_and_features.html)
+* [Usage and features](https://github.com/downpoured/scite-with-python/wiki/Features)
 
-* [Writing plugins](https://downpoured.github.io/scite-with-python/070/writing_plugins.html)
+* [Writing plugins](https://github.com/downpoured/scite-with-python/wiki/Writing-a-plugin)
 
 * [View the default Windows keyboard bindings](https://downpoured.github.io/scite-with-python/070/html/BindingsWin32.html)
 
 * [View the default GTK keyboard bindings](https://downpoured.github.io/scite-with-python/070/html/BindingsGTK.html)
 
-* [View the API reference](https://downpoured.github.io/scite-with-python/070/html/SciTEWithPythonAPIReference.html)
+* [View the API reference](https://github.com/downpoured/scite-with-python/wiki/Writing-a-plugin:-API)
 
 ## Windows
 
 * install [Python 2.7](https://www.python.org/downloads/windows/), use the Windows x86 MSI installer
 
-* download [scite_with_python_0_7_0_win32.zip](https://github.com/downpoured/scite-with-python/releases/download/v0.7.0/scite_with_python_0_7_0_win32.zip) and uncompress
+* download [scite_with_python_0_7_1_win32.zip](https://github.com/downpoured/scite-with-python/releases/download/v0.7.1/scite_with_python_0_7_1_win32.zip)
 
-* open SciTE.exe
+* uncompress everything in the .zip
+
+* open SciTE.exe (no "install" needed)
 
 ## Linux
 
-    # install prereqs
+    (install prereqs)
     sudo apt-get install libgtk2.0-dev
     sudo apt-get install python2.7-dev
-
-    # build scintilla
-    mkdir ~/scite-with-python
-    cd ~/scite-with-python
-    git clone https://github.com/downpoured/scite-with-python.git
-    cd scite-with-python/src/scite/scintilla/gtk
+    
+    (build scintilla)
+    cd ~/Downloads
+    wget https://github.com/downpoured/scite-with-python/archive/v0.7.1.tar.gz
+    tar -xzf v0.7.1.tar.gz
+    cd scite-with-python-0.7.1/src/scite/scintilla/gtk
     make
     
-    # build scite
+    (build scite)
     cd ../../scite/gtk
     make
     sudo make install
 
-    # run scite
+    (run scite)
     SciTE_with_python
 
