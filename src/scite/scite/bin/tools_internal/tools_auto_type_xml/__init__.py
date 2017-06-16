@@ -158,6 +158,10 @@ def onCloseTag(character):
             ScEditor.GotoPos(prevpos)
             
 def getTextToInsertOnCloseTag(lexerLanguage, lineText, linePos):
+    if '<' not in lineText or '>' not in lineText:
+        # apparently there's not a tag
+        return None
+        
     # go back to the nearest < character
     i = linePos - 1
     while i >= 0 and lineText[i] != '<':
@@ -170,9 +174,9 @@ def getTextToInsertOnCloseTag(lexerLanguage, lineText, linePos):
         # didn't find an opening tag name, not much we can do
         return None
     
-    # now let's take the next sequence of alphabetical characters, i.e. the tag name
+    # now let's take the next sequence of alphanumerical characters, i.e. the tag name
     tagName = ''
-    while lineText[i + 1].isalpha():
+    while lineText[i + 1].isalnum():
         tagName += lineText[i + 1]
         i += 1
     
@@ -240,9 +244,12 @@ if __name__ == '__main__':
     testGetTextToInsertOnCloseTag(None, '>a>|')
     testGetTextToInsertOnCloseTag(None, '>>|')
     testGetTextToInsertOnCloseTag(None, '<>|')
-    testGetTextToInsertOnCloseTag(None, '<4>|')
+    testGetTextToInsertOnCloseTag('a', '<a>|')
+    testGetTextToInsertOnCloseTag('4', '<4>|')
+    testGetTextToInsertOnCloseTag('4tag', '<4tag>|')
+    testGetTextToInsertOnCloseTag(None, '<.>|')
+    testGetTextToInsertOnCloseTag(None, '<.tag>|')
     testGetTextToInsertOnCloseTag(None, '< tag>|')
-    testGetTextToInsertOnCloseTag(None, '<4tag>|')
     testGetTextToInsertOnCloseTag(None, '<? tag>|')
     testGetTextToInsertOnCloseTag(None, '<% tag>|')
     testGetTextToInsertOnCloseTag(None, '<//tag>|')
@@ -259,6 +266,9 @@ if __name__ == '__main__':
     testGetTextToInsertOnCloseTag(None, '<br />|')
     testGetTextToInsertOnCloseTag(None, '<img src />|')
     testGetTextToInsertOnCloseTag(None, '<img src="test" />|')
-    
-    
-
+    testGetTextToInsertOnCloseTag(None, '<open|')
+    testGetTextToInsertOnCloseTag('open', '<open>|')
+    testGetTextToInsertOnCloseTag('open', '<open 4>|')
+    testGetTextToInsertOnCloseTag('open4', '<open4>|')
+    testGetTextToInsertOnCloseTag('open4', '<open4 4>|')
+    testGetTextToInsertOnCloseTag('h1', '<h1>|')
