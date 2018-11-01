@@ -70,7 +70,8 @@ def safefilename(s):
         .replace(u': ', u', ').replace(u':', u'-') \
         .replace(u'| ', u', ').replace(u'|', u'-') \
         .replace(u'*', u'') \
-        .replace(u'"', u"'").replace(u'<', u'[').replace(u'>', u']')
+        .replace(u'"', u"'").replace(u'<', u'[').replace(u'>', u']') \
+        .replace(u'\r\n', u' ').replace(u'\r', u' ').replace(u'\n', u' ')
         
 def getRandomString():
     import random

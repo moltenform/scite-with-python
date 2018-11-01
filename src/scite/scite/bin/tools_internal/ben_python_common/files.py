@@ -139,26 +139,36 @@ def copyFilePosixWithoutOverwrite(srcfile, destfile):
                 fdest.write(buffer)
     
 # unicodetype can be utf-8, utf-8-sig, etc.
-def readall(s, mode='r', unicodetype=None):
-    if unicodetype:
+def readall(s, mode='r', unicodetype=None, encoding=None):
+    if encoding:
+        # python 3-style
+        getF = lambda: open(s, mode, encoding=encoding)
+    elif unicodetype:
+        # python 2-style
         import codecs
-        f = codecs.open(s, mode, unicodetype)
+        getF = lambda: codecs.open(s, mode, encoding=unicodetype)
     else:
-        f = open(s, mode)
-    txt = f.read()
-    f.close()
+        getF = lambda: open(s, mode)
+
+    with getF() as f:
+        txt = f.read()
+
     return txt
 
 # unicodetype can be utf-8, utf-8-sig, etc.
-def writeall(s, txt, mode='w', unicodetype=None):
-    if unicodetype:
+def writeall(s, txt, mode='w', unicodetype=None, encoding=None):
+    if encoding:
+        # python 3-style
+        getF = lambda: open(s, mode, encoding=encoding)
+    elif unicodetype:
+        # python 2-style
         import codecs
-        f = codecs.open(s, mode, unicodetype)
+        getF = lambda: codecs.open(s, mode, encoding=unicodetype)
     else:
-        f = open(s, mode)
-    f.write(txt)
-    f.close()
+        getF = lambda: open(s, mode)
 
+    with getF() as f:
+        f.write(txt)
 
 # use this to make the caller pass argument names,
 # allowing foo(param=False) but preventing foo(False)
@@ -181,6 +191,12 @@ if sys.platform.startswith('win'):
 else:
     def listchildren(*args, **kwargs):
         return sorted(listchildrenUnsorted(*args, **kwargs))
+
+def listdirs(dir, _ind=_enforceExplicitlyNamedParameters, filenamesOnly=False, allowedexts=None):
+    _checkNamedParameters(_ind)
+    for full, name in listchildren(dir, allowedexts=allowedexts):
+        if _os.path.isdir(full):
+            yield name if filenamesOnly else (full, name)
 
 def listfiles(dir, _ind=_enforceExplicitlyNamedParameters, filenamesOnly=False, allowedexts=None):
     _checkNamedParameters(_ind)
@@ -265,7 +281,16 @@ def isemptydir(dir):
 def fileContentsEqual(f1, f2):
     import filecmp
     return filecmp.cmp(f1, f2, shallow=False)
-    
+
+def getFileLastModifiedTime(filepath):
+    return _os.path.getmtime(filepath)
+
+def setFileLastModifiedTime(filepath, lmt):
+    curtimes = os.stat(filepath)
+    newtimes = (curtimes.st_atime, lmt)
+    with open(filepath, 'ab') as f:
+        _os.utime(filepath, newtimes)
+
 # processes
 def openDirectoryInExplorer(dir):
     assert isdir(dir), 'not a dir? ' + dir
@@ -346,6 +371,30 @@ def computeHash(path, hasher=None, buffersize=0x40000):
                     break
                 hasher.update(buffer)
         return hasher.hexdigest()
+
+def windowsUrlFileGet(path):
+    assertEq('.url', _os.path.splitext(path)[1].lower())
+    s = readall(path, mode='r', encoding='latin1')
+    lines = s.split('\n')
+    for line in lines:
+        if line.startswith('URL='):
+            return line[len('URL='):]
+    raise RuntimeError('no url seen in ' + path)
+
+def windowsUrlFileWrite(path, url):
+    assertTrue(len(url) > 0)
+    assertTrue(not files.exists(path), 'file already exists at', path)
+    try:
+        testUrl = url.encode('ascii')
+    except e:
+        if isinstance(e, UnicodeEncodeError):
+            raise RuntimeError('can\'t support a non-ascii url' + url + ' ' + path)
+        else:
+            raise
+    f = open(path, 'w', encoding='ascii')
+    f.write('[InternetShortcut]\n')
+    f.write('URL=%s\n' % url)
+    f.close()
 
 # returns tuple (returncode, stdout, stderr)
 def run(listArgs, _ind=_enforceExplicitlyNamedParameters, shell=False, createNoWindow=True,
