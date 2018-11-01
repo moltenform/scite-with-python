@@ -9,6 +9,7 @@ class ShowSelectionInfo(object):
             'T|stats|Stats e.g. mean of numbers',
             'I|sumtimes|Sum of times (mm:ss)',
             'A|ascii|Show ascii of selected text',
+            'P|pos|Show position of selected text',
             'C|counting|Line count, word count, char count']
         label = 'Please select some text and choose:'
         ScAskUserChoiceByPressingKey(
@@ -44,6 +45,13 @@ class ShowSelectionInfo(object):
                 print("Skipping line %s which isn't a number." % line)
         
         return results
+
+    def pos(self, s):
+        from scite_extend_ui import ScEditor
+        st = ScEditor.GetSelectionStart()
+        nd = ScEditor.GetSelectionEnd()
+        print("selection starts at offset %d (0x%x)" % (st, st))
+        print("selection ends at offset %d (0x%x)" % (nd, nd))
         
     def sum(self, s):
         nums = self.getFirstNumbers(s)
