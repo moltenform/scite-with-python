@@ -6,7 +6,7 @@ class ChangeLines(object):
     def go(self):
         from scite_extend_ui import ScAskUserChoiceByPressingKey
         self.choices = ['A|sortaz|Sort A-Z',
-            'Z|sortza|Sort Z-A',
+            'C|sortcase|Sort A-Z case-sensitive',
             'R|reverse|Reverse',
             'S|shuffle|Quick shuffle',
             'N|sortnum|Sort numbers naturally',
@@ -67,10 +67,10 @@ class ChangeLines(object):
             return True
 
     def sortaz(self, lines):
-        lines.sort()
+        lines.sort(key=lambda s: s.lower())
 
-    def sortza(self, lines):
-        lines.sort(reverse=True)
+    def sortcase(self, lines):
+        lines.sort()
     
     def reverse(self, lines):
         lines.reverse()
@@ -181,21 +181,34 @@ if __name__ == '__main__':
     # first col alternates between a and b
     # second col counts upwards
     # third col counts downwards
-    test = 'a 1 5|b 2 4|a 3 3|b 4 2|a 5 1'.split('|')
+    test = 'a,1,5|b,2,4|a,3,3|b,4,2|a,5,1'.split('|')
     normalSort, reverseSort, sort2nd, sort3rd = list(test), list(test), list(test), list(test)
     obj = ChangeLines()
     obj.sortaz(normalSort)
-    obj.sortza(reverseSort)
     obj.sortcol2(sort2nd)
     obj.sortcol3(sort3rd)
-    expectedNormalSort = ['a 1 5', 'a 3 3', 'a 5 1', 'b 2 4', 'b 4 2']
-    expectedReverseSort = ['b 4 2', 'b 2 4', 'a 5 1', 'a 3 3', 'a 1 5']
-    expectedSort2nd = ['a 1 5', 'b 2 4', 'a 3 3', 'b 4 2', 'a 5 1']
-    expectedSort3rd = ['a 5 1', 'b 4 2', 'a 3 3', 'b 2 4', 'a 1 5']
+    expectedNormalSort = ['a,1,5', 'a,3,3', 'a,5,1', 'b,2,4', 'b,4,2']
+    expectedSort2nd = ['a,1,5', 'b,2,4', 'a,3,3', 'b,4,2', 'a,5,1']
+    expectedSort3rd = ['a,5,1', 'b,4,2', 'a,3,3', 'b,2,4', 'a,1,5']
     assertEq(expectedNormalSort, normalSort)
-    assertEq(expectedReverseSort, reverseSort)
     assertEq(expectedSort2nd, sort2nd)
     assertEq(expectedSort3rd, sort3rd)
+    
+    # sorting za is the same as sorting az, then reversing order
+    obj.sortaz(reverseSort)
+    obj.reverse(reverseSort)
+    expectedReverseSort = ['b,4,2','b,2,4','a,5,1','a,3,3','a,1,5']
+    assertEq(expectedReverseSort, reverseSort)
+    
+    # we now default to case-insensitive
+    test = 'aa|cc|DD|BB'.split('|')
+    sortCase, sortNoCase = list(test), list(test)
+    obj.sortcase(sortCase)
+    obj.sortaz(sortNoCase)
+    expectedCase = ['BB', 'DD', 'aa', 'cc']
+    expectedNoCase = ['aa', 'BB', 'cc', 'DD']
+    assertEq(expectedCase, sortCase)
+    assertEq(expectedNoCase, sortNoCase)
     
     # tabs should take precedence over spaces when sorting by columns
     test = '1\ta\tz\t3|1\ta\tz\t2|1\ta z\t1'.split('|')
@@ -211,8 +224,9 @@ if __name__ == '__main__':
     
     # cases where the line has only one col, exactly two cols, or more than two cols
     # if it only has one col it should be sorted to the beginning
-    testEmptyCases = 'a  z  1|b y|c  x|d  |e|f  a'
-    expectedEmptyCases = 'd  |e|f  a|c  x|b y|a  z  1'
+    testEmptyCases = 'a,,z,,1|b,y|c,,x|d,,|e|f,,a'
+    # expectedEmptyCases = 'd,,|e|f,,a|c,,x|b,y|a,,z,,1'
+    expectedEmptyCases = 'a,,z,,1|c,,x|d,,|e|f,,a|b,y'
     testLines(expectedEmptyCases, testEmptyCases, obj.sortcol2)
     
     obj.newlineChar = '\n'

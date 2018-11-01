@@ -22,8 +22,10 @@ def modifyTextInScite(fn):
         # Using Write() would work, but it would lose the selection
         # Using InsertText() on the other hand, selects the text afterwards, which looks nice
         ScEditor.Clear()
-        ScEditor.InsertText(ScEditor.GetCurrentPos(), replaced)
-        ScEditor.SetAnchor(ScEditor.GetCurrentPos() + len(replaced))
+        p = ScEditor.GetCurrentPos()
+        ScEditor.InsertText(p, replaced)
+        # This method scrolls the view to make caret visible
+        ScEditor.SetSel(p, p + len(replaced))
     finally:
         ScEditor.EndUndoAction()
 
