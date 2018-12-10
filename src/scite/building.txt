@@ -8,7 +8,7 @@ Building in Linux
     # build scintilla and scite
     mkdir ~/scite-with-python
     cd ~/scite-with-python
-    git clone https://github.com/downpoured/scite-with-python.git
+    git clone https://github.com/moltenjs/scite-with-python.git
     cd scite-with-python/src/scite/scintilla/gtk
     make
     cd ../../scite/gtk

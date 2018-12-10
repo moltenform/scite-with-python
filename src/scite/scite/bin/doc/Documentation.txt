@@ -3,4 +3,4 @@ SciTE-with-Python 0.7.0
 By Ben Fisher, 2016
 
 The documentation for this project can be found online at 
-https://github.com/downpoured/scite-with-python/wiki
+https://moltenjs.com/page/scite-with-python/doc/

@@ -1,7 +1,7 @@
 # SciTE Python Extension
 # Ben Fisher, 2016
 # Released under the GNU General Public License version 3
-# See documentation at https://github.com/downpoured/scite-with-python/wiki/Writing-a-plugin
+# See documentation at https://moltenjs.com/page/scite-with-python/doc/writingplugin.html
 
 import SciTEModule
 from scite_extend import ScEditor, ScOutput, ScApp, ScConst, OnEvent, findCallbackModule, RequestThatEventContinuesToPropagate
