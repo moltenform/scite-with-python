@@ -30,7 +30,7 @@ A fork of the SciTE code editor that lets you quickly write plugins in Python.
 
 * install [Python 2.7](https://www.python.org/downloads/windows/), use the Windows x86 MSI installer
 
-* download [scite_with_python_0_7_1_win32.zip](https://github.com/moltenjs/scite-with-python/releases/download/v0.7.1/scite_with_python_0_7_1_win32.zip)
+* download [scite_with_python_0_7_2_win32.zip](https://github.com/moltenjs/scite-with-python/releases/download/v0.7.2/scite_with_python_0_7_2_win32.zip)
 
 * uncompress everything in the .zip
 
@@ -44,9 +44,9 @@ A fork of the SciTE code editor that lets you quickly write plugins in Python.
     
     (build scintilla)
     cd ~/Downloads
-    wget https://github.com/moltenjs/scite-with-python/archive/v0.7.1.tar.gz
-    tar -xzf v0.7.1.tar.gz
-    cd scite-with-python-0.7.1/src/scite/scintilla/gtk
+    wget https://github.com/moltenjs/scite-with-python/archive/v0.7.2.tar.gz
+    tar -xzf v0.7.2.tar.gz
+    cd scite-with-python-0.7.2/src/scite/scintilla/gtk
     make
     
     (build scite)
