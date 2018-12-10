@@ -1,0 +1,32 @@
+
+how to host the scite-files documentation???
+===============================
+
+1) stored in .md files in the repo,
+github-flavored-markdown had some limitations though,
+and so this didn't really look the way i wanted.
+for example, on github like this,
+all images must be links for some reason.
+
+2) 
+so I moved it to gh-pages,
+if you make a "ghpages" branch of your repo,
+and put test.html there,
+then github will host your files onto
+downpoured.github.io/myrepo/test.html
+
+3)
+but that's kind of a weird hidden feature,
+and I (at the time) wanted to use downpoured.github.io
+as my personal website, so i moved it to a
+"github wiki"
+you access the wiki through the web interface,
+and it looks fairly good. it even has a little menu
+of pages on the right.
+
+4)
+moved it all to my moltenjs.com
+personal website.
+
+
+
