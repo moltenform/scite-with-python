@@ -1,5 +1,5 @@
 
-how to host the scite-files documentation???
+how to host the scite-files documentation
 ===============================
 
 1) stored in .md files in the repo,
@@ -27,6 +27,8 @@ of pages on the right.
 4)
 moved it all to my moltenjs.com
 personal website.
-
-
+how i removed the wiki:
+git clone https://github.com/moltenjs/scite-with-python.wiki.git
+and removed the files
+and pushed
 
