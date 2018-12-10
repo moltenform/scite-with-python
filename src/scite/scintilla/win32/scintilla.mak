@@ -47,6 +47,10 @@ CXXFLAGS=$(CXXFLAGS) -DDISABLE_D2D
 
 !IFDEF CXX11_REGEX
 CXXFLAGS=$(CXXFLAGS) -DCXX11_REGEX
+!ELSE
+# because we are targeting msvc 15, regex support is weak and under std::tr1,
+# let's use Scite's built-in regex for now
+CXXFLAGS=$(CXXFLAGS) -DNO_CXX11_REGEX
 !ENDIF
 
 !IFDEF DEBUG
