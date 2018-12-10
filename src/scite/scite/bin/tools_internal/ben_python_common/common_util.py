@@ -282,7 +282,26 @@ def DBG(obj=None):
         pprint.pprint(newDict)
     else:
         pprint.pprint(obj)
-            
+
+def runAndCatchException(fn):
+    try:
+        fn()
+    except:
+        import sys
+        return sys.exc_info()[1]
+    return None
+
+def downloadUrl(url, toFile=None, timeout=30, asText=False):
+    import requests
+    resp = requests.get(url, timeout=timeout)
+    if toFile:
+        with open(toFile, 'wb') as fout:
+            fout.write(resp.content)
+    if asText:
+        return resp.text
+    else:
+        return resp.content
+
 def assertTrue(condition, *messageArgs):
     if not condition:
         msg = ' '.join(map(getPrintable, messageArgs)) if messageArgs else ''
