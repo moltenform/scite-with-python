@@ -1,6 +1,11 @@
-Applies to all Python scripts (files with extension .py) under src/scite/scite/bin
-SciTE-with-Python, by Ben Fisher
-https://github.com/moltenjs/scite-with-python
+SciTE-with-Python, by Ben Fisher, 2016
+Applies to all code that contains the prefix
+# Ben Fisher, 2016
+# Released under the GNU General Public License version 3
+# such as the code under
+src/scite/scite/bin
+# and
+src/scite/scite/src/PythonExtension.*
 
                     GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007

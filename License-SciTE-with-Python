@@ -1,7 +1,11 @@
-Applies to all Python scripts, i.e. files with extension .py, that begin with the text
-# SciTE Python Extension
+SciTE-with-Python, by Ben Fisher, 2016
+Applies to all code that contains the prefix
 # Ben Fisher, 2016
 # Released under the GNU General Public License version 3
+# such as the code under
+src/scite/scite/bin
+# and
+src/scite/scite/src/PythonExtension.*
 
                     GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007

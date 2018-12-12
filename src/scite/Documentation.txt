@@ -1,7 +1,9 @@
 
-SciTE-with-Python 0.7.1
+SciTE-with-Python 0.7.2
 By Ben Fisher, 2017
 
 The documentation for this project can be found online at 
 https://moltenjs.com/page/scite-with-python/doc/
+and
+https://github.com/moltenjs/scite-with-python
 
