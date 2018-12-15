@@ -66,6 +66,7 @@ class PropSetFile(object):
 		return s
 
 	def _expandOnce(self, s):
+		s = s.replace('$(insert_section_break_text_backslash_char)', '\\')
 		if s.startswith('$(') and s.endswith(')'):
 			propname = s[2:-1]
 			assert ' ' not in propname, "We don't yet support $(expand) etc."
@@ -302,7 +303,8 @@ def readFromSciTEItemFactoryEntry(parts, bindings, mapUserDefinedKeys):
 		accel = userDefined or accel
 		accel = accel.replace('>space', '>Space')
 		if accel and accel != 'NULL':
-			bindings.append(KeyBinding('SciTEItemFactoryEntry or user-defined', name, accel, priority=80, platform='gtk'))
+			priority = 10 if userDefined else 80
+			bindings.append(KeyBinding('SciTEItemFactoryEntry or user-defined', name, accel, priority=priority, platform='gtk'))
 
 def readFromSciTEResAccelTableEntry(parts, bindings):
 	key, command, modifiers = [part.strip() for part in parts]

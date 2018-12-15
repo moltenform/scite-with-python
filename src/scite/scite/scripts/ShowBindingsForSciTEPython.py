@@ -26,8 +26,9 @@ def readFromSciTEResMenuEntry(bindings, stack, parts, mapUserDefinedKeys):
 	if userDefined != '""' and userDefined != 'none':
 		accel = userDefined or accel
 		if accel:
+			priority = 10 if userDefined else 75
 			bindings.append(KeyBinding(
-				'menu text or user-defined', name, accel, priority=75, platform='win32'))
+				'menu text or user-defined', name, accel, priority=priority, platform='win32'))
 
 def readFromSciTEResMenus(bindings, mapUserDefinedKeys):
 	start = '''SciTE MENU'''
