@@ -1,5 +1,5 @@
 
-SciTE-with-Python 0.7.0
+SciTE-with-Python
 By Ben Fisher, 2016
 
 The documentation for this project can be found online at 
