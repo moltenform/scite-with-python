@@ -214,7 +214,8 @@ def writeOutputFile(bindings, outputFile, includeDuplicates=False):
 	with open(outputFile, 'w') as out:
 		scriptname = os.path.split(__file__)[1].replace('.pyc', '.py')
 		out.write(startFile.replace('%script%', scriptname))
-		out.write("<h2>Current key bindings</h2>\n")
+		# out.write("<h2>Current key bindings</h2>\n")
+		out.write("<br />\n")
 		out.write("<table><tr><th> </th><th> </th><th> </th><th> </th></tr>\n")
 		for binding in bindings:
 			line = writeOutputBinding(binding, mapSciteToString, mapScintillaToString)
