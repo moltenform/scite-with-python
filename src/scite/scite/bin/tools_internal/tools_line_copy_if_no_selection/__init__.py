@@ -125,6 +125,29 @@ def runCustomPaste(pane):
     finally:
         pane.EndUndoAction()
 
+def goDoLineDuplicateEntireLine():
+    '''copies the entire line, even if there is only one word selected, like VSCode's CopyLinesDown'''
+    from scite_extend_ui import ScEditor, ScApp
+    saveSelStart = ScEditor.GetSelectionStart()
+    saveSelEnd = ScEditor.GetSelectionEnd()
+    ScEditor.Utils.ExpandSelectionToIncludeEntireLines()
+    ScApp.CmdDuplicate()
+    ScEditor.CharRight()
+    # have to use PaneWrite and not ScEditor.NewLine(), we don't want to change the indentation
+    ScEditor.PaneWrite(ScEditor.Utils.GetEolCharacter())
+    ScEditor.SetSelectionStart(saveSelStart)
+    ScEditor.SetSelectionEnd(saveSelEnd)
+
+def DoLineDuplicateEntireLine():
+    from scite_extend_ui import ScEditor
+    if ScEditor.GetSelections() <= 1:
+        ScEditor.BeginUndoAction()
+        try:
+            goDoLineDuplicateEntireLine()
+        finally:
+            ScEditor.EndUndoAction()
+    else:
+        print('this tool does not support multiple selections')
         
 if __name__ == '__main__':
     from ben_python_common import assertEq
