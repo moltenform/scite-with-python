@@ -13,7 +13,7 @@
 # ../bin/doc/CurrentBindingsGtk.html
 # ../bin/doc/CurrentBindingsWin32.html
 
-
+import os
 from ShowBindings import *
 
 def readFromSciTEResMenuEntry(bindings, stack, parts, mapUserDefinedKeys):
@@ -155,7 +155,7 @@ def processDuplicatesInOutputFile(filepath, adjustForAesthetics):
 	with open(filepath, 'w') as out:
 		out.write('\n'.join(newContents))
 
-def mainWithPython(propertiesMain, propertiesUser, adjustForAesthetics):
+def mainWithPython(propertiesMain, propertiesUser, adjustForAesthetics, writeMdLocation):
 	import sys
 	if sys.version_info[0] != 2:
 		print('currently, this script is not supported in python 3')
@@ -193,11 +193,13 @@ def mainWithPython(propertiesMain, propertiesUser, adjustForAesthetics):
 			warn('''Warning: saw no bindings from expected sets %s, or saw unexpected %s''' %
 				(set(expectedSets) - set(key for key in setsSeen),
 				set(key for key in setsSeen) - set(expectedSets)))
-		makeVersionForMd(outputFile)
+		makeVersionForMd(outputFile, writeMdLocation)
+		print('wrote to ' + outputFile)
 
-def makeVersionForMd(htmlFile):
+def makeVersionForMd(htmlFile, writeMdLocation):
 	# pull straight from the .html file, not the bindings list, because we've filtered it via adjustForAesthetics
-	mdFile = htmlFile + '.md'
+	assert htmlFile.endswith('.html')
+	mdFile = htmlFile.replace('.html', '_worseterms_reference.txt')
 	lines = getVersionForMd(htmlFile)
 	with open(mdFile, 'w') as f:
 		f.write('<a href="index.html" style="color:black; text-decoration:underline">Back</a>\n')
@@ -205,16 +207,28 @@ def makeVersionForMd(htmlFile):
 		f.write('''<table>
 <thead>
 <tr>
-<th>Keyboard Shortcut (Linux)</th>
+<th>Keyboard Shortcut (%os)</th>
 <th>Result</th>
 </tr>
 </thead>
-<tbody>''')
+<tbody>'''.replace('%os', ('Linux' if 'Gtk' in htmlFile else 'Windows')))
 		f.write('\n'.join(lines))
 		f.write('\n</tbody></table>')
 		f.write('\n')
 		f.write('<p>&nbsp;</p><a href="index.html" style="color:black; text-decoration:underline">Back</a>')
 		f.write('\n')
+
+	comparisonShort = 'keyslinux_worseterms_reference.txt' if 'Gtk' in htmlFile else 'keyswin_worseterms_reference.txt'
+	mdOutShort = 'keyslinux.mdnotjekyll' if 'Gtk' in htmlFile else 'keyswin.mdnotjekyll'
+	comparison = os.path.join(writeMdLocation, comparisonShort)
+	allLatest = open(mdFile).read()
+	allReference = open(comparison).read()
+	if allLatest != allReference:
+		print(os.path.abspath(mdFile))
+		print('is not the same as')
+		print(os.path.abspath(comparison))
+		print('please diff these two files and make the corresponding updates to')
+		print('BOTH ' + comparisonShort + ' and ' + mdOutShort + '\n\n')
 
 def getVersionForMd(htmlFile):
 	lines = []
@@ -946,10 +960,14 @@ if __name__ == '__main__':
 	propertiesUser = None
 	adjustForAesthetics = True
 	
+	writeMdLocation = '../../../../../../../../devarchive/moltenjs/static/page/scite-with-python/doc'
+	if writeMdLocation and not os.path.exists(writeMdLocation):
+		raise Exception('path does not exist ' + os.path.abspath(writeMdLocation))
+	
 	msg = 'keymap.cxx not found, please download both the scintilla and scite sources and place this script in the /scite/src/scripts directory'
 	if not os.path.isfile('../../scintilla/src/KeyMap.cxx'):
 		print(msg)
 	elif not os.path.isfile('../gtk/SciTEGTK.cxx'	):
 		print(msg)
 	else:
-		mainWithPython(propertiesMain, propertiesUser, adjustForAesthetics)
+		mainWithPython(propertiesMain, propertiesUser, adjustForAesthetics, writeMdLocation)
