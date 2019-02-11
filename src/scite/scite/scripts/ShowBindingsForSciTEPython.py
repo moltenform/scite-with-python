@@ -193,6 +193,45 @@ def mainWithPython(propertiesMain, propertiesUser, adjustForAesthetics):
 			warn('''Warning: saw no bindings from expected sets %s, or saw unexpected %s''' %
 				(set(expectedSets) - set(key for key in setsSeen),
 				set(key for key in setsSeen) - set(expectedSets)))
+		makeVersionForMd(outputFile)
+
+def makeVersionForMd(htmlFile):
+	# pull straight from the .html file, not the bindings list, because we've filtered it via adjustForAesthetics
+	mdFile = htmlFile + '.md'
+	lines = getVersionForMd(htmlFile)
+	with open(mdFile, 'w') as f:
+		f.write('<a href="index.html" style="color:black; text-decoration:underline">Back</a>\n')
+		f.write('\n')
+		f.write('''<table>
+<thead>
+<tr>
+<th>Keyboard Shortcut (Linux)</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>''')
+		f.write('\n'.join(lines))
+		f.write('\n</tbody></table>')
+		f.write('\n')
+		f.write('<p>&nbsp;</p><a href="index.html" style="color:black; text-decoration:underline">Back</a>')
+		f.write('\n')
+
+def getVersionForMd(htmlFile):
+	lines = []
+	htmlLines = open(htmlFile)
+	for ln in htmlLines:
+		ln = ln.strip()
+		if ln.startswith('<tr>') and ln.endswith('</tr>'):
+			mark = '@@@@@'
+			ln = ln.replace('<tr>', '').replace('</tr>', '').replace('</td><td>', mark).replace('<td>', '').replace('</td>', '')
+			cells = ln.split(mark)
+			lines.append('<tr>')
+			lines.append('<td>' + cells[1] + '</td>')
+			lines.append('<td>' + cells[2] + '</td>')
+			lines.append('</tr>')
+
+	htmlLines.close()
+	return lines
 
 def checkForNewIfDefsInKeyMap():
 	start = '''const KeyToCommand KeyMap::MapDefault[] = {'''
@@ -756,7 +795,11 @@ r'''<tr><td>X</td><td>Ctrl+X</td><td>Line cut if no selection</td><td>from prope
 r'''<tr><td>C</td><td>Ctrl+C</td><td>Line copy if no selection</td><td>from properties</td></tr>''': 0,
 r'''<tr><td>V</td><td>Ctrl+V</td><td>Line paste if clipboard has entire line</td><td>from properties</td></tr>''': 0,
 r'''<tr><td>M</td><td>Ctrl+Shift+M</td><td>Null</td><td>from properties</td></tr>''': 0,
-r'''<tr><td>Delete</td><td>Delete</td><td>Clear</td><td></td></tr>''': 0}
+r'''<tr><td>Delete</td><td>Delete</td><td>Clear</td><td></td></tr>''': 0,
+r'''<tr><td>9</td><td>Ctrl+9</td><td>Check syntax</td><td>only *.rb</td></tr>''': 0,
+r'''<tr><td>9</td><td>Ctrl+9</td><td>Syntax check</td><td>only *.py;*.pyw</td></tr>''': 0,
+r'''<tr><td>9</td><td>Ctrl+9</td><td>Lint</td><td>only *.cc;*.cpp;*.cxx</td></tr>''': 0,
+}
 
 def getFragment(fragmentName):
 	for arr in fragments:
