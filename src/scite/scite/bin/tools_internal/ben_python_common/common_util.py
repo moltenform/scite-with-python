@@ -217,7 +217,7 @@ class RecentlyUsedList(object):
     def indexOf(self, s):
         try:
             return self.list.index(s)
-        except:
+        except ValueError:
             return -1
     
     def add(self, s):
@@ -269,6 +269,125 @@ def BoundedMemoize(fn):
     memoize_wrapper.func_name = fn.func_name
     return memoize_wrapper
     
+def easyExtract(haystack, needle):
+    '''
+    easyExtract, by Ben Fisher 2019
+    must match the entire string
+    examples:
+    <p>{inside_paragraph}</p>
+    {}<first>{first}</first><second>{second}</second>{}
+    not a search: will not look for multiple matches.
+    use {{ and }} to represent a literal { or } character
+    
+    it's kind-of similar to the "parse" module.
+    '''
+    import re
+    needle, fields = _easyExtractPatternToRegex(needle)
+    found = re.search(needle, haystack, re.DOTALL)
+    if found:
+        ret = Bucket()
+        for field in fields:
+            setattr(ret, field, found.group(field))
+        return ret
+    else:
+        return None
+
+def _easyExtractIsAlphanumericOrUnderscore(x):
+    import re
+    return not not re.match(r'^[A-Za-z0-9_]+$', x)
+
+def _easyExtractPatternToRegex(needle):
+    import re
+    # turn needle into a regex
+    needle = re.escape(needle)
+    # must match entire string
+    needle = '^' + needle + '$'
+    # escape will make { into \{, so go back to {
+    needle = needle.replace('\\{', '{').replace('\\}', '}')
+    # in py2, escape will make _ into \_, so go back to _
+    needle = needle.replace('\\_', '_')
+    reGetBrackets = r'(?<!{){(?P<name>[^{}]*?)}'
+    fields = {}
+    if '{{{' in needle or '}}}' in needle:
+        # to support triple brackets, a pattern like {(?P<name>[^{}]*?)}
+        # would probably work
+        raise ValueError('triple brackets not yet supported')
+    
+    def doReplace(match):
+        name = match.group('name')
+        if len(name) and not _easyExtractIsAlphanumericOrUnderscore(name):
+            raise ValueError('you can use {fieldname} but not ' +
+                '{field name}. got ' + name)
+        if len(name):
+            if name in fields:
+                raise ValueError('field name used twice. ' + name)
+            fields[name] = True
+        if name:
+            return '(?P<' + name + '>.*?)'
+        else:
+            return '.*?'
+    
+    needle = re.sub(reGetBrackets, doReplace, needle)
+    needle = needle.replace('{{', '{').replace('}}', '}')
+    return needle, fields
+
+def easyExtractInsertIntoText(s, needle, key, newValue,
+        appendIfNotFound=None, allowDelimsOnlyOnce=False):
+    '''
+    example:
+    '{before}<title>{title}</title>{after}'
+    '''
+    example = ', example: "{before}<title>{title}</title>{after}"'
+    keyWithBrackets = '{' + key + '}'
+    if not needle.startswith('{before}'):
+        raise ValueError('pattern must start with {before}' + example)
+    if not needle.endswith('{after}'):
+        raise ValueError('pattern must end with {after}' + example)
+    if keyWithBrackets not in needle:
+        raise ValueError('pattern did not contain ' + keyWithBrackets)
+    
+    withoutDoubles = needle.replace('{{', '').replace('}}', '')
+    if len(withoutDoubles.split('{')) != 4 or \
+            len(withoutDoubles.split('}')) != 4:
+        raise ValueError('pattern should only contain 3 fields' + example)
+
+    found = easyExtract(s, needle)
+    if found:
+        delimBefore = needle.split(keyWithBrackets)[0].replace('{before}', '')
+        delimBefore = delimBefore.replace('{{', '{').replace('}}', '}')
+        delimAfter = needle.split(keyWithBrackets)[1].replace('{after}', '')
+        delimAfter = delimAfter.replace('{{', '{').replace('}}', '}')
+        if allowDelimsOnlyOnce and len(s.split(delimBefore)) != 2:
+            raise RuntimeError('we were told to allow delims only once, but ' +
+                delimBefore + ' was not found only once.')
+        if allowDelimsOnlyOnce and len(s.split(delimAfter)) != 2:
+            raise RuntimeError('we were told to allow delims only once, but ' +
+                delimAfter + ' was not found only once.')
+        return found.before + delimBefore + newValue + delimAfter + found.after
+    else:
+        if appendIfNotFound is None:
+            raise RuntimeError("pattern not found, and appendIfNotFound not " +
+                "provided.")
+        else:
+            return s + appendIfNotFound
+
+def easyExtractInsertIntoFile(path, needle, key, newValue,
+        appendIfNotFound=None, allowDelimsOnlyOnce=False):
+    from .files import readall, writeall
+    if isPy3OrNewer:
+        s = readall(path, encoding='utf-8')
+    else:
+        s = readall(path)
+
+    newS = easyExtractInsertIntoText(s, needle, key, newValue,
+        appendIfNotFound=appendIfNotFound,
+        allowDelimsOnlyOnce=allowDelimsOnlyOnce)
+    
+    if isPy3OrNewer:
+        writeall(path, newS, 'w', encoding='utf-8')
+    else:
+        writeall(path, newS, 'w')
+
 def DBG(obj=None):
     import pprint
     if obj is None:

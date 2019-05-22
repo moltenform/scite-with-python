@@ -5,7 +5,7 @@ import tempfile
 from .common_util import *
 from . import files
 try:
-    from . import get_delete_location
+    from . import nocpy_get_delete_location as get_delete_location
 except ImportError:
     get_delete_location = None
 
