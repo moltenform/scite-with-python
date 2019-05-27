@@ -960,7 +960,7 @@ if __name__ == '__main__':
 	propertiesUser = None
 	adjustForAesthetics = True
 	
-	writeMdLocation = '../../../../../../../../devarchive/moltenjs/static/page/scite-with-python/doc'
+	writeMdLocation = '../../../../../../../../devarchive/moltenform/static/page/scite-with-python/doc'
 	if writeMdLocation and not os.path.exists(writeMdLocation):
 		raise Exception('path does not exist ' + os.path.abspath(writeMdLocation))
 	

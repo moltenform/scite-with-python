@@ -12,7 +12,7 @@ A fork of the SciTE code editor that lets you add your own plugins in Python.
 
 * When multiple editor windows are open, the current search term is shared between processes
     
-* [Read more here](https://moltenjs.com/page/scite-with-python/doc/)
+* [Read more here](https://moltenform.com/page/scite-with-python/doc/)
 
 ## Linux
 
@@ -22,7 +22,7 @@ Run the following,
     sudo apt-get install python2.7-dev
     
     cd ~/Downloads
-    wget https://github.com/moltenjs/scite-with-python/archive/v0.7.2.tar.gz
+    wget https://github.com/moltenform/scite-with-python/archive/v0.7.2.tar.gz
     tar -xzf v0.7.2.tar.gz
     cd scite-with-python-0.7.2/src/scite/scintilla/gtk
     make
@@ -37,7 +37,7 @@ Run the following,
 
 * unless you already have Python 2.7 installed, install [Python 2.7](https://www.python.org/downloads/windows/), use the Windows x86 MSI installer
 
-* download [scite_with_python_0_7_2_win32.zip](https://github.com/moltenjs/scite-with-python/releases/download/v0.7.2/scite_with_python_0_7_2_win32.zip)
+* download [scite_with_python_0_7_2_win32.zip](https://github.com/moltenform/scite-with-python/releases/download/v0.7.2/scite_with_python_0_7_2_win32.zip)
 
 * unzip scite_with_python_0_7_2_win32.zip
 

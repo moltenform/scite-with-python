@@ -514,7 +514,7 @@ void SciTEBase::SetAboutMessage(GUI::ScintillaWindow &wsci, const char *appTitle
 		AddStyledText(wsci, " Ben Fisher.\n", 2);
 		SetAboutStyle(wsci, 3, ColourRGB(0, 0, 0));
 		SetAboutStyle(wsci, 4, ColourRGB(0, 0x7f, 0x7f));
-		AddStyledText(wsci, "https://moltenjs.com/page/scite-with-python/doc/\n", 4);
+		AddStyledText(wsci, "https://moltenform.com/page/scite-with-python/doc/\n", 4);
 		AddStyledText(wsci, "Lua scripting language by TeCGraf, PUC-Rio\n", 3);
 		AddStyledText(wsci, "http://www.lua.org\n", 4);
 		if (translator.length()) {

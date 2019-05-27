@@ -2,7 +2,7 @@
 WinCommonDialog.exe, Ben Fisher 2008,
 GPL v3
 A wrapper over simple Windows dialogs, using return code to pass result.
-https://github.com/moltenjs/scite-with-python
+https://github.com/moltenform/scite-with-python
 
 This is divided into different functions. For details, use one of the following,
 WinCommonDialog simple /?
