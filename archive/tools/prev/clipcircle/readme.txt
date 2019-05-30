@@ -1,6 +1,5 @@
 Clipcircle32
 Ben Fisher, 2011. Released under the GPLv3 license.
-http://halfhourhacks.blogspot.com
 
 Clipcircle lets you store multiple values in the clipboard at the same time and cycle between them.
 

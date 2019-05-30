@@ -1,5 +1,5 @@
 # Python printval, by Ben Fisher
-# halfhourhacks.blogspot.com
+# 
 import inspect, itertools
 class PythonPrintVal(object):
     def _output(self, name, val):

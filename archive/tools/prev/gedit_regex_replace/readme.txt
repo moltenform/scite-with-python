@@ -1,4 +1,4 @@
-http://halfhourhacks.blogspot.com/2008/03/gedit-regular-expression-plugin.html
+/2008/03/gedit-regular-expression-plugin.html
 =================
 
 A friend told me that gedit was missing a regular expressions plugin that could replace. I use gedit occasionally, and so I worked on this plugin. It uses Python's good regular expression module, and supports backreferences, making it possible to do significant text processing. 

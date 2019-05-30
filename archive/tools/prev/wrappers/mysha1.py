@@ -1,5 +1,5 @@
 #Ben Fisher, GPL
-#halfhourhacks.blogspot.com
+#
 #This program is distributed in the hope that it will be useful, 
 #but without any warranty.
 

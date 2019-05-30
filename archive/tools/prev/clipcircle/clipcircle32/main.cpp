@@ -1,7 +1,6 @@
 /*
 Clipcircle32
 Ben Fisher, 2011. Released under the GPLv3 license.
-http://halfhourhacks.blogspot.com
 See clipcircle.txt for more information.
 
 Build settings:
