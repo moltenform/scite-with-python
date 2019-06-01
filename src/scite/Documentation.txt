@@ -3,7 +3,5 @@ SciTE-with-Python 0.7.2
 By Ben Fisher, 2017
 
 The documentation for this project can be found online at 
-https://moltenform.com/page/scite-with-python/doc/
-and
 https://github.com/moltenform/scite-with-python
 
