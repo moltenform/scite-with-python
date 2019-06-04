@@ -30,14 +30,14 @@ const int nHashseed = 0x9dce366b;
 // get hash value of a string, if the entire string is known.
 inline u32 Hash_getHashValue(const char* s)
 {
-	size_t len = strlen(s);
-	u32 h = 0;
-	Hash_Reset(h);
-	for (size_t i=0; i<len; i++)
-		Hash_AddChar(h, s[i]);
+    size_t len = strlen(s);
+    u32 h = 0;
+    Hash_Reset(h);
+    for (size_t i=0; i<len; i++)
+        Hash_AddChar(h, s[i]);
 
-	Hash_Finalize(h, len);
-	return h;
+    Hash_Finalize(h, len);
+    return h;
 }
 
 // make hash case-insensitive.

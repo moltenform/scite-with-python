@@ -10,34 +10,34 @@
 
 typedef struct
 {
-	bool isFile;
-	FILE * f; char* mem;
-	size_t position;
+    bool isFile;
+    FILE * f; char* mem;
+    size_t position;
 } Simplestream;
 
 
 size_t gfwrite ( const void * ptr, size_t size, size_t count, Simplestream * stream )
 {
-	if (stream->isFile)
-		return fwrite( ptr, size, count, stream->f);
-	else
-	{
-		memcpy(stream->mem + stream->position, ptr,  count*size);
-		stream->position += count*size;
-		return count*size;
-	}
+    if (stream->isFile)
+        return fwrite( ptr, size, count, stream->f);
+    else
+    {
+        memcpy(stream->mem + stream->position, ptr,  count*size);
+        stream->position += count*size;
+        return count*size;
+    }
 }
 notsourcesearch
 int gfputc ( int character, Simplestream * stream )
 {
-	if (stream->isFile)
-		return fputc( character, stream->f);
-	else
-	{
-		stream->mem[stream->position] = (char) character;
-		stream->position += 1;
-		return 1;
-	}
+    if (stream->isFile)
+        return fputc( character, stream->f);
+    else
+    {
+        stream->mem[stream->position] = (char) character;
+        stream->position += 1;
+        return 1;
+    }
 }
 
 

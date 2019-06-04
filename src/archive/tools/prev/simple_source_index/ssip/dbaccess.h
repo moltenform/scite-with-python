@@ -9,8 +9,8 @@ typedef struct sqlite3_stmt *psqlite3_stmt;
 
 typedef struct SSIdbAccess_t
 {
-	psqlite3 m_db;
-	psqlite3_stmt* m_stmts;
+    psqlite3 m_db;
+    psqlite3_stmt* m_stmts;
 } SSIdbAccess;
 
 

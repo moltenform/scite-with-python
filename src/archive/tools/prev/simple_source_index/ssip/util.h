@@ -21,28 +21,28 @@ bool StringEndsWith(const char* s1, const char* s2);
 
 inline UINT64 GetFileExtensionAsNumber(const char* szFilename)
 {
-	// position just after the '.'.
-	UINT64 ret = 0;
-	for (int i=0; i<64/8; i++)
-	{
-		if (!szFilename[i]) break;
-		if (szFilename[i]=='\\') return 0;
-		ret |= ((UINT64)tolower(szFilename[i])) << ((UINT64)(8*i));
-	}
-	return ret;
+    // position just after the '.'.
+    UINT64 ret = 0;
+    for (int i=0; i<64/8; i++)
+    {
+        if (!szFilename[i]) break;
+        if (szFilename[i]=='\\') return 0;
+        ret |= ((UINT64)tolower(szFilename[i])) << ((UINT64)(8*i));
+    }
+    return ret;
 }
 
 inline bool IsSrcFileExtensionArr(const char* szFilename, const UINT64* rgExts, size_t lenRgExts)
 {
-	const char* szPeriod = strrchr(szFilename, '.');
-	if (!szPeriod || !*(szPeriod+1)) return false;
-	UINT64 num = GetFileExtensionAsNumber(szPeriod+1);
-	for (size_t i=0; i<lenRgExts; i++)
-	{
-		if (!rgExts[i]) return false;
-		if (rgExts[i] == num) return true;
-	}
-	return false;
+    const char* szPeriod = strrchr(szFilename, '.');
+    if (!szPeriod || !*(szPeriod+1)) return false;
+    UINT64 num = GetFileExtensionAsNumber(szPeriod+1);
+    for (size_t i=0; i<lenRgExts; i++)
+    {
+        if (!rgExts[i]) return false;
+        if (rgExts[i] == num) return true;
+    }
+    return false;
 }
 
 // test with a small buffer (many collisions):
@@ -57,16 +57,16 @@ inline bool IsSrcFileExtensionArr(const char* szFilename, const UINT64* rgExts, 
 // Asserts. verify a condition that should always hold.
 inline void assertEqual_impl(int a, int b, int lineno, const char* file)
 {
-	if (a!=b) {
-		printerrfmt("Assertion failure on line %d file %s! %d != %d", lineno,file,a,b);
+    if (a!=b) {
+        printerrfmt("Assertion failure on line %d file %s! %d != %d", lineno,file,a,b);
 #ifdef DebugAssertions
-		__debugbreak();
+        __debugbreak();
 #endif
-	}
+    }
 }
 inline void assertTrue_impl(bool b, int lineno, const char* file)
 {
-	assertEqual_impl(b?1:0,1,lineno, file);
+    assertEqual_impl(b?1:0,1,lineno, file);
 }
 #define assertEqual(a,b) assertEqual_impl((a),(b),__LINE__, __FILE__)
 #define assertTrue(b) assertTrue_impl((b),__LINE__, __FILE__)
@@ -77,21 +77,21 @@ typedef const char* SsiE;
 #define SsiEOk ((SsiE) null)
 inline SsiE ssierrp_impl(const char* msg, int n, int lineno, const char* file)
 {
-	printerrfmt(":%s (%d)", msg,n);
-	printerrfmt("line %d of file %s", lineno, file);
+    printerrfmt(":%s (%d)", msg,n);
+    printerrfmt("line %d of file %s", lineno, file);
 #ifdef DebugAssertions
-	__debugbreak();
+    __debugbreak();
 #endif
-	return msg;
+    return msg;
 }
 inline SsiE ssierr_impl(const char* msg, int lineno, const char* file)
 {
-	printerrfmt(":%s", msg);
-	printerrfmt("line %d of file %s", lineno, file);
+    printerrfmt(":%s", msg);
+    printerrfmt("line %d of file %s", lineno, file);
 #ifdef DebugAssertions
-	__debugbreak();
+    __debugbreak();
 #endif
-	return msg;
+    return msg;
 }
 
 #define ssierrp(a,b) ssierrp_impl((a),(b),__LINE__, __FILE__)

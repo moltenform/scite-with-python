@@ -18,38 +18,38 @@
 
 int main(int argc, char* argv[])
 {
-	const char* szUsage = "ssip.exe, 2011, by Ben Fisher\n\n"
-		"This program indexes source code into a sqlite database for quick searching.\n"
-		"First, create a ssip.cfg file to specify which directories to look in.\n\n"
-		"Usage:\n"
-		"\tssip -s word\t\tSearch for a word\n"
-		"\tssip -start\t\tRe-build index from scratch\n"
-		"\tssip -noindex word\t\tSearch for a word without using index\n"
-		"\tssip -noindexnowhole word\t\tSearch for a word without using index\n"
-		"\n\n";
+    const char* szUsage = "ssip.exe, 2011, by Ben Fisher\n\n"
+        "This program indexes source code into a sqlite database for quick searching.\n"
+        "First, create a ssip.cfg file to specify which directories to look in.\n\n"
+        "Usage:\n"
+        "\tssip -s word\t\tSearch for a word\n"
+        "\tssip -start\t\tRe-build index from scratch\n"
+        "\tssip -noindex word\t\tSearch for a word without using index\n"
+        "\tssip -noindexnowhole word\t\tSearch for a word without using index\n"
+        "\n\n";
 
-	// ensure .cfg file exists.
-	const char* szIni = "." OS_SEP "ssip.cfg"; // .\ssip.cfg works. ssip.cfg does not.
-	if (!OS_FileExists(szIni))
-		szIni = ".." OS_SEP "ssip.cfg";
-	if (!OS_FileExists(szIni))
-	{
-		printerrfmt("Could not find ssip.cfg. Use ssipexample.cfg as an example.");
-		return 1;
-	}
+    // ensure .cfg file exists.
+    const char* szIni = "." OS_SEP "ssip.cfg"; // .\ssip.cfg works. ssip.cfg does not.
+    if (!OS_FileExists(szIni))
+        szIni = ".." OS_SEP "ssip.cfg";
+    if (!OS_FileExists(szIni))
+    {
+        printerrfmt("Could not find ssip.cfg. Use ssipexample.cfg as an example.");
+        return 1;
+    }
 
-	if (argc == 2 && StringAreEqual(argv[1], "-start"))
-		SipHigh_RunUpdate(szIni, true);
-	else if (argc == 3 && StringAreEqual(argv[1], "-s"))
-		SipHigh_RunSearch(szIni, argv[2]);
-	else if (argc == 3 && StringAreEqual(argv[1], "-noindex"))
-		SipHigh_FindInFiles(szIni, argv[2], true /*wholeword*/);
-	else if (argc == 3 && StringAreEqual(argv[1], "-noindexnowhole"))
-		SipHigh_FindInFiles(szIni, argv[2], false /*wholeword*/);
-	else
-		printf("%s\n", szUsage);
-	
-	return 0;
+    if (argc == 2 && StringAreEqual(argv[1], "-start"))
+        SipHigh_RunUpdate(szIni, true);
+    else if (argc == 3 && StringAreEqual(argv[1], "-s"))
+        SipHigh_RunSearch(szIni, argv[2]);
+    else if (argc == 3 && StringAreEqual(argv[1], "-noindex"))
+        SipHigh_FindInFiles(szIni, argv[2], true /*wholeword*/);
+    else if (argc == 3 && StringAreEqual(argv[1], "-noindexnowhole"))
+        SipHigh_FindInFiles(szIni, argv[2], false /*wholeword*/);
+    else
+        printf("%s\n", szUsage);
+    
+    return 0;
 }
 
 
