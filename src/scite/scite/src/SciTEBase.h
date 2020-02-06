@@ -532,6 +532,7 @@ protected:
 	BasicSearcherState previouslySavedSearchState;
 	PropSetFile propsLoadSearchState;
 	time_t modifiedTimeLoadSearchState;
+	time_t lastSaveSearchState;
 	
 	bool macrosEnabled;
 	std::string currentMacro;

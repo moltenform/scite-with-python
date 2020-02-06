@@ -4836,28 +4836,34 @@ void SciTEBase::DoMenuCommand(int cmdID) {
 
 void SciTEBase::LoadSearchState() {
 	if (enableSaveSearchesAcrossInstances) {
-		FilePath filePath(GetSciteUserHome(), GUI_TEXT("SciTE_save_search.session"));
-		time_t lmt = filePath.ModifiedTime();
+		// don't read a new search state immediately, so that we don't
+		// read in a search state that our own process wrote
+		const time_t waitSecondsBeforeLoadSearchState = 5;
+		if (time(0) - lastSaveSearchState > waitSecondsBeforeLoadSearchState) {
 		
-		// modified time is 0: file doesn't exist.
-		// modified time is modifiedTimeLoadSearchState: no one has updated the file.
-		if (lmt != 0 && lmt != modifiedTimeLoadSearchState) {
-			FilePath disableImport;
-			ImportFilter filter;
-			propsLoadSearchState.Clear();
-			propsLoadSearchState.Read(filePath, disableImport, filter, NULL, 0);
+			FilePath filePath(GetSciteUserHome(), GUI_TEXT("SciTE_save_search.session"));
+			time_t lmt = filePath.ModifiedTime();
 			
-			findWhat = propsLoadSearchState.GetString("save.search.across.findwhat");
-			replaceWhat = propsLoadSearchState.GetString("save.search.across.replacewhat");
-			wholeWord = propsLoadSearchState.GetInt("save.search.across.wholeword");
-			matchCase = propsLoadSearchState.GetInt("save.search.across.matchcase");
-			regExp = propsLoadSearchState.GetInt("save.search.across.regexp");
-			unSlash = propsLoadSearchState.GetInt("save.search.across.escapes");
-			wrapFind = propsLoadSearchState.GetInt("save.search.across.wrapfind");
-			reverseFind = propsLoadSearchState.GetInt("save.search.across.reversefind");
-			previouslySavedSearchState = *this;
-			modifiedTimeLoadSearchState = lmt;
-		}
+			// modified time is 0: file doesn't exist.
+			// modified time is modifiedTimeLoadSearchState: no one has updated the file.
+			if (lmt != 0 && lmt != modifiedTimeLoadSearchState) {
+				FilePath disableImport;
+				ImportFilter filter;
+				propsLoadSearchState.Clear();
+				propsLoadSearchState.Read(filePath, disableImport, filter, NULL, 0);
+				
+				findWhat = propsLoadSearchState.GetString("save.search.across.findwhat");
+				replaceWhat = propsLoadSearchState.GetString("save.search.across.replacewhat");
+				wholeWord = propsLoadSearchState.GetInt("save.search.across.wholeword");
+				matchCase = propsLoadSearchState.GetInt("save.search.across.matchcase");
+				regExp = propsLoadSearchState.GetInt("save.search.across.regexp");
+				unSlash = propsLoadSearchState.GetInt("save.search.across.escapes");
+				wrapFind = propsLoadSearchState.GetInt("save.search.across.wrapfind");
+				reverseFind = propsLoadSearchState.GetInt("save.search.across.reversefind");
+				previouslySavedSearchState = *this;
+				modifiedTimeLoadSearchState = lmt;
+			}
+	}
 	}
 }
 
@@ -4878,6 +4884,7 @@ void SciTEBase::SaveSearchState() {
 					fputs("\nsave.search.across.replacewhat=", f);
 					fputs(replaceWhat.c_str(), f);
 				}
+
 				fprintf(f, "\nsave.search.across.wholeword=%d", (wholeWord ? 1 : 0));
 				fprintf(f, "\nsave.search.across.matchcase=%d", (matchCase ? 1 : 0));
 				fprintf(f, "\nsave.search.across.regexp=%d", (regExp ? 1 : 0));
@@ -4887,6 +4894,8 @@ void SciTEBase::SaveSearchState() {
 				fclose(f);
 				previouslySavedSearchState = *this;
 				modifiedTimeLoadSearchState = filePath.ModifiedTime();
+				
+				lastSaveSearchState = time(0);
 			}
 		}
 	}
