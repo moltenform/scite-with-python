@@ -3490,7 +3490,7 @@ void SciTEBase::MenuCommand(int cmdID, int source) {
 		break;
 
 	case IDM_COMPILE: {
-			if (SaveIfUnsureForBuilt() != saveCancelled) {
+			if (SaveIfUnsureForBuilt() != saveCancelled && !jobQueue.IsExecuting()) {
 				SelectionIntoProperties();
 				AddCommand(props.GetWild("command.compile.", FileNameExt().AsUTF8().c_str()), "",
 				        SubsystemType("command.compile.subsystem."));
@@ -3501,7 +3501,7 @@ void SciTEBase::MenuCommand(int cmdID, int source) {
 		break;
 
 	case IDM_BUILD: {
-			if (SaveIfUnsureForBuilt() != saveCancelled) {
+			if (SaveIfUnsureForBuilt() != saveCancelled && !jobQueue.IsExecuting()) {
 				SelectionIntoProperties();
 				AddCommand(
 				    props.GetWild("command.build.", FileNameExt().AsUTF8().c_str()),
@@ -3516,7 +3516,7 @@ void SciTEBase::MenuCommand(int cmdID, int source) {
 		break;
 
 	case IDM_CLEAN: {
-			if (SaveIfUnsureForBuilt() != saveCancelled) {
+			if (SaveIfUnsureForBuilt() != saveCancelled && !jobQueue.IsExecuting()) {
 				SelectionIntoProperties();
 				AddCommand(props.GetWild("command.clean.", FileNameExt().AsUTF8().c_str()), "",
 				        SubsystemType("command.clean.subsystem."));
@@ -3527,7 +3527,7 @@ void SciTEBase::MenuCommand(int cmdID, int source) {
 		break;
 
 	case IDM_GO: {
-			if (SaveIfUnsureForBuilt() != saveCancelled) {
+			if (SaveIfUnsureForBuilt() != saveCancelled && !jobQueue.IsExecuting()) {
 				SelectionIntoProperties();
 				int flags = 0;
 
