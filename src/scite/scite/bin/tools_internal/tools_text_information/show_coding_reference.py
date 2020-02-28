@@ -66,7 +66,7 @@ to point to the right path.'''
             print(doc % (binaryPath, ScApp.GetSciteDirectory(), propname))
         else:
             args = [binaryPath, currentFile]
-            files.run(args, createNoWindow=False, captureoutput=False,
+            files.run(args, createNoWindow=False, captureOutput=False,
                 wait=False, throwOnFailure=None)
     
     

@@ -133,7 +133,7 @@ def callProc(args):
         raise RuntimeError('cannot find commondialog, expected to see it at ' + exepath)
     
     args.insert(0, exepath)
-    retcode, stdout, stderr = files.run(args, throwOnFailure=False, stripText=False, captureoutput=True)
+    retcode, stdout, stderr = files.run(args, throwOnFailure=False, stripText=False, captureOutput=True)
     return retcode, stdout
 
 class DisallowCastToBool(object):

@@ -232,7 +232,7 @@ class ScPaneClassUtils(object):
             # specify -O (look for .pyo files) and -B (won't try to write .pyc or .pyo files)
             args = [python, '-O', '-B', script]
             from ben_python_common import files
-            retcode, stdout, stderr = files.run(args, shell=False, throwOnFailure=False, captureoutput=True, wait=True)
+            retcode, stdout, stderr = files.run(args, shell=False, throwOnFailure=False, captureOutput=True, wait=True)
             if retcode != 0:
                 return None
             else:

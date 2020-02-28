@@ -34,7 +34,7 @@ def OpenInNewWindow(closeCurrent=True):
         args.append("-goto:%s,%s" %
             (ScApp.GetProperty('SelectionStartLine'), ScApp.GetProperty('SelectionStartColumn')))
             
-    files.run(args, createNoWindow=False, captureoutput=False,
+    files.run(args, createNoWindow=False, captureOutput=False,
         wait=False, throwOnFailure=None)
         
 def OpenNewDocInNewWindow():
