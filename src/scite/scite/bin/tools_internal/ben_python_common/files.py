@@ -35,9 +35,9 @@ def modtime(s):
 def createdtime(s):
     return _os.stat(s).st_ctime
     
-def getext(s):
+def getext(s, removeDot=True):
     a, b = splitext(s)
-    if len(b) > 0 and b[0] == '.':
+    if removeDot and len(b) > 0 and b[0] == '.':
         return b[1:].lower()
     else:
         return b.lower()
@@ -73,8 +73,8 @@ def ensure_empty_directory(d):
         _os.makedirs(d)
 
 def copy(srcfile, destfile, overwrite, traceToStdout=False):
-    if not exists(srcfile):
-        raise IOError('source path does not exist')
+    if not isfile(srcfile):
+        raise IOError('source path does not exist or is not a file')
 
     if traceToStdout:
         trace('copy()', srcfile, destfile)
@@ -97,9 +97,12 @@ def copy(srcfile, destfile, overwrite, traceToStdout=False):
 
     assertTrue(exists(destfile))
         
-def move(srcfile, destfile, overwrite, warn_between_drives=False, traceToStdout=False):
+def move(srcfile, destfile, overwrite, warn_between_drives=False,
+        traceToStdout=False, allowDirs=False):
     if not exists(srcfile):
         raise IOError('source path does not exist')
+    if not allowDirs and not isfile(srcfile):
+        raise IOError('source path does not exist or is not a file')
 
     if traceToStdout:
         trace('move()', srcfile, destfile)
@@ -143,7 +146,48 @@ def copyFilePosixWithoutOverwrite(srcfile, destfile):
                 if not buffer:
                     break
                 fdest.write(buffer)
-    
+
+# "millistime" is number of milliseconds past epoch (unix time * 1000)
+
+def getModTimeNs(path, asMillisTime=False):
+    t = _os.stat(path).st_mtime_ns
+    if asMillisTime:
+        t = int(t / 1.0e6)
+    return t
+
+def getCTimeNs(path, asMillisTime=False):
+    t = _os.stat(path).st_ctime_ns
+    if asMillisTime:
+        t = int(t / 1.0e6)
+    return t
+
+def getATimeNs(path, asMillisTime=False):
+    t = _os.stat(path).st_atime_ns
+    if asMillisTime:
+        t = int(t / 1.0e6)
+    return t
+
+def setModTimeNs(path, mtime, asMillisTime=False):
+    if asMillisTime:
+        mtime *= 1e6
+    atime = getATimeNs(path)
+    _os.utime(path, ns=(atime, mtime))
+
+def setATimeNs(path, atime, asMillisTime=False):
+    if asMillisTime:
+        atime *= 1e6
+    mtime = getModTimeNs(path)
+    _os.utime(path, ns=(atime, mtime))
+
+def getFileLastModifiedTime(filepath):
+    return _os.path.getmtime(filepath)
+
+def setFileLastModifiedTime(filepath, lmt):
+    curtimes = _os.stat(filepath)
+    newtimes = (curtimes.st_atime, lmt)
+    with open(filepath, 'ab'):
+        _os.utime(filepath, newtimes)
+
 # unicodetype can be utf-8, utf-8-sig, etc.
 def readall(s, mode='r', unicodetype=None, encoding=None):
     if encoding:
@@ -176,6 +220,25 @@ def writeall(s, txt, mode='w', unicodetype=None, encoding=None):
     with getF() as f:
         f.write(txt)
 
+def writeallunlessalreadythere(path, txt, mode='w', encoding='utf-8'):
+    ret = False
+    if mode == 'wb':
+        current = readall(path, 'rb') if exists(path) else False
+        if current != txt:
+            writeall(path, txt, 'wb')
+            ret = True
+    elif mode == 'w':
+        assertTrue(isPy3OrNewer)
+        current = readall(path, 'r', encoding=encoding) if \
+            exists(path) else False
+        if current != txt:
+            writeall(path, txt, 'w', encoding=encoding)
+            ret = True
+    else:
+        raise ValueError('please use a mode of "w" or "wb"')
+    return ret
+
+
 _enforceExplicitlyNamedParameters = object()
 # use this to make the caller pass argument names,
 # allowing foo(param=False) but preventing foo(False)
@@ -193,8 +256,11 @@ def listchildrenUnsorted(dir, _ind=_enforceExplicitlyNamedParameters, filenamesO
 
 
 if sys.platform.startswith('win'):
+    exeSuffix = '.exe'
     listchildren = listchildrenUnsorted
 else:
+    exeSuffix = ''
+
     def listchildren(*args, **kwargs):
         return sorted(listchildrenUnsorted(*args, **kwargs))
 
@@ -288,15 +354,6 @@ def fileContentsEqual(f1, f2):
     import filecmp
     return filecmp.cmp(f1, f2, shallow=False)
 
-def getFileLastModifiedTime(filepath):
-    return _os.path.getmtime(filepath)
-
-def setFileLastModifiedTime(filepath, lmt):
-    curtimes = os.stat(filepath)
-    newtimes = (curtimes.st_atime, lmt)
-    with open(filepath, 'ab'):
-        _os.utime(filepath, newtimes)
-
 # processes
 def openDirectoryInExplorer(dir):
     assert isdir(dir), 'not a dir? ' + dir
@@ -359,12 +416,37 @@ warnExt = {'.0xe': 1, '.73k': 1, '.89k': 1, '.a6p': 1, '.ac': 1, '.acc': 1, '.ac
     '.widget': 1, '.wiz': 1, '.wpk': 1, '.wpm': 1, '.xap': 1, '.xbap': 1, '.xlam': 1, '.xlm': 1,
     '.xlsm': 1, '.xltm': 1, '.xqt': 1, '.xys': 1, '.zl9': 1}
 
+# from Duplicati's default_compressed_extensions.txt
+# GNU Lesser General Public License v2.1
+alreadyCompressedExt = {'.7z': 1, '.alz': 1, '.bz': 1, '.bz2': 1, '.cab': 1, '.cbr': 1, '.cbz': 1,
+    '.deb': 1, '.dl_': 1, '.dsft': 1, '.ex_': 1, '.gz': 1, '.jar': 1, '.lzma': 1, '.mpkg': 1,
+    '.msi': 1, '.msp': 1, '.msu': 1, '.pet': 1, '.rar': 1, '.rpm': 1, '.sft': 1, '.sfx': 1,
+    '.sit': 1, '.sitx': 1, '.sy_': 1, '.tgz': 1, '.war': 1, '.wim': 1, '.xar': 1, '.xz': 1,
+    '.zip': 1, '.zipx': 1, '.3gp': 1, '.aa3': 1, '.aac': 1, '.aif': 1, '.ape': 1, '.file': 1,
+    '.flac': 1, '.gsm': 1, '.iff': 1, '.m4a': 1, '.mp3': 1, '.mpa': 1, '.mpc': 1, '.ra': 1,
+    '.ogg': 1, '.wma': 1, '.wv': 1, '.sfark': 1, '.sfpack': 1, '.3g2': 1, '.3gp': 1, '.asf': 1,
+    '.asx': 1, '.avi': 1, '.bsf': 1, '.divx': 1, '.dv': 1, '.f4v': 1, '.flv': 1, '.hdmov': 1,
+    '.m2p': 1, '.m4v': 1, '.mkv': 1, '.mov': 1, '.mp4': 1, '.mpg': 1, '.mts': 1, '.ogv': 1,
+    '.rm': 1, '.swf': 1, '.trp': 1, '.ts': 1, '.vob': 1, '.webm': 1, '.wmv': 1, '.wtv': 1,
+    '.m2ts': 1, '.emz': 1, '.gif': 1, '.j2c': 1, '.jpeg': 1, '.jpg': 1, '.pamp': 1, '.pdn': 1,
+    '.png': 1, '.pspimage': 1, '.tif': 1, '.dng': 1, '.cr2': 1, '.webp': 1, '.nef': 1,
+    '.arw': 1, '.heic': 1, '.eot': 1, '.woff': 1, '.bik': 1, '.mpq': 1, '.chm': 1, '.docx': 1,
+    '.docm': 1, '.dotm': 1, '.dotx': 1, '.epub': 1, '.graffle': 1, '.hxs': 1, '.max': 1,
+    '.mobi': 1, '.mshc': 1, '.odp': 1, '.ods': 1, '.odt': 1, '.otp': 1, '.ots': 1, '.ott': 1,
+    '.pages': 1, '.pptx': 1, '.pptm': 1, '.stw': 1, '.trf': 1, '.webarchive': 1, '.xlsx': 1,
+    '.xlsm': 1, '.xlsb': 1, '.xps': 1, '.d': 1, '.dess': 1, '.i': 1, '.idx': 1, '.nupkg': 1,
+    '.pack': 1, '.swz': 1, '.aes': 1, '.axx': 1, '.gpg': 1, '.hc': 1, '.kdbx': 1, '.tc': 1,
+    '.tpm': 1, '.fve': 1, '.apk': 1, '.eftx': 1, '.sdg': 1, '.thmx': 1, '.vsix': 1, '.vsv': 1,
+    '.wmz': 1, '.xpi': 1}
+
+mostCommonImageExt = {'.gif': 1, '.jpg': 1, '.jpeg': 1, '.png': 1, '.bmp': 1, '.tif': 1,
+    '.webp': 1}
+
 def extensionPossiblyExecutable(s):
     '''Returns 'exe' if it looks executable,
     Returns 'warn' if it is a document type that can include embedded scripts,
     Returns False otherwise'''
-    _, ext = _os.path.splitext(s)
-    ext = ext.lower()
+    ext = getext(s, False)
     if ext in exeExt:
         return 'exe'
     elif ext in warnExt:
@@ -421,7 +503,7 @@ def hasherFromString(s):
     elif s == 'shake_256':
         return hashlib.shake_256()
     else:
-        return None
+        raise ValueError('Unknown hash type ' + s)
 
 def computeHash(path, hasher='sha1', buffersize=0x40000):
     if hasher == 'crc32':
@@ -437,8 +519,9 @@ def computeHash(path, hasher='sha1', buffersize=0x40000):
         crc = crc & 0xffffffff
         return '%08x' % crc
     else:
-        checkFromString = hasherFromString(hasher)
-        hasher = checkFromString if checkFromString else hasher
+        if isinstance(hasher, str):
+            hasher = hasherFromString(hasher)
+
         with open(path, 'rb') as f:
             while True:
                 # update the hash with the contents of the file
@@ -447,6 +530,38 @@ def computeHash(path, hasher='sha1', buffersize=0x40000):
                     break
                 hasher.update(buffer)
         return hasher.hexdigest()
+
+def addAllToZip(root, zipPath, method='deflate', alreadyCompressedAsStore=False,
+        pathPrefix='', recurse=True, **kwargs):
+    import zipfile
+    methodDict = dict(store=zipfile.ZIP_STORED, deflate=zipfile.ZIP_DEFLATED)
+    try:
+        methodDict['lzma'] = zipfile.ZIP_LZMA
+    except AttributeError:
+        pass  # lzma isn't always available, e.g. python 2.7
+    def getMethod(s):
+        if alreadyCompressedAsStore and getext(s, False) in alreadyCompressedExt:
+            return zipfile.ZIP_STORED
+        elif isinstance(method, anystringtype):
+            return methodDict[method]
+        else:
+            return method
+
+    assertTrue(not root.endswith('/') and not root.endswith('\\'))
+    with zipfile.ZipFile(zipPath, 'a') as zip:
+        if isfile(root):
+            thisMethod = getMethod(root)
+            zip.write(root, pathPrefix + files.getname(root), compress_type=thisMethod)
+        elif isdir(root):
+            itr = recursefiles(root, **kwargs) if recurse else listfiles(root, **kwargs)
+            for f, short in itr:
+                assertTrue(f.startswith(root))
+                shortname = f[len(root) + 1:]
+                thisMethod = getMethod(f)
+                assertTrue(shortname)
+                zip.write(f, pathPrefix + shortname, compress_type=thisMethod)
+        else:
+            raise RuntimeError("not found: " + root)
 
 def windowsUrlFileGet(path):
     assertEq('.url', _os.path.splitext(path)[1].lower())
@@ -564,3 +679,26 @@ def runWithoutWaitUnicode(listArgs):
         ht.Close()
         handle.Close()
         return pid
+
+def runWithTimeout(args, _ind=_enforceExplicitlyNamedParameters, shell=False, createNoWindow=True,
+                  throwOnFailure=True, captureOutput=True, timeout=None, addArgs=None):
+    addArgs = addArgs if addArgs else {}
+    # todo: consolidate with run()
+    assertTrue(throwOnFailure is True or throwOnFailure is False or throwOnFailure is None,
+        "we don't yet support custom exception types set here, you can use CalledProcessError")
+
+    retcode = -1
+    stdout = None
+    stderr = None
+    if sys.platform.startswith('win') and createNoWindow:
+        addArgs['creationflags'] = 0x08000000
+
+    import subprocess
+    ret = subprocess.run(args, capture_output=captureOutput, shell=shell, timeout=timeout,
+        check=throwOnFailure, **addArgs)
+
+    retcode = ret.returncode
+    if captureOutput:
+        stdout = ret.stdout
+        stderr = ret.stderr
+    return retcode, stdout, stderr

@@ -4,10 +4,6 @@
 import tempfile
 from .common_util import *
 from . import files
-try:
-    from . import nocpy_get_delete_location as get_delete_location
-except ImportError:
-    get_delete_location = None
 
 def getInputBool(prompt, flushOutput=True):
     prompt += ' '
@@ -89,21 +85,27 @@ def getRawInput(prompt, flushOutput=True):
     else:
         return input(getPrintable(''))
 
-def err(s=''):
+def err(s='', s2=None, s3=None):
+    s = _combinePrintableStrings(s, s2, s3)
     raise RuntimeError('fatal error\n' + getPrintable(s))
     
-def alert(s, flushOutput=True):
+def alert(s, s2=None, s3=None, flushOutput=True):
+    s = _combinePrintableStrings(s, s2, s3)
     trace(s)
     getRawInput('press Enter to continue', flushOutput)
     
-def warn(s, flushOutput=True):
+def warn(s, s2=None, s3=None, flushOutput=True):
+    s = _combinePrintableStrings(s, s2, s3)
     trace('warning\n' + getPrintable(s))
     if not getInputBool('continue?', flushOutput):
         raise RuntimeError('user chose not to continue after warning')
-    
+
 def getInputBoolGui(prompt):
     "Ask yes or no. Returns True on yes and False on no."
-    import tkMessageBox
+    if isPy3OrNewer:
+        from tkinter import messagebox as tkMessageBox
+    else:
+        import tkMessageBox
     return tkMessageBox.askyesno(title=' ', message=prompt)
     
 def getInputYesNoCancelGui(prompt):
@@ -116,19 +118,29 @@ def getInputYesNoCancelGui(prompt):
         return 'No'
     else:
         return 'Cancel'
-    
-def getInputFloatGui(prompt, default=None, min=0.0, max=100.0, title=''):
-    "validated to be an float (decimal number). Returns None on cancel."
-    import tkSimpleDialog
-    kwargs = dict(initialvalue=default) if default is not None else dict()
-    return tkSimpleDialog.askfloat(' ', prompt, minvalue=min, maxvalue=max, **kwargs)
-    
-# returns '' on cancel
-def getInputStringGui(prompt, initialvalue=None, title=' '):
-    import Tkinter
-    import tkSimpleDialog
+
+def createTkSimpleDialog():
+    if isPy3OrNewer:
+        import tkinter as Tkinter
+        from tkinter import simpledialog as tkSimpleDialog
+    else:
+        import Tkinter
+        import tkSimpleDialog
+    # need to create a root window or we'll fail on simpledialog.py", line 137
+    # "if parent.winfo_viewable():" because parent is none.
     root = Tkinter.Tk()
     root.withdraw()
+    return Tkinter, tkSimpleDialog, root
+
+def getInputFloatGui(prompt, default=None, min=0.0, max=100.0, title=''):
+    "validated to be an float (decimal number). Returns None on cancel."
+    Tkinter, tkSimpleDialog, root = createTkSimpleDialog()
+    options = dict(initialvalue=default) if default is not None else dict()
+    return tkSimpleDialog.askfloat(' ', prompt, minvalue=min, maxvalue=max, **options)
+    
+def getInputStringGui(prompt, initialvalue=None, title=' '):
+    "returns '' on cancel"
+    Tkinter, tkSimpleDialog, root = createTkSimpleDialog()
     options = dict(initialvalue=initialvalue) if initialvalue else dict()
     s = tkSimpleDialog.askstring(title, prompt, **options)
     return '' if s is None else s
@@ -199,20 +211,41 @@ def getInputFromChoicesGui(prompt, arOptions):
     else:
         return result, arOptions[result]
 
-def errGui(s=''):
-    import tkMessageBox
+def errGui(s='', s2=None, s3=None):
+    s = _combinePrintableStrings(s, s2, s3)
+    if isPy3OrNewer:
+        from tkinter import messagebox as tkMessageBox
+    else:
+        import tkMessageBox
     tkMessageBox.showerror(title='Error', message=getPrintable(s))
     raise RuntimeError('fatal error\n' + getPrintable(s))
     
-def alertGui(s):
-    import tkMessageBox
+def alertGui(s, s2=None, s3=None):
+    s = _combinePrintableStrings(s, s2, s3)
+    if isPy3OrNewer:
+        from tkinter import messagebox as tkMessageBox
+    else:
+        import tkMessageBox
     tkMessageBox.showinfo(title=' ', message=getPrintable(s))
     
-def warnGui(s):
-    import tkMessageBox
+def warnGui(s, s2=None, s3=None):
+    s = _combinePrintableStrings(s, s2, s3)
+    if isPy3OrNewer:
+        from tkinter import messagebox as tkMessageBox
+    else:
+        import tkMessageBox
     if not tkMessageBox.askyesno(title='Warning', message=getPrintable(s) + '\nContinue?', icon='warning'):
         raise RuntimeError('user chose not to continue after warning')
-        
+
+def _combinePrintableStrings(s, s2, s3):
+    s = str(s)
+    if s2:
+        s += ' ' + str(s2)
+    if s3:
+        s += ' ' + str(s3)
+
+    return s
+
 
 gDirectoryHistory = dict()
 def _getFileDialogGui(fn, initialdir, types, title):
@@ -252,23 +285,32 @@ def registerDebughook(b=True):
         sys.excepthook = _dbgHookCallback
     else:
         sys.excepthook = sys.__excepthook__
-    
-def softDeleteFileFull(s, destination):
+
+def softDeleteFileFull(s, destination, allowDirs=False, doTrace=False):
     # as a prefix, the first 2 chars of the parent directory
     prefix = files.getname(files.getparent(s))[0:2] + '_'
     newname = destination + files.sep + prefix + files.split(s)[1] + getRandomString()
     if files.exists(newname):
         raise Exception('already exists ' + newname +
             '. is this directory full of files, or was the random seed reused?')
+    
+    if doTrace:
+        trace('softDeleteFile()', s, '|to|', newname)
 
-    files.move(s, newname, overwrite=False, warn_between_drives=True)
+    files.move(s, newname, overwrite=False,
+        warn_between_drives=True, allowDirs=allowDirs)
     return newname
 
-def softDeleteFile(s):
-    if get_delete_location:
-        destination = get_delete_location.get_delete_location(s)
+def softDeleteFile(s, allowDirs=False, doTrace=False):
+    try:
+        from . import nocpy_get_delete_location
+    except ImportError:
+        nocpy_get_delete_location = None
+    
+    if nocpy_get_delete_location:
+        destination = nocpy_get_delete_location.get_delete_location(s)
     else:
         destination = files.join(tempfile.gettempdir(), 'ben_python_common_trash')
         files.makedirs(destination)
     
-    return softDeleteFileFull(s, destination)
+    return softDeleteFileFull(s, destination, allowDirs=allowDirs, doTrace=doTrace)

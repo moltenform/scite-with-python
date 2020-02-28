@@ -73,15 +73,52 @@ def safefilename(s):
         .replace(u'"', u"'").replace(u'<', u'[').replace(u'>', u']') \
         .replace(u'\r\n', u' ').replace(u'\r', u' ').replace(u'\n', u' ')
         
-def getRandomString():
+def getRandomString(max=100 * 1000):
     import random
-    return '%s' % random.randrange(99999)
-        
-def warnWithOptionToContinue(s):
-    import common_ui
-    trace('WARNING ' + s)
-    if not common_ui.getInputBool('continue?'):
-        raise RuntimeError()
+    return '%s' % random.randrange(max)
+
+def genGuid(asBase64=False):
+    import uuid
+    u = uuid.uuid4()
+    if asBase64:
+        import base64
+        b = base64.urlsafe_b64encode(u.bytes_le)
+        return b.decode('utf8')
+    else:
+        return str(u)
+
+# "millistime" is number of milliseconds past epoch (unix time * 1000)
+def renderMillisTime(millisTime):
+    t = millisTime / 1000.0
+    import time
+    return time.strftime("%m/%d/%Y %I:%M:%S %p", time.localtime(t))
+
+def getNowAsMillisTime():
+    import time
+    t = time.time()
+    return int(t * 1000)
+
+def splice(s, insertionpoint, lenToDelete, newtext):
+    return s[0:insertionpoint] + newtext + s[insertionpoint + lenToDelete:]
+
+def spliceSpan(s, span, newtext):
+    assertTrue(span[1] >= span[0])
+    assertEq(len(span), 2)
+    return splice(s, span[0], span[1] - span[0], newtext)
+
+def stripHtmlTags(s, removeRepeatedWhitespace=True):
+    import re
+    # a (?:) is a non-capturing group
+    reTags = re.compile(r'<[^>]+(?:>|$)', re.DOTALL)
+    s = reTags.sub(' ', s)
+    if removeRepeatedWhitespace:
+        regNoDblSpace = re.compile(r'\s+')
+        s = regNoDblSpace.sub(' ', s)
+        s = s.strip()
+
+    # malformed tags like "<a<" with no close, replace with ?
+    s = s.replace('<', '?').replace('>', '?')
+    return s
 
 
 '''
@@ -268,125 +305,167 @@ def BoundedMemoize(fn):
     memoize_wrapper._cache = cache
     memoize_wrapper.func_name = fn.func_name
     return memoize_wrapper
-    
-def easyExtract(haystack, needle):
+
+class ParsePlus(object):
     '''
-    easyExtract, by Ben Fisher 2019
-    must match the entire string
-    examples:
-    <p>{inside_paragraph}</p>
-    {}<first>{first}</first><second>{second}</second>{}
-    not a search: will not look for multiple matches.
-    use {{ and }} to represent a literal { or } character
+    ParsePlus, by Ben Fisher 2019
     
-    it's kind-of similar to the "parse" module.
+    Adds the following features to the "parse" module:
+        {s:NoNewlines} field type
+        {s:NoSpaces} works like {s:S}
+        remember that "{s} and {s}" matches "a and a" but not "a and b",
+            use "{s1} and {s2}" or "{} and {}" if the contents can differ
+        escapeSequences such as backslash-escapes (see examples in tests)
+        replaceFieldWithText (see examples in tests)
+        getTotalSpan
     '''
-    import re
-    needle, fields = _easyExtractPatternToRegex(needle)
-    found = re.search(needle, haystack, re.DOTALL)
-    if found:
+    def __init__(self, pattern, extra_types=None, escapeSequences=None,
+            case_sensitive=True):
+        try:
+            import parse
+        except:
+            raise ImportError('needs "parse", https://pypi.org/project/parse/')
+        self.pattern = pattern
+        self.case_sensitive = case_sensitive
+        self.extra_types = extra_types if extra_types else {}
+        self.escapeSequences = escapeSequences if escapeSequences else []
+        if 'NoNewlines' in pattern:
+            @parse.with_pattern(r'[^\r\n]+')
+            def parse_NoNewlines(s):
+                return str(s)
+            self.extra_types['NoNewlines'] = parse_NoNewlines
+        if 'NoSpaces' in pattern:
+            @parse.with_pattern(r'[^\r\n\t ]+')
+            def parse_NoSpaces(s):
+                return str(s)
+            self.extra_types['NoSpaces'] = parse_NoSpaces
+
+    def _createEscapeSequencesMap(self, s):
+        self._escapeSequencesMap = {}
+        if len(self.escapeSequences) > 5:
+            raise ValueError('we support a max of 5 escape sequences')
+    
+        sTransformed = s
+        for i, seq in enumerate(self.escapeSequences):
+            assertTrue(len(seq) > 1, "an escape-sequence only makes sense if " +
+                "it is at least two characters")
+            
+            # use rarely-occurring ascii chars like
+            # \x01 (start of heading)
+            rareChar = chr(i + 1)
+            # raise error if there's any occurance of rareChar, not repl,
+            # otherwise we would have incorrect expansions
+            if rareChar in s:
+                raise RuntimeError("we don't yet support escape sequences " +
+                "if the input string contains rare ascii characters. the " +
+                "input string contains " + rareChar + ' (ascii ' +
+                str(ord(rareChar)) + ')')
+            # replacement string is the same length, so offsets aren't affected
+            repl = rareChar * len(seq)
+            self._escapeSequencesMap[repl] = seq
+            sTransformed = sTransformed.replace(seq, repl)
+            
+        assertEq(len(s), len(sTransformed), 'internal error: len(s) changed.')
+        return sTransformed
+
+    def _unreplaceEscapeSequences(self, s):
+        for key in self._escapeSequencesMap:
+            s = s.replace(key, self._escapeSequencesMap[key])
+        return s
+
+    def _resultToMyResult(self, parseResult, s):
+        if not parseResult:
+            return parseResult
         ret = Bucket()
-        for field in fields:
-            setattr(ret, field, found.group(field))
+        lenS = len(s)
+        for name in parseResult.named:
+            val = self._unreplaceEscapeSequences(parseResult.named[name])
+            setattr(ret, name, val)
+        ret.spans = parseResult.spans
+        ret.getTotalSpan = lambda: self._getTotalSpan(parseResult, lenS)
         return ret
-    else:
-        return None
 
-def _easyExtractIsAlphanumericOrUnderscore(x):
-    import re
-    return not not re.match(r'^[A-Za-z0-9_]+$', x)
-
-def _easyExtractPatternToRegex(needle):
-    import re
-    # turn needle into a regex
-    needle = re.escape(needle)
-    # must match entire string
-    needle = '^' + needle + '$'
-    # escape will make { into \{, so go back to {
-    needle = needle.replace('\\{', '{').replace('\\}', '}')
-    # in py2, escape will make _ into \_, so go back to _
-    needle = needle.replace('\\_', '_')
-    reGetBrackets = r'(?<!{){(?P<name>[^{}]*?)}'
-    fields = {}
-    if '{{{' in needle or '}}}' in needle:
-        # to support triple brackets, a pattern like {(?P<name>[^{}]*?)}
-        # would probably work
-        raise ValueError('triple brackets not yet supported')
+    def _getTotalSpan(self, parseResult, lenS):
+        if '{{' in self.pattern or '}}' in self.pattern:
+            raise RuntimeError("for simplicity, we don't yet support getTotalSpan " +
+                "if the pattern contains {{ or }}")
+        locationOfFirstOpen = self.pattern.find('{')
+        locationOfLastClose = self.pattern.rfind('}')
+        if locationOfFirstOpen == -1 or locationOfLastClose == -1:
+            # pattern contained no fields?
+            return None
+        
+        if not len(parseResult.spans):
+            # pattern contained no fields?
+            return None
+        smallestSpanStart = float('inf')
+        largestSpanEnd = -1
+        for key in parseResult.spans:
+            lower, upper = parseResult.spans[key]
+            smallestSpanStart = min(smallestSpanStart, lower)
+            largestSpanEnd = max(largestSpanEnd, upper)
+        
+        # ex.: for the pattern aaa{field}bbb, widen by len('aaa') and len('bbb')
+        smallestSpanStart -= locationOfFirstOpen
+        largestSpanEnd += len(self.pattern) - (locationOfLastClose + len('}'))
+        
+        # sanity check that the bounds make sense
+        assertTrue(0 <= smallestSpanStart <= lenS,
+            'internal error: span outside bounds')
+        assertTrue(0 <= largestSpanEnd <= lenS,
+            'internal error: span outside bounds')
+        assertTrue(largestSpanEnd >= smallestSpanStart,
+            'internal error: invalid span')
+        return (smallestSpanStart, largestSpanEnd)
     
-    def doReplace(match):
-        name = match.group('name')
-        if len(name) and not _easyExtractIsAlphanumericOrUnderscore(name):
-            raise ValueError('you can use {fieldname} but not ' +
-                '{field name}. got ' + name)
-        if len(name):
-            if name in fields:
-                raise ValueError('field name used twice. ' + name)
-            fields[name] = True
-        if name:
-            return '(?P<' + name + '>.*?)'
+    def match(self, s):
+        # entire string must match
+        import parse
+        sTransformed = self._createEscapeSequencesMap(s)
+        parseResult = parse.parse(self.pattern, sTransformed,
+            extra_types=self.extra_types, case_sensitive=self.case_sensitive)
+        return self._resultToMyResult(parseResult, s)
+
+    def search(self, s):
+        import parse
+        sTransformed = self._createEscapeSequencesMap(s)
+        parseResult = parse.search(self.pattern, sTransformed,
+            extra_types=self.extra_types, case_sensitive=self.case_sensitive)
+        return self._resultToMyResult(parseResult, s)
+
+    def findall(self, s):
+        import parse
+        sTransformed = self._createEscapeSequencesMap(s)
+        parseResults = parse.findall(self.pattern, sTransformed,
+            extra_types=self.extra_types, case_sensitive=self.case_sensitive)
+        for parseResult in parseResults:
+            yield self._resultToMyResult(parseResult, s)
+
+    def replaceFieldWithText(self, s, key, newValue,
+            appendIfNotFound=None, allowOnlyOnce=False):
+        # example: <title>{title}</title>
+        results = list(self.findall(s))
+        if allowOnlyOnce and len(results) > 1:
+            raise RuntimeError('we were told to allow pattern only once.')
+        if len(results):
+            span = results[0].spans[key]
+            return spliceSpan(s, span, newValue)
         else:
-            return '.*?'
+            if appendIfNotFound is None:
+                raise RuntimeError("pattern not found.")
+            else:
+                return s + appendIfNotFound
     
-    needle = re.sub(reGetBrackets, doReplace, needle)
-    needle = needle.replace('{{', '{').replace('}}', '}')
-    return needle, fields
+    def replaceFieldWithTextIntoFile(self, path, key, newValue,
+            appendIfNotFound=None, allowOnlyOnce=False, encoding=None):
+        from .files import readall, writeall
+        s = readall(path, encoding=encoding)
 
-def easyExtractInsertIntoText(s, needle, key, newValue,
-        appendIfNotFound=None, allowDelimsOnlyOnce=False):
-    '''
-    example:
-    '{before}<title>{title}</title>{after}'
-    '''
-    example = ', example: "{before}<title>{title}</title>{after}"'
-    keyWithBrackets = '{' + key + '}'
-    if not needle.startswith('{before}'):
-        raise ValueError('pattern must start with {before}' + example)
-    if not needle.endswith('{after}'):
-        raise ValueError('pattern must end with {after}' + example)
-    if keyWithBrackets not in needle:
-        raise ValueError('pattern did not contain ' + keyWithBrackets)
-    
-    withoutDoubles = needle.replace('{{', '').replace('}}', '')
-    if len(withoutDoubles.split('{')) != 4 or \
-            len(withoutDoubles.split('}')) != 4:
-        raise ValueError('pattern should only contain 3 fields' + example)
-
-    found = easyExtract(s, needle)
-    if found:
-        delimBefore = needle.split(keyWithBrackets)[0].replace('{before}', '')
-        delimBefore = delimBefore.replace('{{', '{').replace('}}', '}')
-        delimAfter = needle.split(keyWithBrackets)[1].replace('{after}', '')
-        delimAfter = delimAfter.replace('{{', '{').replace('}}', '}')
-        if allowDelimsOnlyOnce and len(s.split(delimBefore)) != 2:
-            raise RuntimeError('we were told to allow delims only once, but ' +
-                delimBefore + ' was not found only once.')
-        if allowDelimsOnlyOnce and len(s.split(delimAfter)) != 2:
-            raise RuntimeError('we were told to allow delims only once, but ' +
-                delimAfter + ' was not found only once.')
-        return found.before + delimBefore + newValue + delimAfter + found.after
-    else:
-        if appendIfNotFound is None:
-            raise RuntimeError("pattern not found, and appendIfNotFound not " +
-                "provided.")
-        else:
-            return s + appendIfNotFound
-
-def easyExtractInsertIntoFile(path, needle, key, newValue,
-        appendIfNotFound=None, allowDelimsOnlyOnce=False):
-    from .files import readall, writeall
-    if isPy3OrNewer:
-        s = readall(path, encoding='utf-8')
-    else:
-        s = readall(path)
-
-    newS = easyExtractInsertIntoText(s, needle, key, newValue,
-        appendIfNotFound=appendIfNotFound,
-        allowDelimsOnlyOnce=allowDelimsOnlyOnce)
-    
-    if isPy3OrNewer:
-        writeall(path, newS, 'w', encoding='utf-8')
-    else:
-        writeall(path, newS, 'w')
+        newS = self.replaceFieldWithText(s, key, newValue,
+            appendIfNotFound=appendIfNotFound,
+            allowOnlyOnce=allowOnlyOnce)
+        
+        writeall(path, newS, 'w', encoding=encoding)
 
 def DBG(obj=None):
     import pprint
@@ -396,7 +475,9 @@ def DBG(obj=None):
         framelocals = fback.f_locals
         newDict = {}
         for key in framelocals:
-            if not callable(framelocals[key]) and not inspect.isclass(framelocals[key]) and not inspect.ismodule(framelocals[key]):
+            if not callable(framelocals[key]) and not \
+                    inspect.isclass(framelocals[key]) and not \
+                    inspect.ismodule(framelocals[key]):
                 newDict[key] = framelocals[key]
         pprint.pprint(newDict)
     else:
