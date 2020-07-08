@@ -86,6 +86,16 @@ class ScAppClass(object):
     def GetSciteUserDirectory(self):
         '''Returns SciTE user dir location'''
         return self.GetProperty('SciteUserHome')
+
+    def GetCurrentPane(self):
+        '''Returns the pane object for the active pane, defaults to Editor'''
+        nm = self.GetProperty('CurrentPaneNumber')
+        if str(nm) == '0':
+            return ScEditor
+        elif str(nm) == '1':
+            return ScEditor
+        else:
+            return ScEditor
         
     def GetExternalPython(self):
         import os
@@ -109,7 +119,35 @@ class ScAppClass(object):
         RequestThatEventContinuesToPropagate only works for tools in py_immediate mode, e.g.
         customcommand.name_of_tool.action.py_immediate=ThisModule().myAction()'''
         raise RequestThatEventContinuesToPropagate()
+
+    def GuessActivePane(self):
+        '''Which is focused, editor or output? If happen to have same selection might return incorrect result.
+        Defaults to ScEditor if not found.'''
+        curStartLine = self.GetProperty('SelectionStartLine')
+        curStartColumn = self.GetProperty('SelectionStartColumn')
+        curEndLine = self.GetProperty('SelectionEndLine')
+        curEndColumn = self.GetProperty('SelectionEndColumn')
         
+        scores = {}
+        for pane in [ScEditor, ScOutput]:
+            currentScore = 0
+            st = pane.GetSelectionStart()
+            end = pane.GetSelectionEnd()
+            paneStartLine = ScEditor.LineFromPosition(st) + 1
+            paneStartColumn = ScEditor.GetColumn(st) + 1
+            paneEndLine = ScEditor.LineFromPosition(end) + 1
+            paneEndColumn = ScEditor.GetColumn(end) + 1
+            currentScore += 1 if str(paneStartLine) == str(curStartLine) else 0
+            currentScore += 1 if str(paneStartColumn) == str(curStartColumn) else 0
+            currentScore += 1 if str(paneEndLine) == str(curEndLine) else 0
+            currentScore += 1 if str(paneEndColumn) == str(curEndColumn) else 0
+            scores[pane.paneNumber] = currentScore
+            
+        if scores[ScOutput.paneNumber] > scores[ScEditor.paneNumber]:
+            return ScOutput
+        else:
+            return ScEditor
+
     def __getattr__(self, s):
         '''Run a command, see the full list in https://moltenform.com/page/scite-with-python/doc/writingpluginapi.html'''
         if s.startswith('Cmd'):
@@ -257,6 +295,11 @@ class ScPaneClass(object):
     def __init__(self, paneNumber):
         self.paneNumber = paneNumber
         self.Utils = ScPaneClassUtils(self)
+        
+        # register your userListID here, to guarantee a unique number
+        import argparse
+        self.UserListIDs = argparse.Namespace()
+        self.UserListIDs.reopenClosedTabs = 100
     
     # pane methods
     def PaneAppend(self, txt):
@@ -313,6 +356,16 @@ class ScPaneClass(object):
             raise AttributeError()
         else:
             return (lambda *args: SciTEModule.pane_SendScintilla(self.paneNumber, sprop, *args))
+    
+    def GetMultiSelect(self):
+        ret = []
+        for i in range(self.GetSelections()):
+            ret.append((ScEditor.GetSelectionNStart(i), ScEditor.GetSelectionNEnd(i)))
+        return ret
+
+    def GetMultiSelectText(self):
+        bounds = self.GetMultiSelect()
+        return map(lambda b: self.PaneGetText(b[0], b[1]), bounds)
 
 class RequestThatEventContinuesToPropagate(Exception):
     # see ScApp.RequestThatEventContinuesToPropagate
