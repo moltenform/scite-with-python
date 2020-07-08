@@ -11,10 +11,10 @@ class ChangeCasing(object):
     
     def onChoiceMade(self, choice):
         # look for a method named choice, and call it
-        from __init__ import modifyTextInScite
+        from __init__ import modifyTextSupportsMultiSelection
         assert choice in [s.split('|')[1] for s in self.choices]
         method = self.__getattribute__(choice)
-        return modifyTextInScite(method)
+        return modifyTextSupportsMultiSelection(method, resetSelection=False)
 
     def upper(self, s):
         return s.upper()
@@ -35,10 +35,7 @@ class ChangeCasing(object):
 
 def DoChangeCasing():
     from scite_extend_ui import ScEditor
-    if ScEditor.GetSelections() <= 1:
-        ChangeCasing().go()
-    else:
-        print('this tool does not support multiple selections')
+    ChangeCasing().go()
 
 if __name__ == '__main__':
     from ben_python_common import assertEq

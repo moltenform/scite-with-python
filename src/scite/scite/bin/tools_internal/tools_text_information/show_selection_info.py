@@ -17,7 +17,7 @@ class ShowSelectionInfo(object):
 
     def onChoiceMade(self, choice):
         from scite_extend_ui import ScEditor
-        selected = ScEditor.GetSelectedText()
+        selected = '\n'.join(ScEditor.GetMultiSelectText())
         
         if selected:
             # look for a method named choice

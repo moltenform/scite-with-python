@@ -29,3 +29,23 @@ def modifyTextInScite(fn):
     finally:
         ScEditor.EndUndoAction()
 
+def modifyTextSupportsMultiSelection(fn, resetSelection):
+    from scite_extend_ui import ScEditor
+    sels = ScEditor.GetMultiSelect()
+    if not sels:
+        print('Nothing is selected.')
+        return
+    
+    firstChar = sels[0][0]
+    ScEditor.BeginUndoAction()
+    try:
+        for b in sels:
+            txt = ScEditor.PaneGetText(b[0], b[1])
+            newtxt = fn(txt)
+            ScEditor.PaneRemoveText(b[0], b[1])
+            ScEditor.PaneInsertText(newtxt, b[0])
+        if resetSelection:
+            ScEditor.SetSel(firstChar, firstChar)
+    finally:
+        ScEditor.EndUndoAction()
+
