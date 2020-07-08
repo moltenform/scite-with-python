@@ -17,6 +17,7 @@ class SimpleEnum(object):
     _set = None
 
     def __init__(self, listStart):
+        assertTrue(not isinstance(listStart, anystringtype))
         self._set = set(listStart)
 
     def __getattribute__(self, name):
@@ -27,7 +28,7 @@ class SimpleEnum(object):
         else:
             raise AttributeError
 
-    def __setattribute__(self, name, value):
+    def __setattr__(self, name, value):
         if name.startswith('_'):
             object.__setattr__(self, name, value)
         else:
@@ -63,7 +64,7 @@ def getPrintable(s, okToIgnore=False):
 def trace(*args):
     print(' '.join(map(getPrintable, args)))
         
-def safefilename(s):
+def toValidFilename(s):
     return s.replace(u'\u2019', u"'").replace(u'?', u'').replace(u'!', u'') \
         .replace(u'\\ ', u', ').replace(u'\\', u'-') \
         .replace(u'/ ', u', ').replace(u'/', u'-') \
@@ -73,31 +74,6 @@ def safefilename(s):
         .replace(u'"', u"'").replace(u'<', u'[').replace(u'>', u']') \
         .replace(u'\r\n', u' ').replace(u'\r', u' ').replace(u'\n', u' ')
         
-def getRandomString(max=100 * 1000):
-    import random
-    return '%s' % random.randrange(max)
-
-def genGuid(asBase64=False):
-    import uuid
-    u = uuid.uuid4()
-    if asBase64:
-        import base64
-        b = base64.urlsafe_b64encode(u.bytes_le)
-        return b.decode('utf8')
-    else:
-        return str(u)
-
-# "millistime" is number of milliseconds past epoch (unix time * 1000)
-def renderMillisTime(millisTime):
-    t = millisTime / 1000.0
-    import time
-    return time.strftime("%m/%d/%Y %I:%M:%S %p", time.localtime(t))
-
-def getNowAsMillisTime():
-    import time
-    t = time.time()
-    return int(t * 1000)
-
 def splice(s, insertionpoint, lenToDelete, newtext):
     return s[0:insertionpoint] + newtext + s[insertionpoint + lenToDelete:]
 
@@ -119,6 +95,19 @@ def stripHtmlTags(s, removeRepeatedWhitespace=True):
     # malformed tags like "<a<" with no close, replace with ?
     s = s.replace('<', '?').replace('>', '?')
     return s
+    
+def replaceMustExist(s, search, replace):
+    assertTrue(search in s, "not found", search)
+    return s.replace(search, replace)
+
+def reReplaceWholeWord(starget, sin, srep):
+    import re
+    sin = '\\b' + re.escape(sin) + '\\b'
+    return re.sub(sin, srep, starget)
+
+def reReplace(starget, sre, srep):
+    import re
+    return re.sub(sre, srep, starget)
 
 
 '''
@@ -133,15 +122,6 @@ re.finditer(pattern, string, flags=0)
     
 re.IGNORECASE, re.MULTILINE, re.DOTALL
 '''
-
-def re_replacewholeword(starget, sin, srep):
-    import re
-    sin = '\\b' + re.escape(sin) + '\\b'
-    return re.sub(sin, srep, starget)
-
-def re_replace(starget, sre, srep):
-    import re
-    return re.sub(sre, srep, starget)
 
 def truncateWithEllipsis(s, maxLength):
     if len(s) <= maxLength:
@@ -162,52 +142,6 @@ def formatSize(n):
         return '%.2fKB' % (n / (1024.0))
     else:
         return '%db' % n
-
-def getClipboardTextTk():
-    from Tkinter import Tk
-    try:
-        r = Tk()
-        r.withdraw()
-        s = r.clipboard_get()
-    except BaseException as e:
-        if 'selection doesn\'t exist' in str(e):
-            s = ''
-        else:
-            raise
-    finally:
-        r.destroy()
-    return s
-
-def setClipboardTextTk(s):
-    from Tkinter import Tk
-    text = unicode(s)
-    try:
-        r = Tk()
-        r.withdraw()
-        r.clipboard_clear()
-        r.clipboard_append(text)
-    finally:
-        r.destroy()
-
-def getClipboardTextPyperclip():
-    import pyperclip
-    return pyperclip.paste()
-
-def setClipboardTextPyperclip(s):
-    import pyperclip
-    pyperclip.copy(s)
-    
-def getClipboardText():
-    try:
-        return getClipboardTextPyperclip()
-    except ImportError:
-        return getClipboardTextTk()
-    
-def setClipboardText(s):
-    try:
-        setClipboardTextPyperclip(s)
-    except ImportError:
-        setClipboardTextTk(s)
 
 def takeBatchOnArbitraryIterable(iterable, size):
     import itertools
@@ -270,13 +204,6 @@ class RecentlyUsedList(object):
         if self.maxSize:
             while len(self.list) > self.maxSize:
                 self.list.pop()
-
-def startThread(fn, args=None):
-    import threading
-    if args is None:
-        args = tuple()
-    t = threading.Thread(target=fn, args=args)
-    t.start()
     
 # inspired by http://code.activestate.com/recipes/496879-memoize-decorator-function-with-cache-size-limit/
 def BoundedMemoize(fn):
@@ -306,182 +233,54 @@ def BoundedMemoize(fn):
     memoize_wrapper.func_name = fn.func_name
     return memoize_wrapper
 
-class ParsePlus(object):
-    '''
-    ParsePlus, by Ben Fisher 2019
-    
-    Adds the following features to the "parse" module:
-        {s:NoNewlines} field type
-        {s:NoSpaces} works like {s:S}
-        remember that "{s} and {s}" matches "a and a" but not "a and b",
-            use "{s1} and {s2}" or "{} and {}" if the contents can differ
-        escapeSequences such as backslash-escapes (see examples in tests)
-        replaceFieldWithText (see examples in tests)
-        getTotalSpan
-    '''
-    def __init__(self, pattern, extra_types=None, escapeSequences=None,
-            case_sensitive=True):
-        try:
-            import parse
-        except:
-            raise ImportError('needs "parse", https://pypi.org/project/parse/')
-        self.pattern = pattern
-        self.case_sensitive = case_sensitive
-        self.extra_types = extra_types if extra_types else {}
-        self.escapeSequences = escapeSequences if escapeSequences else []
-        if 'NoNewlines' in pattern:
-            @parse.with_pattern(r'[^\r\n]+')
-            def parse_NoNewlines(s):
-                return str(s)
-            self.extra_types['NoNewlines'] = parse_NoNewlines
-        if 'NoSpaces' in pattern:
-            @parse.with_pattern(r'[^\r\n\t ]+')
-            def parse_NoSpaces(s):
-                return str(s)
-            self.extra_types['NoSpaces'] = parse_NoSpaces
+# "millistime" is number of milliseconds past epoch (unix time * 1000)
+def renderMillisTime(millisTime):
+    t = millisTime / 1000.0
+    import time
+    return time.strftime("%m/%d/%Y %I:%M:%S %p", time.localtime(t))
 
-    def _createEscapeSequencesMap(self, s):
-        self._escapeSequencesMap = {}
-        if len(self.escapeSequences) > 5:
-            raise ValueError('we support a max of 5 escape sequences')
-    
-        sTransformed = s
-        for i, seq in enumerate(self.escapeSequences):
-            assertTrue(len(seq) > 1, "an escape-sequence only makes sense if " +
-                "it is at least two characters")
+class EnglishDateParserWrapper(object):
+    def __init__(self):
+        # restrict to English, less possibility of accidentally parsing a non-date string
+        import dateparser
+        self.p = dateparser.date.DateDataParser(languages=['en'], settings={
+            'STRICT_PARSING': True,
+            'DATE_ORDER': 'MDY'})  # month-day-year
             
-            # use rarely-occurring ascii chars like
-            # \x01 (start of heading)
-            rareChar = chr(i + 1)
-            # raise error if there's any occurance of rareChar, not repl,
-            # otherwise we would have incorrect expansions
-            if rareChar in s:
-                raise RuntimeError("we don't yet support escape sequences " +
-                "if the input string contains rare ascii characters. the " +
-                "input string contains " + rareChar + ' (ascii ' +
-                str(ord(rareChar)) + ')')
-            # replacement string is the same length, so offsets aren't affected
-            repl = rareChar * len(seq)
-            self._escapeSequencesMap[repl] = seq
-            sTransformed = sTransformed.replace(seq, repl)
-            
-        assertEq(len(s), len(sTransformed), 'internal error: len(s) changed.')
-        return sTransformed
-
-    def _unreplaceEscapeSequences(self, s):
-        for key in self._escapeSequencesMap:
-            s = s.replace(key, self._escapeSequencesMap[key])
-        return s
-
-    def _resultToMyResult(self, parseResult, s):
-        if not parseResult:
-            return parseResult
-        ret = Bucket()
-        lenS = len(s)
-        for name in parseResult.named:
-            val = self._unreplaceEscapeSequences(parseResult.named[name])
-            setattr(ret, name, val)
-        ret.spans = parseResult.spans
-        ret.getTotalSpan = lambda: self._getTotalSpan(parseResult, lenS)
-        return ret
-
-    def _getTotalSpan(self, parseResult, lenS):
-        if '{{' in self.pattern or '}}' in self.pattern:
-            raise RuntimeError("for simplicity, we don't yet support getTotalSpan " +
-                "if the pattern contains {{ or }}")
-        locationOfFirstOpen = self.pattern.find('{')
-        locationOfLastClose = self.pattern.rfind('}')
-        if locationOfFirstOpen == -1 or locationOfLastClose == -1:
-            # pattern contained no fields?
-            return None
+    def parse(self, s):
+        return self.p.get_date_data(s)['date_obj']
         
-        if not len(parseResult.spans):
-            # pattern contained no fields?
-            return None
-        smallestSpanStart = float('inf')
-        largestSpanEnd = -1
-        for key in parseResult.spans:
-            lower, upper = parseResult.spans[key]
-            smallestSpanStart = min(smallestSpanStart, lower)
-            largestSpanEnd = max(largestSpanEnd, upper)
-        
-        # ex.: for the pattern aaa{field}bbb, widen by len('aaa') and len('bbb')
-        smallestSpanStart -= locationOfFirstOpen
-        largestSpanEnd += len(self.pattern) - (locationOfLastClose + len('}'))
-        
-        # sanity check that the bounds make sense
-        assertTrue(0 <= smallestSpanStart <= lenS,
-            'internal error: span outside bounds')
-        assertTrue(0 <= largestSpanEnd <= lenS,
-            'internal error: span outside bounds')
-        assertTrue(largestSpanEnd >= smallestSpanStart,
-            'internal error: invalid span')
-        return (smallestSpanStart, largestSpanEnd)
-    
-    def match(self, s):
-        # entire string must match
-        import parse
-        sTransformed = self._createEscapeSequencesMap(s)
-        parseResult = parse.parse(self.pattern, sTransformed,
-            extra_types=self.extra_types, case_sensitive=self.case_sensitive)
-        return self._resultToMyResult(parseResult, s)
-
-    def search(self, s):
-        import parse
-        sTransformed = self._createEscapeSequencesMap(s)
-        parseResult = parse.search(self.pattern, sTransformed,
-            extra_types=self.extra_types, case_sensitive=self.case_sensitive)
-        return self._resultToMyResult(parseResult, s)
-
-    def findall(self, s):
-        import parse
-        sTransformed = self._createEscapeSequencesMap(s)
-        parseResults = parse.findall(self.pattern, sTransformed,
-            extra_types=self.extra_types, case_sensitive=self.case_sensitive)
-        for parseResult in parseResults:
-            yield self._resultToMyResult(parseResult, s)
-
-    def replaceFieldWithText(self, s, key, newValue,
-            appendIfNotFound=None, allowOnlyOnce=False):
-        # example: <title>{title}</title>
-        results = list(self.findall(s))
-        if allowOnlyOnce and len(results) > 1:
-            raise RuntimeError('we were told to allow pattern only once.')
-        if len(results):
-            span = results[0].spans[key]
-            return spliceSpan(s, span, newValue)
-        else:
-            if appendIfNotFound is None:
-                raise RuntimeError("pattern not found.")
+    def fromFullWithTimezone(self, s):
+        # compensate for +0000
+        # Wed Nov 07 04:01:10 +0000 2018
+        pts = s.split(' ')
+        newpts = []
+        isTimeZone = ''
+        for pt in pts:
+            if pt.startswith('+'):
+                assertEq('', isTimeZone)
+                isTimeZone = ' ' + pt
             else:
-                return s + appendIfNotFound
-    
-    def replaceFieldWithTextIntoFile(self, path, key, newValue,
-            appendIfNotFound=None, allowOnlyOnce=False, encoding=None):
-        from .files import readall, writeall
-        s = readall(path, encoding=encoding)
-
-        newS = self.replaceFieldWithText(s, key, newValue,
-            appendIfNotFound=appendIfNotFound,
-            allowOnlyOnce=allowOnlyOnce)
+                newpts.append(pt)
+        return ' '.join(newpts) + isTimeZone
         
-        writeall(path, newS, 'w', encoding=encoding)
-
-def DBG(obj=None):
-    import pprint
-    if obj is None:
-        import inspect
-        fback = inspect.currentframe().f_back
-        framelocals = fback.f_locals
-        newDict = {}
-        for key in framelocals:
-            if not callable(framelocals[key]) and not \
-                    inspect.isclass(framelocals[key]) and not \
-                    inspect.ismodule(framelocals[key]):
-                newDict[key] = framelocals[key]
-        pprint.pprint(newDict)
-    else:
-        pprint.pprint(obj)
+    def getDaysBefore(self, baseDate, n):
+        import datetime
+        assertTrue(isinstance(n, int))
+        diff = datetime.timedelta(days=n)
+        return baseDate - diff
+        
+    def getDaysBeforeInMilliseconds(self, sBaseDate, nDaysBefore):
+        import datetime
+        dObj = self.parse(sBaseDate)
+        diff = datetime.timedelta(days=nDaysBefore)
+        dBefore = dObj - diff
+        return int(dBefore.timestamp() * 1000)
+        
+    def toUnixMilliseconds(self, s):
+        assertTrue(isPy3OrNewer, 'requires python 3 or newer')
+        dt = self.parse(s)
+        return int(dt.timestamp() * 1000)
 
 def runAndCatchException(fn):
     try:
@@ -490,17 +289,6 @@ def runAndCatchException(fn):
         import sys
         return sys.exc_info()[1]
     return None
-
-def downloadUrl(url, toFile=None, timeout=30, asText=False):
-    import requests
-    resp = requests.get(url, timeout=timeout)
-    if toFile:
-        with open(toFile, 'wb') as fout:
-            fout.write(resp.content)
-    if asText:
-        return resp.text
-    else:
-        return resp.content
 
 def assertTrue(condition, *messageArgs):
     if not condition:
@@ -516,6 +304,23 @@ def assertEq(expected, received, *messageArgs):
         msg += '\nbut got:\n'
         msg += getPrintable(pprint.pformat(received))
         raise AssertionError(msg)
+
+def assertWarn(condition, *messageArgs):
+    from .common_ui import warn
+    if not condition:
+        msg = ' '.join(map(getPrintable, messageArgs)) if messageArgs else ''
+        warn(msg)
+
+def assertWarnEq(expected, received, *messageArgs):
+    from .common_ui import warn
+    if expected != received:
+        import pprint
+        msg = ' '.join(map(getPrintable, messageArgs)) if messageArgs else ''
+        msg += '\nexpected:\n'
+        msg += getPrintable(pprint.pformat(expected))
+        msg += '\nbut got:\n'
+        msg += getPrintable(pprint.pformat(received))
+        warn(msg)
 
 def assertFloatEq(expected, received, *messageArgs):
     import math

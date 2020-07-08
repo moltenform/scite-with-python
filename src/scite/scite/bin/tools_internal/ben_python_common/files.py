@@ -4,6 +4,7 @@
 import sys
 import os as _os
 import shutil as _shutil
+from .common_higher import *
 from .common_util import *
 
 rename = _os.rename
@@ -56,7 +57,7 @@ def makedirs(s):
         else:
             raise
 
-def ensure_empty_directory(d):
+def ensureEmptyDirectory(d):
     if isfile(d):
         raise IOError('file exists at this location ' + d)
     
@@ -133,7 +134,11 @@ def move(srcfile, destfile, overwrite, warn_between_drives=False,
         _os.unlink(srcfile)
     
     assertTrue(exists(destfile))
-    
+
+def copyTrace(srcfile, destfile, overwrite):
+    if not isfile(srcfile):
+        raise IOError('source path does not exist or is not a file')
+
 def copyFilePosixWithoutOverwrite(srcfile, destfile):
     # fails if destination already exist. O_EXCL prevents other files from writing to location.
     # raises OSError on failure.
@@ -188,55 +193,35 @@ def setFileLastModifiedTime(filepath, lmt):
     with open(filepath, 'ab'):
         _os.utime(filepath, newtimes)
 
+def _openSupportingUnicode(s, mode, unicodetype, encoding):
+    if encoding:
+        # python 3-style
+        return lambda: open(s, mode, encoding=encoding)
+    elif unicodetype:
+        # python 2-style. see also: io.open
+        import codecs
+        return lambda: codecs.open(s, mode, encoding=unicodetype)
+    else:
+        return lambda: open(s, mode)
+
 # unicodetype can be utf-8, utf-8-sig, etc.
 def readall(s, mode='r', unicodetype=None, encoding=None):
-    if encoding:
-        # python 3-style
-        getF = lambda: open(s, mode, encoding=encoding)
-    elif unicodetype:
-        # python 2-style
-        import codecs
-        getF = lambda: codecs.open(s, mode, encoding=unicodetype)
-    else:
-        getF = lambda: open(s, mode)
-
-    with getF() as f:
-        txt = f.read()
-
-    return txt
+    with _openSupportingUnicode(s, mode, unicodetype, encoding)() as f:
+        return f.read()
 
 # unicodetype can be utf-8, utf-8-sig, etc.
-def writeall(s, txt, mode='w', unicodetype=None, encoding=None):
-    if encoding:
-        # python 3-style
-        getF = lambda: open(s, mode, encoding=encoding)
-    elif unicodetype:
-        # python 2-style
-        import codecs
-        getF = lambda: codecs.open(s, mode, encoding=unicodetype)
-    else:
-        getF = lambda: open(s, mode)
+def writeall(s, txt, mode='w', unicodetype=None, encoding=None, skipIfSameContent=False, updateTimeIfSameContent=True):
+    if skipIfSameContent and isfile(s):
+        assertTrue(mode == 'w' or mode == 'wb')
+        currentContent = readall(s, mode.replace('w', 'r'), unicodetype, encoding)
+        if currentContent == txt:
+            if updateTimeIfSameContent:
+                setFileLastModifiedTime(s, getNowAsMillisTime() / 1000.0)
+            return False
 
-    with getF() as f:
+    with _openSupportingUnicode(s, mode, unicodetype, encoding)() as f:
         f.write(txt)
-
-def writeallunlessalreadythere(path, txt, mode='w', encoding='utf-8'):
-    ret = False
-    if mode == 'wb':
-        current = readall(path, 'rb') if exists(path) else False
-        if current != txt:
-            writeall(path, txt, 'wb')
-            ret = True
-    elif mode == 'w':
-        assertTrue(isPy3OrNewer)
-        current = readall(path, 'r', encoding=encoding) if \
-            exists(path) else False
-        if current != txt:
-            writeall(path, txt, 'w', encoding=encoding)
-            ret = True
-    else:
-        raise ValueError('please use a mode of "w" or "wb"')
-    return ret
+        return True
 
 
 _enforceExplicitlyNamedParameters = object()
@@ -277,11 +262,11 @@ def listfiles(dir, _ind=_enforceExplicitlyNamedParameters, filenamesOnly=False, 
             yield name if filenamesOnly else (full, name)
 
 def recursefiles(root, _ind=_enforceExplicitlyNamedParameters, filenamesOnly=False, allowedexts=None,
-        fnFilterDirs=None, includeFiles=True, includeDirs=False, topdown=True):
+        fnFilterDirs=None, includeFiles=True, includeDirs=False, topdown=True, followSymlinks=False):
     _checkNamedParameters(_ind)
     assert isdir(root)
     
-    for (dirpath, dirnames, filenames) in _os.walk(root, topdown=topdown):
+    for (dirpath, dirnames, filenames) in _os.walk(root, topdown=topdown, followlinks=followSymlinks):
         if fnFilterDirs:
             newdirs = [dir for dir in dirnames if fnFilterDirs(join(dirpath, dir))]
             dirnames[:] = newdirs
@@ -294,9 +279,11 @@ def recursefiles(root, _ind=_enforceExplicitlyNamedParameters, filenamesOnly=Fal
         if includeDirs:
             yield getname(dirpath) if filenamesOnly else (dirpath, getname(dirpath))
     
-def recursedirs(root, _ind=_enforceExplicitlyNamedParameters, filenamesOnly=False, fnFilterDirs=None, topdown=True):
+def recursedirs(root, _ind=_enforceExplicitlyNamedParameters, filenamesOnly=False, fnFilterDirs=None,
+        topdown=True, followSymlinks=False):
     _checkNamedParameters(_ind)
-    return recursefiles(root, filenamesOnly=filenamesOnly, fnFilterDirs=fnFilterDirs, includeFiles=False, includeDirs=True, topdown=topdown)
+    return recursefiles(root, filenamesOnly=filenamesOnly, fnFilterDirs=fnFilterDirs, includeFiles=False,
+        includeDirs=True, topdown=topdown, followSymlinks=followSymlinks)
 
 class FileInfoEntryWrapper(object):
     def __init__(self, obj):
@@ -369,7 +356,7 @@ def openDirectoryInExplorer(dir):
                 return
         raise RuntimeError('unable to open directory.')
 
-def openUrl(s):
+def openUrl(s, filter=True):
     import webbrowser
     if s.startswith('http://'):
         prefix = 'http://'
@@ -378,18 +365,19 @@ def openUrl(s):
     else:
         assertTrue(False, 'url did not start with http')
     
-    s = s[len(prefix):]
-    s = s.replace('%', '%25')
-    s = s.replace('&', '%26')
-    s = s.replace('|', '%7C')
-    s = s.replace('\\', '%5C')
-    s = s.replace('^', '%5E')
-    s = s.replace('"', '%22')
-    s = s.replace("'", '%27')
-    s = s.replace('>', '%3E')
-    s = s.replace('<', '%3C')
-    s = s.replace(' ', '%20')
-    s = prefix + s
+    if filter:
+        s = s[len(prefix):]
+        s = s.replace('%', '%25')
+        s = s.replace('&', '%26')
+        s = s.replace('|', '%7C')
+        s = s.replace('\\', '%5C')
+        s = s.replace('^', '%5E')
+        s = s.replace('"', '%22')
+        s = s.replace("'", '%27')
+        s = s.replace('>', '%3E')
+        s = s.replace('<', '%3C')
+        s = s.replace(' ', '%20')
+        s = prefix + s
     webbrowser.open(s, new=2)
 
 
@@ -454,21 +442,30 @@ def extensionPossiblyExecutable(s):
     else:
         return False
 
-def findBinaryOnPath(binaryName):
-    def is_exe(fpath):
-        return _os.path.isfile(fpath) and _os.access(fpath, _os.X_OK)
+def findBinaryOnPath(name):
+    def existsAsExe(dir, name):
+        f = join(dir, name)
+        if _os.path.isfile(f):
+            return f
+        if sys.platform.startswith('win'):
+            if _os.path.isfile(f + '.exe'):
+                return f + '.exe'
+            if _os.path.isfile(f + '.cmd'):
+                return f + '.cmd'
+            if _os.path.isfile(f + '.com'):
+                return f + '.com'
+            if _os.path.isfile(f + '.bat'):
+                return f + '.bat'
+        return None
+    
+    # handle "./binaryname"
+    if _os.sep in name:
+        return existsAsExe('.', name) if existsAsExe('.', name) else None
 
-    if _os.sep in binaryName:
-        return binaryName if is_exe(binaryName) else None
-
-    if sys.platform.startswith('win') and not binaryName.lower().endswith('.exe'):
-        binaryName += '.exe'
-
+    # handle "binaryname"
     for path in _os.environ["PATH"].split(_os.pathsep):
-        path = path.strip('"')
-        exe_file = _os.path.join(path, binaryName)
-        if is_exe(exe_file):
-            return exe_file
+        if path and existsAsExe(path, name):
+            return existsAsExe(path, name)
 
     return None
 
@@ -565,7 +562,7 @@ def addAllToZip(root, zipPath, method='deflate', alreadyCompressedAsStore=False,
 
 def windowsUrlFileGet(path):
     assertEq('.url', _os.path.splitext(path)[1].lower())
-    s = readall(path, mode='r', encoding='latin1')
+    s = readall(path, mode='r')
     lines = s.split('\n')
     for line in lines:
         if line.startswith('URL='):
@@ -574,7 +571,7 @@ def windowsUrlFileGet(path):
 
 def windowsUrlFileWrite(path, url):
     assertTrue(len(url) > 0)
-    assertTrue(not files.exists(path), 'file already exists at', path)
+    assertTrue(not exists(path), 'file already exists at', path)
     try:
         url.encode('ascii')
     except e:
@@ -582,14 +579,107 @@ def windowsUrlFileWrite(path, url):
             raise RuntimeError('can\'t support a non-ascii url' + url + ' ' + path)
         else:
             raise
-    f = open(path, 'w', encoding='ascii')
-    f.write('[InternetShortcut]\n')
-    f.write('URL=%s\n' % url)
-    f.close()
+
+    s = '[InternetShortcut]\n'
+    s += 'URL=%s\n' % url
+    writeall(path, s)
+
+def runRsync(srcDir, destDir, deleteExisting, excludeFiles=None,
+        excludeDirs=None, throwOnFailure=True, checkExist=True):
+    if not excludeFiles:
+        excludeFiles = []
+    if not excludeDirs:
+        excludeDirs = []
+    if checkExist:
+        assertTrue(isdir(srcDir), "not a dir", srcDir)
+        assertTrue(isdir(destDir), "not a dir", destDir)
+
+    args = []
+    if sys.platform.startswith('win'):
+        # we could use /r:0 to eliminate retries, but an
+        # apparent bug in robocopy gives a success exit code,
+        # so it's better to leave the current repeat-million-times
+        # because at least it doesn't silently fail
+        # (example: open a file for write with the same name as incoming directory)
+        args.append('robocopy')
+        args.append(srcDir)
+        args.append(destDir)
+        if deleteExisting:
+            args.append('/MIR')
+        args.append('/E')  # copy all, including empty dirs
+        for ex in excludeFiles:
+            args.append('/XF')
+            args.append(ex)
+        for ex in excludeDirs:
+            args.append('/XD')
+            args.append(ex)
+    else:
+        assertTrue(False, "Not yet supported")
+        args.append('rsync')
+        args.append('-az')
+        args.append(srcDir)
+        args.append(destDir)
+        if deleteExisting:
+            args.append('--delete-after')
+        for ex in excludeFiles + excludeDirs:
+            args.append('--exclude')
+            args.append(ex)
+    
+    retcode, stdout, stderr = run(args, throwOnFailure=False)
+    isOk, status = runRsyncErrMap(retcode)
+    if throwOnFailure and not isOk:
+        raise Exception("Could not copy. " + str(retcode) +
+            str(stdout) + str(stderr) + str(status))
+    return retcode, stdout, stderr, status
+
+def runRsyncErrMap(code, platform=None):
+    if not platform:
+        platform = sys.platform
+
+    if platform.startswith('win'):
+        status = ''
+        if code & 0x1:
+            status += "One or more files were copied successfully (that is, new files have arrived).\n"
+            code = code & ~0x1
+        if code & 0x2:
+            status += "Extra files or directories were detected.\n"
+            code = code & ~0x2
+        if code & 0x4:
+            status += "Mismatched files or directories were detected.\n"
+            code = code & ~0x4
+        if code & 0x8:
+            status += "Some files or directories could not be copied.\n"
+        if code & 0x10:
+            status += "Serious error.\n"
+        isOk = code == 0
+        return (isOk, status)
+    else:
+        mapCode = {}
+        mapCode[0] = (True, '')
+        mapCode[1] = (False, "Syntax or usage error")
+        mapCode[2] = (False, "Protocol incompatibility")
+        mapCode[3] = (False, "Errors selecting input/output files, dirs")
+        mapCode[4] = (False, "Action not supported, maybe by the client and not server")
+        mapCode[5] = (False, "Error starting client-server protocol")
+        mapCode[6] = (False, "Daemon unable to append to log-file")
+        mapCode[10] = (False, "Error in socket I/O")
+        mapCode[11] = (False, "Error in file I/O")
+        mapCode[12] = (False, "Error in rsync protocol data stream")
+        mapCode[13] = (False, "Errors with program diagnostics")
+        mapCode[14] = (False, "Error in IPC code")
+        mapCode[20] = (False, "Received SIGUSR1 or SIGINT")
+        mapCode[21] = (False, "Some error returned by waitpid()")
+        mapCode[22] = (False, "Error allocating core memory buffers")
+        mapCode[23] = (False, "Partial transfer due to error")
+        mapCode[24] = (False, "Partial transfer due to vanished source files")
+        mapCode[25] = (False, "The --max-delete limit stopped deletions")
+        mapCode[30] = (False, "Timeout in data send/receive")
+        mapCode[35] = (False, "Timeout waiting for daemon connection")
+        return mapCode.get(code, (False, "Unknown"))
 
 # returns tuple (returncode, stdout, stderr)
 def run(listArgs, _ind=_enforceExplicitlyNamedParameters, shell=False, createNoWindow=True,
-        throwOnFailure=RuntimeError, stripText=True, captureOutput=True, silenceoutput=False,
+        throwOnFailure=RuntimeError, stripText=True, captureOutput=True, silenceOutput=False,
         wait=True):
     import subprocess
     _checkNamedParameters(_ind)
@@ -621,7 +711,7 @@ def run(listArgs, _ind=_enforceExplicitlyNamedParameters, shell=False, createNoW
             stderr = stderr.rstrip()
 
     else:
-        if silenceoutput:
+        if silenceOutput:
             stdoutArg = open(_os.devnull, 'wb')
             stderrArg = open(_os.devnull, 'wb')
         else:

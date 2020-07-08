@@ -2,7 +2,7 @@
 # 2015 Ben Fisher, released under the GPLv3 license.
 
 import tempfile
-from .common_util import *
+from .common_higher import *
 from . import files
 
 def getInputBool(prompt, flushOutput=True):
@@ -277,7 +277,7 @@ def getSaveFileGui(initialdir=None, types=None, title='Save As'):
 
 def _dbgHookCallback(exctype, value, traceback):
     DBG()
-    msg('unhandled exception ' + value)
+    alert('unhandled exception ' + value)
     sys.__excepthook__(exctype, value, traceback)
 
 def registerDebughook(b=True):
