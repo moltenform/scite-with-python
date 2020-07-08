@@ -28,7 +28,16 @@ of pages on the right.
 moved it all to my moltenjs.com
 personal website.
 how i removed the wiki:
-git clone https://github.com/moltenjs/scite-with-python.wiki.git
+git clone https://github.com/moltenform/scite-with-python.wiki.git
 and removed the files
 and pushed
+
+5)
+you can still access this at
+moltenform.github.io/scite-with-python
+but it's pretty hidden
+you can't even get there from 
+downpoured.github.io/scite-with-python
+well, I'll fix the urls anyways, just for completion
+to point to moltenform.com
 
