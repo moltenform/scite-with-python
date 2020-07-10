@@ -875,6 +875,9 @@ void SciTEBase::SelectionIntoProperties() {
 
 	std::string word = SelectionWord();
 	props.Set("CurrentWord", word.c_str());
+	
+	int whichPane = wOutput.HasFocus() ?  ExtensionAPI::paneOutput : ExtensionAPI::paneEditor;
+	props.SetInteger("CurrentPaneNumber", whichPane);
 
 	int selStart = CallFocused(SCI_GETSELECTIONSTART);
 	int selEnd = CallFocused(SCI_GETSELECTIONEND);
