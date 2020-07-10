@@ -68,6 +68,7 @@ Modifications to SciTE source code include
 	New feature: if parameters are set from the dialog, they can be automatically added to every Go command. (command.go.use.parameters.from.dialog)
 	New feature: commands that run in immediate mode can allow the keyboard event to continue to propagate.
 	New feature: current search term and find state can be shared among all SciTE processes. (save.find.across.instances)
+	New feature: new "CurrentPaneNumber" property is automatically set like "CurrentWord"
 	user strip on Windows, focus in/out events are sent for combo boxes.
 	user strip on Windows, cursor does not flicker in an edit box.
 	Fix minor issue when parsing command.mode strings from properties.

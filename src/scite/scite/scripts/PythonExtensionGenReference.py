@@ -185,7 +185,8 @@ GetFileName|Returns file name
 GetFileDirectory|Returns directory of file
 GetExternalPython|Returns path of Python binary
 GetSciteDirectory|Returns SciTE location
-GetSciteUserDirectory|Returns SciTE user dir location'''.replace('\r\n', '\n').split('\n')
+GetSciteUserDirectory|Returns SciTE user dir location
+GetActivePane|Which is focused, editor or output? Defaults to ScEditor if not found'''.replace('\r\n', '\n').split('\n')
 	manuallyAddMethods.reverse()
 	for line in manuallyAddMethods:
 		methodName, desc = line.split('|')
@@ -207,6 +208,8 @@ def addPythonDefinedPaneMethods(idsInOrder, mapSymbolNameToExplanation):
 |Selection and information||Utils.ExpandSelectionToIncludeEntireLines()|Ensure entire lines are selected
 |Cut, copy and paste||Utils.SetClipboardText(s)|Set clipboard text
 |Cut, copy and paste|string|Utils.GetClipboardText()|Get clipboard text (not available on all platforms)
+|Selection and information|int[][]|GetMultiSelect()|Support multiple selections. Return a list of (start, end) tuples for each selection
+|Selection and information|string[]|GetMultiSelectText()|Support multiple selections. Return a list of strings with the contents of each selection
 SCI_APPENDTEXT|Text retrieval and modification||PaneAppend(string txt)|Append text
 SCI_INSERTTEXT|Text retrieval and modification||PaneInsertText(string txt, int pos)|Insert text (without changing selection)
 SCI_INSERTTEXT|Text retrieval and modification||PaneWrite(string txt, int pos=None)|Write text, and update selection
@@ -442,6 +445,14 @@ def writeScConstMethods(out):
 	writeScConstMethodsToFile(out)
 	out.write("</table>\n")
 
+def writeFooter(out):
+	out.write("<p>See Also:</p>")
+	out.write("<ul>")
+	out.write("<li>User strips (e.g. <code>RegexPreviewTool()</code> in scite-with-python source)</li>")
+	out.write("<li>Interactive context menus (e.g. <code>reopenClosedTab()</code> in scite-with-python source)</li>")
+	out.write("<li>Register for callbacks (e.g. <code>customcommandsregister</code> in scite-with-python source)</li>")
+	out.write("</ul>")
+
 def RegenerateAll():
 	import sys
 	if sys.version_info[0] != 2:
@@ -454,6 +465,7 @@ def RegenerateAll():
 		writeScAppMethods(out)
 		writeScEditorMethods(out)
 		writeScConstMethods(out)
+		writeFooter(out)
 		out.write("</body>\n</html>\n")
 	
 if __name__ == "__main__":
