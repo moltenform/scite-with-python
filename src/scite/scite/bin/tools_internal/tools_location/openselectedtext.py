@@ -58,7 +58,6 @@ def expandSelectionToEntireString(includeSpaces):
         return ''
 
 def existsAndIsSmallEnough(path):
-    #~ print('|'+path+'|')
     return files.isfile(path) and files.getsize(path) < maxSize
 
 def existsOrIsDir(path):
@@ -133,7 +132,6 @@ def findOpenTarget(curfile, s):
                 # try replacing extension
                 sBase = files.splitext(s)[0] + addExt
             
-            #~ print('\n[[addExt=%s addOrReplace=%s sBase=%s]]'%(addExt, addOrReplace, sBase))
             sTry = tryInAncestors(currentParent, sBase)
             if sTry:
                 return sTry
@@ -200,14 +198,13 @@ def openSelectedForPython(curfile, s):
 def openSelectedText():
     from scite_extend_ui import ScApp
     
-    # try including spaces
-    curfile = ScApp.GetFilePath() or 'placeholder.' + ScApp.GetProperty("default.file.ext") or 'placeholder.txt'
-    
     # paths should be relative to current file
     savedDir = os.getcwd()
+    curfile = ScApp.GetFilePath() or 'placeholder.' + ScApp.GetProperty("default.file.ext") or 'placeholder.txt'
     if ScApp.GetFilePath():
         os.chdir(files.getparent(ScApp.GetFilePath()))
     try:
+        # try including spaces
         target = findOpenTarget(curfile, expandSelectionToEntireString(True))
         if target:
             ScApp.OpenFile(target)

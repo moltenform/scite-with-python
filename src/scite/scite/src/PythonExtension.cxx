@@ -1991,6 +1991,7 @@ static IFaceConstant rgFriendlyNamedIDMConstants[] =
 	{"OpenLocalProperties", IDM_OPENLOCALPROPERTIES},
 	{"OpenLuaExternalfile", IDM_OPENLUAEXTERNALFILE},
 	{"OpenSelected", IDM_OPENSELECTED},
+	{"OpenSelectedPlaceholder", IDM_OPENSELECTED_PLACEHOLDER},
 	{"OpenUserProperties", IDM_OPENUSERPROPERTIES},
 	{"Paste", IDM_PASTE},
 	{"PasteAndDown", IDM_PASTEANDDOWN},

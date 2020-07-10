@@ -21,4 +21,8 @@ def LocationNext():
 def LocationPrev():
     ScApp.LocationPrev()
 
-
+#~ # why OnKey?
+#~ # otherwise open-in-selection won't work in the output pane
+#~ def OnKey(key, shift, ctrl, alt):
+    #~ if (key==ord('o') or key==ord('O')) and shift and ctrl:
+        #~ ScApp.GetActivePane()

@@ -3329,8 +3329,8 @@ static KeyToCommand kmap[] = {
                                  {m_C, GKEY_Tab, IDM_NEXTFILESTACK},
                                  {mSC, GKEY_ISO_Left_Tab, IDM_PREVFILESTACK},
                                  {m_C, GKEY_KP_Enter, IDM_COMPLETEWORD},
-                                 {GDK_MOD1_MASK, GKEY_F2, IDM_BOOKMARK_NEXT_SELECT},
-                                 {GDK_MOD1_MASK|GDK_SHIFT_MASK, GKEY_F2, IDM_BOOKMARK_PREV_SELECT},
+                                 {GDK_MOD1_MASK, GKEY_F1, IDM_BOOKMARK_NEXT_SELECT},
+                                 {GDK_MOD1_MASK|GDK_SHIFT_MASK, GKEY_F1, IDM_BOOKMARK_PREV_SELECT},
                                  {m_C, GKEY_F3, IDM_FINDNEXTSEL},
                                  {mSC, GKEY_F3, IDM_FINDNEXTBACKSEL},
                                  {m_C, GKEY_F4, IDM_CLOSE},
@@ -3798,7 +3798,7 @@ void SciTEGTK::CreateMenu() {
 	                                      {"/_File", NULL, NULL, 0, "<Branch>"},
 	                                      {"/File/_New", "<control>N", menuSig, IDM_NEW, 0},
 	                                      {"/File/_Open...", "<control>O", menuSig, IDM_OPEN, 0},
-	                                      {"/File/Open Selected _Filename", "<control><shift>O", menuSig, IDM_OPENSELECTED, 0},
+	                                      {"/File/Open Selected _Filename", "<control><shift>O", menuSig, IDM_OPENSELECTED_PLACEHOLDER, 0},
 	                                      {"/File/_Revert", "<control>R", menuSig, IDM_REVERT, 0},
 	                                      {"/File/_Close", "<control>W", menuSig, IDM_CLOSE, 0},
 	                                      {"/File/_Save", "<control>S", menuSig, IDM_SAVE, 0},
@@ -3875,9 +3875,9 @@ void SciTEGTK::CreateMenu() {
 	                                      {"/Search/Selection _Add Each", "", menuSig, IDM_SELECTIONADDEACH, 0},
 	                                      {"/Search/sep3", NULL, NULL, 0, "<Separator>"},
 	                                      {"/Search/_Go To...", "<control>G", menuSig, IDM_GOTO, 0},
-	                                      {"/Search/Next Book_mark", "F2", menuSig, IDM_BOOKMARK_NEXT, 0},
-	                                      {"/Search/Pre_vious Bookmark", "<shift>F2", menuSig, IDM_BOOKMARK_PREV, 0},
-	                                      {"/Search/Toggle Bookmar_k", "<control>F2", menuSig, IDM_BOOKMARK_TOGGLE, 0},
+	                                      {"/Search/Next Book_mark", "F1", menuSig, IDM_BOOKMARK_NEXT, 0},
+	                                      {"/Search/Pre_vious Bookmark", "<shift>F1", menuSig, IDM_BOOKMARK_PREV, 0},
+	                                      {"/Search/Toggle Bookmar_k", "<control>F1", menuSig, IDM_BOOKMARK_TOGGLE, 0},
 	                                      {"/Search/_Clear All Bookmarks", "", menuSig, IDM_BOOKMARK_CLEARALL, 0},
 
 	                                      {"/_View", NULL, NULL, 0, "<Branch>"},
@@ -4051,7 +4051,7 @@ void SciTEGTK::CreateMenu() {
 
 	SciTEItemFactoryEntry menuItemsHelp[] = {
 	                                          {"/_Help", NULL, NULL, 0, "<Branch>"},
-	                                          {"/Help/_Help", "F1", menuSig, IDM_HELP, 0},
+	                                          {"/Help/_Help", "", menuSig, IDM_HELP, 0},
 	                                          {"/Help/_SciTE Help", "", menuSig, IDM_HELP_SCITE, 0},
 	                                          {"/Help/_About SciTE", "", menuSig, IDM_ABOUT, 0},
 	                                      };

@@ -3021,6 +3021,10 @@ void SciTEBase::MenuCommand(int cmdID, int source) {
 		OpenDialog(filePath.Directory(), GUI::StringFromUTF8(props.GetExpandedString("open.filter")).c_str());
 		WindowSetFocus(wEditor);
 		break;
+	case IDM_OPENSELECTED_PLACEHOLDER:
+		// Run an extension that can do more than OpenSelected()
+		Trace("Press Ctrl+Shift+O to open a selected filename.\n");
+		break;
 	case IDM_OPENSELECTED:
 		if (OpenSelected())
 			WindowSetFocus(wEditor);
