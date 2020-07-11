@@ -114,11 +114,11 @@ class PropSetFile(object):
 			raise RuntimeError("Unsupported conditional " + s)
 			
 		if self.condition:
-			if s[0] == '\t':
+			if s[0] == '\t' or s.startswith('   '):
 				if self.platform != self.condition:
 					return
 				else:
-					s = s[1:]
+					s = s.lstrip()
 			else:
 				self.condition = None
 		

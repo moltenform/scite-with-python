@@ -156,7 +156,7 @@ def processDuplicatesInOutputFile(filepath, adjustForAesthetics):
 	with open(filepath, 'w') as out:
 		out.write('\n'.join(newContents))
 
-def mainWithPython(propertiesMain, propertiesUser, adjustForAesthetics, writeMdLocation):
+def mainWithPython(propertiesMain, propertiesUser, adjustForAesthetics, externalDocsLocation):
 	import sys
 	if sys.version_info[0] != 2:
 		print('currently, this script is not supported in python 3')
@@ -194,15 +194,16 @@ def mainWithPython(propertiesMain, propertiesUser, adjustForAesthetics, writeMdL
 			warn('''Warning: saw no bindings from expected sets %s, or saw unexpected %s''' %
 				(set(expectedSets) - set(key for key in setsSeen),
 				set(key for key in setsSeen) - set(expectedSets)))
-		makeVersionForMd(outputFile, writeMdLocation)
+		# we don't directly create an md file, but we detect when it needs to be updated
+		checkIfDocumentationNeedsToBeUpdated(outputFile, externalDocsLocation)
 		print('wrote to ' + outputFile)
 
-def makeVersionForMd(htmlFile, writeMdLocation):
-	# pull straight from the .html file, not the bindings list, because we've filtered it via adjustForAesthetics
+def checkIfDocumentationNeedsToBeUpdated(htmlFile, externalDocsLocation):
+	# use the .html file since we've filtered it via adjustForAesthetics
 	assert htmlFile.endswith('.html')
-	mdFile = htmlFile.replace('.html', '_worseterms_reference.txt')
-	lines = getVersionForMd(htmlFile)
-	with open(mdFile, 'w') as f:
+	referenceTxtFile = htmlFile.replace('.html', '_worseterms_reference.txt')
+	lines = getVersionForReferenceTxtFile(htmlFile)
+	with open(referenceTxtFile, 'w') as f:
 		f.write('<a href="index.html" style="color:black; text-decoration:underline">Back</a>\n')
 		f.write('\n')
 		f.write('''<table>
@@ -221,17 +222,17 @@ def makeVersionForMd(htmlFile, writeMdLocation):
 
 	comparisonShort = 'keyslinux_worseterms_reference.txt' if 'Gtk' in htmlFile else 'keyswin_worseterms_reference.txt'
 	mdOutShort = 'keyslinux.mdnotjekyll' if 'Gtk' in htmlFile else 'keyswin.mdnotjekyll'
-	comparison = os.path.join(writeMdLocation, comparisonShort)
-	allLatest = open(mdFile).read()
+	comparison = os.path.join(externalDocsLocation, comparisonShort)
+	allLatest = open(referenceTxtFile).read()
 	allReference = open(comparison).read()
 	if allLatest != allReference:
-		print(os.path.abspath(mdFile))
+		print(os.path.abspath(referenceTxtFile))
 		print('is not the same as')
 		print(os.path.abspath(comparison))
 		print('please diff these two files and make the corresponding updates to')
 		print('BOTH ' + comparisonShort + ' and ' + mdOutShort + '\n\n')
 
-def getVersionForMd(htmlFile):
+def getVersionForReferenceTxtFile(htmlFile):
 	lines = []
 	htmlLines = open(htmlFile)
 	for ln in htmlLines:
@@ -961,9 +962,9 @@ if __name__ == '__main__':
 	propertiesUser = None
 	adjustForAesthetics = True
 	
-	writeMdLocation = '../../../../../../../../devarchive/moltenform/static/page/scite-with-python/doc'
-	if writeMdLocation and not os.path.exists(writeMdLocation):
-		raise Exception('path does not exist ' + os.path.abspath(writeMdLocation))
+	externalDocsLocation = '../../../../../../../../devarchive/moltenform/static/page/scite-with-python/doc'
+	if externalDocsLocation and not os.path.exists(externalDocsLocation):
+		raise Exception('path does not exist ' + os.path.abspath(externalDocsLocation))
 	
 	msg = 'keymap.cxx not found, please download both the scintilla and scite sources and place this script in the /scite/src/scripts directory'
 	if not os.path.isfile('../../scintilla/src/KeyMap.cxx'):
@@ -971,4 +972,4 @@ if __name__ == '__main__':
 	elif not os.path.isfile('../gtk/SciTEGTK.cxx'	):
 		print(msg)
 	else:
-		mainWithPython(propertiesMain, propertiesUser, adjustForAesthetics, writeMdLocation)
+		mainWithPython(propertiesMain, propertiesUser, adjustForAesthetics, externalDocsLocation)
