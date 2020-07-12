@@ -19,7 +19,7 @@
 
 pathPropertiesMain = '/path/to/SciTEGlobal.properties'
 pathPropertiesUser = '/path/to/SciTEUser.properties'
-pathOutputFile = './CurrentBindings_$platform.html'
+pathOutputFile = './Bindings$platform.html'
 
 import os
 import re

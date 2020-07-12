@@ -172,7 +172,7 @@ def mainWithPython(propertiesMain, propertiesUser, adjustForAesthetics, external
 		
 		scintillaPriority = 100
 		platformCapitalized = platform[0].upper() + platform[1:]
-		outputFile = '../bin/doc/CurrentBindings%s.html' % platformCapitalized
+		outputFile = '../bin/doc/Bindings%s.html' % platformCapitalized
 		mapUserDefinedKeys = readUserDefinedKeys(props)
 		bindings = []
 		getScintillaBindings(bindings, props, scintillaPriority)
@@ -728,8 +728,7 @@ fragments.append(['accelStringWindowsToGtkIfNeeded', 'gtk/SciTEGTK.cxx', r'''sta
 	Substitute(accelKey, "Ctrl+", "<control>");
 	Substitute(accelKey, "Shift+", "<shift>");
 	Substitute(accelKey, "Alt+", "<alt>");
-	Substitute(accelKey, "Super+", "<super>");
-}'''])
+	Substitute(accelKey, "Super+", "<super>");'''])
 
 fragments.append(['accelStringGtkToWindowsIfNeeded', 'win32/SciTEWinBar.cxx', r'''static void AccelStringGtkToWindowsIfNeeded(std::string &accelKey) {
 	Substitute(accelKey, "<control>", "Ctrl+");
