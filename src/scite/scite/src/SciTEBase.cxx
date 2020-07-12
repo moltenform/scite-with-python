@@ -152,6 +152,7 @@ SciTEBase::SciTEBase(Extension *ext) : apis(true), extender(ext) {
 	previousHeightOutput = 0;
 
 	allowMenuActions = true;
+	menuItemsHidden = false;
 	scrollOutput = 1;
 	returnOutputToCommand = true;
 

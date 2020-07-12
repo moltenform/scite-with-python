@@ -1491,7 +1491,7 @@ public:
 
 	T PeekRedo()
 	{
-		// cast to signed int ok because of  maximum size check in Add()
+		// cast to signed int ok because of maximum size check in Add()
 		if (_position + 1 <= (int)(_list.size()) - 1)
 			return _list[_position + 1];
 		else
@@ -1500,7 +1500,7 @@ public:
 
 	void Redo()
 	{
-		// cast to signed int ok because of  maximum size check in Add()
+		// cast to signed int ok because of maximum size check in Add()
 		if (_position + 1 <= (int)(_list.size()) - 1)
 			++_position;
 	}

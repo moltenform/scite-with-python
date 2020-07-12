@@ -524,6 +524,7 @@ protected:
 	bool lineNumbersExpand;
 
 	bool allowMenuActions;
+	bool menuItemsHidden;
 	int scrollOutput;
 	bool returnOutputToCommand;
 	JobQueue jobQueue;

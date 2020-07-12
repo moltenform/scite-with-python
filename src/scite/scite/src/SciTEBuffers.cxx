@@ -525,6 +525,11 @@ void SciTEBase::InitialiseBuffers() {
 			RedrawMenu();
 		}
 	}
+	
+	if (!menuItemsHidden) {
+		HideMenusHiddenByUser();
+		menuItemsHidden = true;
+	}
 }
 
 FilePath SciTEBase::UserFilePath(const GUI::gui_char *name) {

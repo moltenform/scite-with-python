@@ -59,7 +59,7 @@ Modifications to SciTE source code include
 	New feature: internal grep supports regex search (find.in.files.enable.regexp), UI only updated for Windows (2 commits)
 	New feature: expose SciTEWindowID property for plugins to communicate with SciTE
 	New feature: user.shortcuts supports SCI_ constants
-	New feature: on Windows, user can hide specified menu items via properties files (menu.hidemenuitems)
+	New feature: user can hide specified menu items via properties files (menu.hidemenuitems)
 	New feature: on Windows, moved Tools to a submenu
 	New feature: on Windows, increased number of slots for mru items
 	New feature: on Windows, for text in the parameters dialog, property is set right when dialog is deactivated (i.e. property is updated faster, no need to click Set).
