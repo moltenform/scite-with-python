@@ -614,9 +614,11 @@ def runRsync(srcDir, destDir, deleteExisting, excludeFiles=None,
             args.append('/XD')
             args.append(ex)
     else:
-        assertTrue(False, "Not yet supported")
         args.append('rsync')
         args.append('-az')
+        if not srcDir.endswith('/'):
+            # so that rsync won't put files into a subdir
+            srcDir += '/'
         args.append(srcDir)
         args.append(destDir)
         if deleteExisting:
