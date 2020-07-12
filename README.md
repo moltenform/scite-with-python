@@ -1,46 +1,12 @@
 # SciTE-with-Python
 
-A fork of the SciTE code editor that lets you add your own plugins in Python.
+* A fork of the SciTE code editor that adds Python scriptability
 
-* Plugins can insert and delete text and automate nearly every editor action
+* Download for [Linux](./src/dloadlin.md) or [Windows](./src/dloadwin.md)
 
-* Plugins can register for events like OnKey and OnOpen, listen for multi-key keyboard shortcuts, and even show an interactive GUI inside the code editor
+* Comes with 28 built-in plugins - and you can write your own in Python to insert and delete text, restyle ranges of text to underline or highlight, modify files/do anything else via the Python standard library, and automate nearly every editor action
 
-* 26 built-in plugins for quickly editing html/xml, debugging .py scripts, and jumping to the definition of a method or function in Python or C
-    
-* Customize keyboard bindings on all platforms by editing menukey in a properties file
+* <font size="+1">[Full documentation - read more here!](https://moltenform.com/page/scite-with-python/doc/)</font>
 
-* When multiple editor windows are open, the current search term is shared between processes
-    
-* [Read more here](https://moltenform.com/page/scite-with-python/doc/)
-
-## Linux
-
-Run the following,
-
-    sudo apt-get install libgtk2.0-dev
-    sudo apt-get install python2.7-dev
-    
-    cd ~/Downloads
-    wget https://github.com/moltenform/scite-with-python/archive/v0.7.3.tar.gz
-    tar -xzf v0.7.3.tar.gz
-    cd scite-with-python-0.7.3/src/scite/scintilla/gtk
-    make
-    
-    cd ../../scite/gtk
-    make
-    sudo make install
-
-    SciTE_with_python
-
-## Windows
-
-* unless you already have Python 2.7 installed, install [Python 2.7](https://www.python.org/downloads/windows/), use the Windows x86 MSI installer
-
-* download [scite_with_python_0_7_3_win32.zip](https://github.com/moltenform/scite-with-python/releases/download/v0.7.3/scite_with_python_0_7_3_win32.zip)
-
-* unzip scite_with_python_0_7_3_win32.zip
-
-* open SciTE.exe
-
+<a href="https://moltenform.com/page/scite-with-python/doc/highlights1.html">![Screenshot](https://moltenform.com/page/scite-with-python/doc/img/out-shot.png)</a>
 
