@@ -3648,6 +3648,22 @@ static void AccelStringWindowsToGtkIfNeeded(std::string &accelKey) {
 	Substitute(accelKey, "Shift+", "<shift>");
 	Substitute(accelKey, "Alt+", "<alt>");
 	Substitute(accelKey, "Super+", "<super>");
+	// use gtk names, see  gtk/gdk/keyname-table.h
+	Substitute(accelKey, "Space", "space");
+	Substitute(accelKey, "'", "apostrophe");
+	Substitute(accelKey, "+", "plus");
+	Substitute(accelKey, ",", "comma");
+	Substitute(accelKey, "-", "minus");
+	Substitute(accelKey, "_", "underscore");
+	Substitute(accelKey, ".", "period");
+	Substitute(accelKey, "/", "slash");
+	Substitute(accelKey, ":", "colon");
+	Substitute(accelKey, ";", "semicolon");
+	Substitute(accelKey, "=", "equal");
+	Substitute(accelKey, "[", "bracketleft");
+	Substitute(accelKey, "\\", "backslash");
+	Substitute(accelKey, "]", "bracketright");
+	Substitute(accelKey, "`", "grave");
 }
 
 static std::string WithoutUnderscore(const char *s) {
