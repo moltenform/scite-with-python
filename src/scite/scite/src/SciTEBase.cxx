@@ -4123,7 +4123,7 @@ void SciTEBase::CheckMenus() {
 	CheckMenusClipboard();
 	EnableAMenuItem(IDM_UNDO, CallFocusedElseDefault(true, SCI_CANUNDO));
 	EnableAMenuItem(IDM_REDO, CallFocusedElseDefault(true, SCI_CANREDO));
-	EnableAMenuItem(IDM_DUPLICATE, CurrentBuffer()->isReadOnly);
+	EnableAMenuItem(IDM_DUPLICATE, !CurrentBuffer()->isReadOnly);
 	EnableAMenuItem(IDM_SHOWCALLTIP, apis != 0);
 	EnableAMenuItem(IDM_COMPLETE, apis != 0);
 	CheckAMenuItem(IDM_SPLITVERTICAL, splitVertical);
