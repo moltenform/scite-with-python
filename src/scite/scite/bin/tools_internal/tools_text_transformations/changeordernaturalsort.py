@@ -26,6 +26,10 @@
 
 import re
 
+def cmp(a, b):
+    """compat for py3"""
+    return (a > b) - (a < b)
+
 def chunkify(str):
     """return a list of numbers and non-numeric substrings of +str+
 

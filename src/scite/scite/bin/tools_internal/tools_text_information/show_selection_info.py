@@ -72,7 +72,7 @@ class ShowSelectionInfo(object):
             print('Mean is %f' % mean)
             print('Sample stddev is %f' % stdev)
             print('Population stddev is %f' % pstdev)
-        except ValueError, e:
+        except ValueError as e:
             print(e)
     
     def sumtimes(self, s):
@@ -141,7 +141,7 @@ class BasicStats(object):
         # The following sum should mathematically equal zero, but due to rounding
         # error may not.
         total2 = sum((x - c) for x in data)
-        total -= total2 ** 2 / len(data)
+        total -= float(total2) ** 2 / len(data)
         assert not total < 0, 'negative sum of square deviations: %f' % total
         return total
     

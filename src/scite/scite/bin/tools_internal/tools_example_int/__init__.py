@@ -6,7 +6,7 @@ debugTracing = False
 
 def OnOpen(filename):
     if debugTracing:
-        print 'plugin saw OnOpen', filename
+        print('plugin saw OnOpen', filename)
 
 def OnFileChange():
     if debugTracing:

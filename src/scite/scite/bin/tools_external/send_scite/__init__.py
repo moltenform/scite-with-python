@@ -93,6 +93,7 @@ def SciTEUtils_RedirectStdout(windowId):
     sys.stderr = StdoutRedirect()
         
 def SciTEUtils_EscapeStringForPython(s):
+    assert sys.version_info[0] <= 2
     if isinstance(s, unicode):
         bytes = s.encode('utf-8')
     else:

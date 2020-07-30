@@ -16,11 +16,13 @@ def testDisallowCastToBool(obj):
 
 def tests():
     import os
+    import sys
     
     def announce(s):
         showMsg(s)
-        
-    if raw_input('Run interactive tests? y/n') != 'y':
+    
+    inp = raw_input if sys.version[0] <= 2 else input
+    if inp('Run interactive tests? y/n') != 'y':
         return
         
     announce('Showing an "info" dialog with title=title and text=text:')

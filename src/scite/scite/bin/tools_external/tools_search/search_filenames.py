@@ -70,7 +70,8 @@ def go(type, dir, query, scitewindow):
     if not scitewindow.isdigit() or int(scitewindow) == 0:
         print('scitewindow not valid.')
         sys.exit(1)
-    
+
+    assert sys.version_info[0] <= 2
     redirectStdoutToSciTE(int(scitewindow))
     query = unicode(query.decode('utf-8'))
     dir = unicode(dir.decode('utf-8'))

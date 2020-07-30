@@ -203,7 +203,7 @@ def OnChar(key):
         global isRunning
         if isRunning:
             # prevent infinite recursion
-            print 'stopping because isrunning'
+            print('stopping because isrunning')
             return
         
         isRunning = True

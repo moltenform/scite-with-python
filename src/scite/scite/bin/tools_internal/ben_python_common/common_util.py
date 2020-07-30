@@ -207,9 +207,6 @@ class RecentlyUsedList(object):
     
 # inspired by http://code.activestate.com/recipes/496879-memoize-decorator-function-with-cache-size-limit/
 def BoundedMemoize(fn):
-    if sys.version_info[0] > 2:
-        raise NotImplementedError('not supported in python 3+')
-    
     from collections import OrderedDict
     cache = OrderedDict()
 
@@ -230,7 +227,10 @@ def BoundedMemoize(fn):
 
     memoize_wrapper._limit = 20
     memoize_wrapper._cache = cache
-    memoize_wrapper.func_name = fn.func_name
+    if sys.version_info[0] <= 2:
+        memoize_wrapper.func_name = fn.func_name
+    else:
+        memoize_wrapper.__name__ = fn.__name__
     return memoize_wrapper
 
 # "millistime" is number of milliseconds past epoch (unix time * 1000)

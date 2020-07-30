@@ -154,7 +154,10 @@ def findUnusedLetter(dictUsed, newWord):
 
 # returns -1, 'Cancel' on cancel
 def getInputFromChoicesGui(prompt, arOptions):
-    import Tkinter
+    if isPy3OrNewer:
+        import tkinter as Tkinter
+    else:
+        import Tkinter
     assert len(arOptions) > 0
     retval = [None]
 
@@ -267,12 +270,18 @@ def _getFileDialogGui(fn, initialdir, types, title):
 
 def getOpenFileGui(initialdir=None, types=None, title='Open'):
     "Specify types in the format ['.png|Png image','.gif|Gif image'] and so on."
-    import tkFileDialog
+    if isPy3OrNewer:
+        import tkinter.filedialog as tkFileDialog
+    else:
+        import tkFileDialog
     return _getFileDialogGui(tkFileDialog.askopenfilename, initialdir, types, title)
-    
+
 def getSaveFileGui(initialdir=None, types=None, title='Save As'):
     "Specify types in the format ['.png|Png image','.gif|Gif image'] and so on."
-    import tkFileDialog
+    if isPy3OrNewer:
+        import tkinter.filedialog as tkFileDialog
+    else:
+        import tkFileDialog
     return _getFileDialogGui(tkFileDialog.asksaveasfilename, initialdir, types, title)
 
 def _dbgHookCallback(exctype, value, traceback):

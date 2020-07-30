@@ -8,15 +8,15 @@ def InsertSectionBreakText():
     block = u'▃'
     amount = 32
     whatToWrite = u''
-    whatToWrite += u'# ' + block * int(amount / 2)
+    whatToWrite += u'# ' + block * int(amount // 2)
     whatToWrite += '  '
-    whatToWrite += block * int(amount / 2)
+    whatToWrite += block * int(amount // 2)
     whatToWriteBytes = whatToWrite.encode('utf-8')
     
     ScEditor.BeginUndoAction()
     try:
         ScEditor.PaneWrite(whatToWriteBytes)
-        for _ in range(1 + int(amount / 2)):
+        for _ in range(1 + int(amount // 2)):
             ScEditor.CharLeft()
     finally:
         ScEditor.EndUndoAction()

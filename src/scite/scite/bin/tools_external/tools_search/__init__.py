@@ -88,7 +88,7 @@ def cancelProcess():
             childProcess.kill()
             childProcess.wait()
             childProcess = None
-        except OSError, e:
+        except OSError as e:
             print('Canceling search, ' + str(e))
         print('Canceled search.')
     else:

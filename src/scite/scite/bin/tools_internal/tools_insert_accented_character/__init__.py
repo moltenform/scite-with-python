@@ -26,12 +26,19 @@ index = dict(
     H=('upper-case grave accent', upperGrave), S=('upper-case acute accent', upperAcute), _7=('upper-case circumflex', upperCircumflex), Y=('upper-case tilde', upperTilde), F=('upper-case diaeresis/umlaut', upperDiaeresis), V=('upper-case consonants', upperConsonants),
     P=('add punctuation', punctuation))
 
+def isString(s):
+    import sys
+    if sys.version[0] > 2:
+        return isinstance(val, str)
+    else:
+        return isinstance(val, basestring)
+
 def choicesFromDict(d):
     ret = []
     for dictkey in d:
         character = dictkey.replace('_', '').upper()
         val = d[dictkey]
-        showText = val if isinstance(val, basestring) else val[0]
+        showText = val if isString(val) else val[0]
         showText = showText.encode('utf-8')
         ret.append(character + '|' + dictkey + '|' + showText)
     

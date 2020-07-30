@@ -337,7 +337,7 @@ class ScPaneClass(object):
     def GetMultiSelectText(self):
         '''Support multiple selections. Return a list of strings with the contents of each selection'''
         bounds = self.GetMultiSelect()
-        return map(lambda b: self.PaneGetText(b[0], b[1]), bounds)
+        return [self.PaneGetText(b[0], b[1]) for b in bounds]
 
 class RequestThatEventContinuesToPropagate(Exception):
     # see ScApp.RequestThatEventContinuesToPropagate

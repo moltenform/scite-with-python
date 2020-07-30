@@ -85,7 +85,7 @@ class FilterLineCDefinition(object):
         textFiltered = killAllWithinMatching(text, '(', ')')
         textFiltered = killAllWithinMatching(textFiltered, '<', '>')
         partsFiltered = textFiltered.split()
-        partsFiltered = map(killNamespaces, partsFiltered)
+        partsFiltered = list(map(killNamespaces, partsFiltered))
         
         # traditional C-style const char *SearchTerm()
         for i in range(len(partsFiltered)):

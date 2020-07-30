@@ -40,7 +40,10 @@ def DBG(obj=None):
         pprint.pprint(obj)
 
 def getClipboardTextTk():
-    from Tkinter import Tk
+    try:
+        from tkinter import Tk
+    except ImportError:
+        from Tkinter import Tk
     try:
         r = Tk()
         r.withdraw()
@@ -55,8 +58,12 @@ def getClipboardTextTk():
     return s
 
 def setClipboardTextTk(s):
-    from Tkinter import Tk
-    text = unicode(s)
+    try:
+        from tkinter import Tk
+    except ImportError:
+        from Tkinter import Tk
+    if not isPy3OrNewer:
+    	text = unicode(s)
     try:
         r = Tk()
         r.withdraw()
