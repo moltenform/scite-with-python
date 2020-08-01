@@ -63,7 +63,7 @@ def setClipboardTextTk(s):
     except ImportError:
         from Tkinter import Tk
     if not isPy3OrNewer:
-    	text = unicode(s)
+        text = unicode(s)
     try:
         r = Tk()
         r.withdraw()

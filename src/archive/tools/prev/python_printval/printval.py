@@ -48,10 +48,10 @@ if __name__=='__main__':
         printval| obj
         
         # we don't support looking up source here, but fail gracefully
-        exec 'printval| 2*a*b'
+        exec('printval| 2*a*b')
         # prints "printval.? is 40"
                 
-        print '\n\n  now print all the locals:\n\n'
+        print('\n\n  now print all the locals:\n\n')
         printval| locals()
     
     examples()

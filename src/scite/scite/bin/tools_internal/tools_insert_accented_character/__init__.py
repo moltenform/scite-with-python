@@ -28,10 +28,10 @@ index = dict(
 
 def isString(s):
     import sys
-    if sys.version[0] > 2:
-        return isinstance(val, str)
+    if sys.version_info[0] > 2:
+        return isinstance(s, str)
     else:
-        return isinstance(val, basestring)
+        return isinstance(s, basestring)
 
 def choicesFromDict(d):
     ret = []

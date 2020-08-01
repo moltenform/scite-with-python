@@ -47,12 +47,12 @@ def pattern(s, asserts=False):
 if __name__=='__main__':
     #a few examples:
     necessarybits(640)
-    print
-    print tobinary(46)
-    print
-    print frombinary('1100_1100')
-    print
+    print()
+    print(tobinary(46))
+    print()
+    print(frombinary('1100_1100'))
+    print()
     pattern('00rrr000', True)
-    print
+    print()
     pattern('00000bbb')
     

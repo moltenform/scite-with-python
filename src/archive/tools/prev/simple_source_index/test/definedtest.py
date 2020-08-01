@@ -9,17 +9,17 @@ sfile2  = join('..','test','testdata','folder1','contrived.cpp')
 sbinary = join('..','test','testdata','folder1','tempbinary.cpp')
 
 
-class Bucket():
+class Bucket(object):
     pass
     
 def assertEqual(v, vExpected):
     if v != vExpected:
-        print 'Fail: Expected '+str(vExpected) + ' but got '+str(v)
-        raise exceptions.RuntimeError, 'stop'
+        print('Fail: Expected '+str(vExpected) + ' but got '+str(v))
+        raise exceptions.RuntimeError('stop')
 def assertContains(s, subs):
     if subs not in s:
-        print 'Fail: "'+str(subs) + '" not found in "'+str(s)+'"'
-        raise exceptions.RuntimeError, 'stop'
+        print('Fail: "'+str(subs) + '" not found in "'+str(s)+'"')
+        raise exceptions.RuntimeError('stop')
 
 def main():
     assert os.path.exists(g_sExe)
@@ -48,7 +48,7 @@ def main():
 def tests():
     # simple test
     bk = runandprocessresults(['-start'])
-    print bk.err
+    print(bk.err)
     bk = runandprocessresults(['-s', 'extern'])
     assertEqual(bk.countResults, 1)
     assertContains(bk.txt, 'src2.h:23:extern "C" {')
@@ -171,7 +171,7 @@ def runandprocessresults(listArgs):
             bucket.countResults+=1
             bucket.txt = txt
         else:
-            print 'not sure if result or error', txt
+            print('not sure if result or error', txt)
             assert False
         
     return bucket

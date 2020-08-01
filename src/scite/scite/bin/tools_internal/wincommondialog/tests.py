@@ -21,7 +21,7 @@ def tests():
     def announce(s):
         showMsg(s)
     
-    inp = raw_input if sys.version[0] <= 2 else input
+    inp = raw_input if sys.version_info[0] <= 2 else input
     if inp('Run interactive tests? y/n') != 'y':
         return
         
