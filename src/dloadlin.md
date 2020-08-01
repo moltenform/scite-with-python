@@ -7,6 +7,7 @@ run the following in a terminal,
 
     sudo apt-get install libgtk2.0-dev
     sudo apt-get install python2.7-dev
+    sudo apt-get install xclip
     
     cd ~/Downloads
     wget https://github.com/moltenform/scite-with-python/archive/v0.7.4.tar.gz

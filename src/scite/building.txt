@@ -3,6 +3,7 @@ Building in Linux
 ----------------------------------------
     sudo apt-get install libgtk2.0-dev
     sudo apt-get install python2.7-dev
+    sudo apt-get install xclip
 
     mkdir ~/scite-with-python
     cd ~/scite-with-python
