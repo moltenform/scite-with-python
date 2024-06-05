@@ -1,9 +1,18 @@
 # BenPythonCommon,
-# 2015 Ben Fisher, released under the GPLv3 license.
+# 2015 Ben Fisher, released under the LGPLv3 license.
 
 import tempfile
 from .common_higher import *
 from . import files
+
+# get better arrowkey history in macos
+try:
+    import gnureadline
+except:
+    try:
+        import readline
+    except:
+        pass
 
 def getInputBool(prompt, flushOutput=True):
     prompt += ' '
@@ -19,7 +28,7 @@ def getInputBool(prompt, flushOutput=True):
             return 0
         if s == 'BRK':
             raise KeyboardInterrupt()
-            
+
 def getInputYesNoCancel(prompt, flushOutput=True):
     prompt += ' y/n/cancel '
     while True:
@@ -53,18 +62,21 @@ def getInputString(prompt, bConfirm=True, flushOutput=True):
                 return ustr(s)
 
 # returns -1, 'Cancel' on cancel
-def getInputFromChoices(prompt, arrChoices, fnOtherCommands=None, otherCommandsContext=None, flushOutput=True):
-    trace('0) cancel')
+def getInputFromChoices(prompt, arrChoices, fnOtherCommands=None,
+        otherCommandsContext=None, flushOutput=True, cancelString='0) cancel', zeroBased=False):
+    if cancelString:
+        trace(cancelString)
     for i, choice in enumerate(arrChoices):
-        trace('%d) %s'%(i + 1, choice))
+        num = i if zeroBased else i + 1
+        trace('%d) %s'%(num, choice))
     while True:
         s = getRawInput(prompt, flushOutput).strip()
-        if s == '0':
+        if s == '0' and cancelString:
             return -1, 'Cancel'
         if s == 'BRK':
             raise KeyboardInterrupt()
         if s.isdigit():
-            n = int(s) - 1
+            n = int(s) if zeroBased else (int(s) - 1)
             if n >= 0 and n < len(arrChoices):
                 return n, arrChoices[n]
             else:
@@ -88,12 +100,12 @@ def getRawInput(prompt, flushOutput=True):
 def err(s='', s2=None, s3=None):
     s = _combinePrintableStrings(s, s2, s3)
     raise RuntimeError('fatal error\n' + getPrintable(s))
-    
+
 def alert(s, s2=None, s3=None, flushOutput=True):
     s = _combinePrintableStrings(s, s2, s3)
     trace(s)
     getRawInput('press Enter to continue', flushOutput)
-    
+
 def warn(s, s2=None, s3=None, flushOutput=True):
     s = _combinePrintableStrings(s, s2, s3)
     trace('warning\n' + getPrintable(s))
@@ -107,7 +119,7 @@ def getInputBoolGui(prompt):
     else:
         import tkMessageBox
     return tkMessageBox.askyesno(title=' ', message=prompt)
-    
+
 def getInputYesNoCancelGui(prompt):
     choice, choiceText = getInputFromChoicesGui(prompt, ['Yes', 'No', 'Cancel'])
     if choice == -1:
@@ -137,7 +149,7 @@ def getInputFloatGui(prompt, default=None, min=0.0, max=100.0, title=''):
     Tkinter, tkSimpleDialog, root = createTkSimpleDialog()
     options = dict(initialvalue=default) if default is not None else dict()
     return tkSimpleDialog.askfloat(' ', prompt, minvalue=min, maxvalue=max, **options)
-    
+
 def getInputStringGui(prompt, initialvalue=None, title=' '):
     "returns '' on cancel"
     Tkinter, tkSimpleDialog, root = createTkSimpleDialog()
@@ -163,7 +175,7 @@ def getInputFromChoicesGui(prompt, arOptions):
 
     def setresult(v):
         retval[0] = v
-    
+
     # http://effbot.org/tkinterbook/tkinter-dialog-windows.htm
     class ChoiceDialog(object):
         def __init__(self, parent):
@@ -178,20 +190,20 @@ def getInputFromChoicesGui(prompt, arOptions):
                 opts['text'] = text
                 opts['width'] = 10
                 opts['command'] = lambda which=i: self.onbtn(which)
-                
-                whichToUnderline = _findUnusedLetter(lettersUsed, text)
+
+                whichToUnderline = findUnusedLetter(lettersUsed, text)
                 if whichToUnderline is not None:
                     opts['underline'] = whichToUnderline
-                    
+
                     # if the label is has t underlined, t is keyboard shortcut
                     top.bind(text[whichToUnderline].lower(), lambda _, which=i: self.onbtn(which))
-                    
+
                 if i == 0:
                     opts['default'] = Tkinter.ACTIVE
-                    
+
                 w = Tkinter.Button(box, **opts)
                 w.pack(side=Tkinter.LEFT, padx=5, pady=5)
-            
+
             top.bind("<Return>", lambda unused: self.onbtn(0))
             top.bind("<Escape>", lambda unused: self.cancel())
             box.pack(pady=5)
@@ -222,7 +234,7 @@ def errGui(s='', s2=None, s3=None):
         import tkMessageBox
     tkMessageBox.showerror(title='Error', message=getPrintable(s))
     raise RuntimeError('fatal error\n' + getPrintable(s))
-    
+
 def alertGui(s, s2=None, s3=None):
     s = _combinePrintableStrings(s, s2, s3)
     if isPy3OrNewer:
@@ -230,7 +242,7 @@ def alertGui(s, s2=None, s3=None):
     else:
         import tkMessageBox
     tkMessageBox.showinfo(title=' ', message=getPrintable(s))
-    
+
 def warnGui(s, s2=None, s3=None):
     s = _combinePrintableStrings(s, s2, s3)
     if isPy3OrNewer:
@@ -254,18 +266,18 @@ gDirectoryHistory = dict()
 def _getFileDialogGui(fn, initialdir, types, title):
     if initialdir is None:
         initialdir = gDirectoryHistory.get(repr(types), '.')
-    
+
     kwargs = dict()
     if types is not None:
         aTypes = [(type.split('|')[1], type.split('|')[0]) for type in types]
         defaultExtension = aTypes[0][1]
         kwargs['defaultextension'] = defaultExtension
         kwargs['filetypes'] = aTypes
-    
+
     result = fn(initialdir=initialdir, title=title, **kwargs)
     if result:
         gDirectoryHistory[repr(types)] = files.split(result)[0]
-        
+
     return result
 
 def getOpenFileGui(initialdir=None, types=None, title='Open'):
@@ -302,12 +314,12 @@ def softDeleteFileFull(s, destination, allowDirs=False, doTrace=False):
     if files.exists(newname):
         raise Exception('already exists ' + newname +
             '. is this directory full of files, or was the random seed reused?')
-    
+
     if doTrace:
         trace('softDeleteFile()', s, '|to|', newname)
 
     files.move(s, newname, overwrite=False,
-        warn_between_drives=True, allowDirs=allowDirs)
+        warnBetweenDrives=True, allowDirs=allowDirs)
     return newname
 
 def softDeleteFile(s, allowDirs=False, doTrace=False):
@@ -315,11 +327,11 @@ def softDeleteFile(s, allowDirs=False, doTrace=False):
         from . import nocpy_get_delete_location
     except ImportError:
         nocpy_get_delete_location = None
-    
+
     if nocpy_get_delete_location:
         destination = nocpy_get_delete_location.get_delete_location(s)
     else:
         destination = files.join(tempfile.gettempdir(), 'ben_python_common_trash')
         files.makedirs(destination)
-    
+
     return softDeleteFileFull(s, destination, allowDirs=allowDirs, doTrace=doTrace)

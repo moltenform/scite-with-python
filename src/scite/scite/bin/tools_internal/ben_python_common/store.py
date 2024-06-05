@@ -1,5 +1,5 @@
 # BenPythonCommon,
-# 2015 Ben Fisher, released under the GPLv3 license.
+# 2015 Ben Fisher, released under the LGPLv3 license.
 # store.py, a simple database abstraction layer
 #
 # raison d'etre
@@ -29,19 +29,19 @@ class Store(object):
     def add_schema(self, cursor):
         raise NotImplementedError('please inherit from Store and implement this method')
     
-    def currrent_schema_version_number(self):
+    def current_schema_version_number(self):
         raise NotImplementedError('please inherit from Store and implement this method')
     
     def stamp_schema_version(self, cursor):
-        if self.currrent_schema_version_number() is None:
+        if self.current_schema_version_number() is None:
             return
         
         cursor.execute('CREATE TABLE ben_python_common_store_properties(schema_version INT)')
         cursor.execute('INSERT INTO ben_python_common_store_properties(schema_version) VALUES(?)',
-            [self.currrent_schema_version_number()])
+            [self.current_schema_version_number()])
     
     def verify_schema_version(self):
-        if self.currrent_schema_version_number() is None:
+        if self.current_schema_version_number() is None:
             return
         
         cursor = self.conn.cursor()
@@ -50,12 +50,12 @@ class Store(object):
             got = None
             for version in cursor.execute('SELECT schema_version FROM ben_python_common_store_properties'):
                 got = int(version[0])
-                if got == int(self.currrent_schema_version_number()):
+                if got == int(self.current_schema_version_number()):
                     valid = True
             
             if not valid:
                 raise StoreException('DB is empty or comes from a different version. Expected schema version %s, got %s' %
-                    (int(self.currrent_schema_version_number()), got))
+                    (int(self.current_schema_version_number()), got))
         except:
             if 'SQLError: no such table:' in str(sys.exc_info()[1]):
                 raise StoreException(

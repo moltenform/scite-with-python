@@ -1,5 +1,5 @@
 # BenPythonCommon,
-# 2015 Ben Fisher, released under the GPLv3 license.
+# 2015 Ben Fisher, released under the LGPLv3 license.
 
 import sys
 import os as _os
@@ -8,7 +8,6 @@ from .common_higher import *
 from .common_util import *
 
 rename = _os.rename
-delete = _os.unlink
 exists = _os.path.exists
 join = _os.path.join
 split = _os.path.split
@@ -26,28 +25,44 @@ rmtree = _shutil.rmtree
 # simple wrappers
 def getparent(s):
     return _os.path.split(s)[0]
-    
+
 def getname(s):
     return _os.path.split(s)[1]
-    
+
 def modtime(s):
     return _os.stat(s).st_mtime
-    
+
 def createdtime(s):
     return _os.stat(s).st_ctime
-    
+
 def getext(s, removeDot=True):
     a, b = splitext(s)
     if removeDot and len(b) > 0 and b[0] == '.':
         return b[1:].lower()
     else:
         return b.lower()
-    
-def deletesure(s):
+
+def getwithdifferentext(s, ext_with_dot):
+    parent, short = os.path.split(s)
+    short_before_ext, short_ext = os.path.splitext(short)
+    assertTrue(short_ext, s)
+    if parent:
+        with_trailing_slash = s[0:len(parent) + 1]
+        assertTrue(with_trailing_slash == parent + '/' or with_trailing_slash == parent + '\\')
+        return with_trailing_slash + short_before_ext + ext_with_dot
+    else:
+        return short_before_ext + ext_with_dot
+
+def delete(s, traceToStdout=False):
+    if traceToStdout:
+        trace('delete()', s)
+    _os.unlink(s)
+
+def deletesure(s, traceToStdout=False):
     if exists(s):
-        delete(s)
-    assert not exists(s)
-    
+        delete(s, traceToStdout)
+    assertTrue(not exists(s))
+
 def makedirs(s):
     try:
         _os.makedirs(s)
@@ -60,7 +75,7 @@ def makedirs(s):
 def ensureEmptyDirectory(d):
     if isfile(d):
         raise IOError('file exists at this location ' + d)
-    
+
     if isdir(d):
         # delete all existing files in the directory
         for s in _os.listdir(d):
@@ -68,17 +83,26 @@ def ensureEmptyDirectory(d):
                 _shutil.rmtree(join(d, s))
             else:
                 _os.unlink(join(d, s))
-        
+
         assertTrue(isemptydir(d))
     else:
         _os.makedirs(d)
 
-def copy(srcfile, destfile, overwrite, traceToStdout=False):
+def copy(srcfile, destfile, overwrite, traceToStdout=False,
+        useDestModifiedTime=False, createParent=False):
     if not isfile(srcfile):
         raise IOError('source path does not exist or is not a file')
 
+    toSetModTime = None
+    if useDestModifiedTime and exists(destfile):
+        assertTrue(isfile(destfile), 'not supported for directories')
+        toSetModTime = getModTimeNs(destfile)
+
     if traceToStdout:
         trace('copy()', srcfile, destfile)
+
+    if createParent and not exists(getparent(destfile)):
+        makedirs(getparent(destfile))
 
     if srcfile == destfile:
         pass
@@ -94,19 +118,29 @@ def copy(srcfile, destfile, overwrite, traceToStdout=False):
         if overwrite:
             _shutil.copy(srcfile, destfile)
         else:
-            copyFilePosixWithoutOverwrite(srcfile, destfile)
+            _copyFilePosixWithoutOverwrite(srcfile, destfile)
 
     assertTrue(exists(destfile))
-        
-def move(srcfile, destfile, overwrite, warn_between_drives=False,
-        traceToStdout=False, allowDirs=False):
+    if toSetModTime:
+        setModTimeNs(destfile, toSetModTime)
+
+def move(srcfile, destfile, overwrite, warnBetweenDrives=False,
+        traceToStdout=False, allowDirs=False, useDestModifiedTime=False, createParent=False):
     if not exists(srcfile):
         raise IOError('source path does not exist')
     if not allowDirs and not isfile(srcfile):
         raise IOError('source path does not exist or is not a file')
 
+    toSetModTime = None
+    if useDestModifiedTime and exists(destfile):
+        assertTrue(isfile(destfile), 'not supported for directories')
+        toSetModTime = getModTimeNs(destfile)
+
     if traceToStdout:
         trace('move()', srcfile, destfile)
+
+    if createParent and not exists(getparent(destfile)):
+        makedirs(getparent(destfile))
 
     if srcfile == destfile:
         pass
@@ -115,31 +149,29 @@ def move(srcfile, destfile, overwrite, warn_between_drives=False,
         ERROR_NOT_SAME_DEVICE = 17
         flags = 0
         flags |= 1 if overwrite else 0
-        flags |= 0 if warn_between_drives else 2
+        flags |= 0 if warnBetweenDrives else 2
         res = windll.kernel32.MoveFileExW(c_wchar_p(srcfile), c_wchar_p(destfile), c_int(flags))
         if not res:
             err = GetLastError()
-            if err == ERROR_NOT_SAME_DEVICE and warn_between_drives:
+            if err == ERROR_NOT_SAME_DEVICE and warnBetweenDrives:
                 rinput('Note: moving file from one drive to another. ' +
                     '%s %s Press Enter to continue.\r\n'%(srcfile, destfile))
-                return move(srcfile, destfile, overwrite, warn_between_drives=False)
-                
+                return move(srcfile, destfile, overwrite, warnBetweenDrives=False)
+
             raise IOError('MoveFileExW failed (maybe dest already exists?) err=%d' % err +
                 getPrintable(srcfile + '->' + destfile))
-        
+
     elif sys.platform.startswith('linux') and overwrite:
         _os.rename(srcfile, destfile)
     else:
         copy(srcfile, destfile, overwrite)
         _os.unlink(srcfile)
-    
+
     assertTrue(exists(destfile))
+    if toSetModTime:
+        setModTimeNs(destfile, toSetModTime)
 
-def copyTrace(srcfile, destfile, overwrite):
-    if not isfile(srcfile):
-        raise IOError('source path does not exist or is not a file')
-
-def copyFilePosixWithoutOverwrite(srcfile, destfile):
+def _copyFilePosixWithoutOverwrite(srcfile, destfile):
     # fails if destination already exist. O_EXCL prevents other files from writing to location.
     # raises OSError on failure.
     flags = _os.O_CREAT | _os.O_EXCL | _os.O_WRONLY
@@ -233,7 +265,7 @@ def _checkNamedParameters(obj):
         raise ValueError('please name parameters for this function or method')
 
 # allowedexts in the form ['png', 'gif']
-def listchildrenUnsorted(dir, _ind=_enforceExplicitlyNamedParameters, filenamesOnly=False, allowedexts=None):
+def _listchildrenUnsorted(dir, _ind=_enforceExplicitlyNamedParameters, filenamesOnly=False, allowedexts=None):
     _checkNamedParameters(_ind)
     for filename in _os.listdir(dir):
         if not allowedexts or getext(filename) in allowedexts:
@@ -242,12 +274,12 @@ def listchildrenUnsorted(dir, _ind=_enforceExplicitlyNamedParameters, filenamesO
 
 if sys.platform.startswith('win'):
     exeSuffix = '.exe'
-    listchildren = listchildrenUnsorted
+    listchildren = _listchildrenUnsorted
 else:
     exeSuffix = ''
 
     def listchildren(*args, **kwargs):
-        return sorted(listchildrenUnsorted(*args, **kwargs))
+        return sorted(_listchildrenUnsorted(*args, **kwargs))
 
 def listdirs(dir, _ind=_enforceExplicitlyNamedParameters, filenamesOnly=False, allowedexts=None):
     _checkNamedParameters(_ind)
@@ -265,20 +297,20 @@ def recursefiles(root, _ind=_enforceExplicitlyNamedParameters, filenamesOnly=Fal
         fnFilterDirs=None, includeFiles=True, includeDirs=False, topdown=True, followSymlinks=False):
     _checkNamedParameters(_ind)
     assert isdir(root)
-    
+
     for (dirpath, dirnames, filenames) in _os.walk(root, topdown=topdown, followlinks=followSymlinks):
         if fnFilterDirs:
             newdirs = [dir for dir in dirnames if fnFilterDirs(join(dirpath, dir))]
             dirnames[:] = newdirs
-        
+
         if includeFiles:
             for filename in (filenames if sys.platform.startswith('win') else sorted(filenames)):
                 if not allowedexts or getext(filename) in allowedexts:
                     yield filename if filenamesOnly else (dirpath + _os.path.sep + filename, filename)
-        
+
         if includeDirs:
             yield getname(dirpath) if filenamesOnly else (dirpath, getname(dirpath))
-    
+
 def recursedirs(root, _ind=_enforceExplicitlyNamedParameters, filenamesOnly=False, fnFilterDirs=None,
         topdown=True, followSymlinks=False):
     _checkNamedParameters(_ind)
@@ -289,44 +321,53 @@ class FileInfoEntryWrapper(object):
     def __init__(self, obj):
         self.obj = obj
         self.path = obj.path
-        
+
     def is_dir(self, *args):
         return self.obj.is_dir(*args)
-        
+
     def is_file(self, *args):
         return self.obj.is_file(*args)
-        
+
     def short(self):
         return _os.path.split(self.path)[1]
-        
+
     def size(self):
         return self.obj.stat().st_size
-        
+
     def mtime(self):
         return self.obj.stat().st_mtime
-    
+
     def metadatachangetime(self):
         assertTrue(not sys.platform.startswith('win'))
         return self.obj.stat().st_ctime
-    
+
     def createtime(self):
         assertTrue(sys.platform.startswith('win'))
         return self.obj.stat().st_ctime
 
-def recursefileinfo(root, recurse=True, followSymlinks=False, filesOnly=True):
+def recursefileinfo(root, recurse=True, followSymlinks=False, filesOnly=True,
+        fnFilterDirs=None, fnDirectExceptionsTo=None):
     assertTrue(isPy3OrNewer)
-    
+
     # scandir's resources are released in destructor,
     # do not create circular references holding it
     for entry in _os.scandir(root):
         if entry.is_dir(follow_symlinks=followSymlinks):
             if not filesOnly:
                 yield FileInfoEntryWrapper(entry)
-            if recurse:
-                for subentry in recursefileinfo(entry.path, recurse=recurse,
-                        followSymlinks=followSymlinks, filesOnly=filesOnly):
-                    yield subentry
-        
+            if recurse and (not fnFilterDirs or fnFilterDirs(entry.path)):
+                try:
+                    for subentry in recursefileinfo(entry.path, recurse=recurse,
+                            followSymlinks=followSymlinks, filesOnly=filesOnly,
+                            fnFilterDirs=fnFilterDirs, fnDirectExceptionsTo=fnDirectExceptionsTo):
+                        yield subentry
+                except:
+                    e = sys.exc_info()[1]
+                    if fnDirectExceptionsTo and isinstance(e, OSError):
+                        fnDirectExceptionsTo(entry.path, e)
+                    else:
+                        raise
+
         if entry.is_file():
             yield FileInfoEntryWrapper(entry)
 
@@ -336,7 +377,14 @@ def listfileinfo(root, followSymlinks=False, filesOnly=True):
 
 def isemptydir(dir):
     return len(_os.listdir(dir)) == 0
-    
+
+def getSizeRecurse(dir, followSymlinks=False, fnFilterDirs=None, fnDirectExceptionsTo=None):
+    total = 0
+    for obj in recursefileinfo(dir, followSymlinks=followSymlinks,
+            fnFilterDirs=fnFilterDirs, fnDirectExceptionsTo=fnDirectExceptionsTo):
+        total += obj.size()
+    return total
+
 def fileContentsEqual(f1, f2):
     import filecmp
     return filecmp.cmp(f1, f2, shallow=False)
@@ -364,7 +412,7 @@ def openUrl(s, filter=True):
         prefix = 'https://'
     else:
         assertTrue(False, 'url did not start with http')
-    
+
     if filter:
         s = s[len(prefix):]
         s = s.replace('%', '%25')
@@ -457,7 +505,7 @@ def findBinaryOnPath(name):
             if _os.path.isfile(f + '.bat'):
                 return f + '.bat'
         return None
-    
+
     # handle "./binaryname"
     if _os.sep in name:
         return existsAsExe('.', name) if existsAsExe('.', name) else None
@@ -499,33 +547,57 @@ def hasherFromString(s):
         return hashlib.shake_128()
     elif s == 'shake_256':
         return hashlib.shake_256()
+    elif s == 'xxhash_32':
+        import xxhash
+        return xxhash.xxh32()
+    elif s == 'xxhash_64':
+        import xxhash
+        return xxhash.xxh64()
     else:
         raise ValueError('Unknown hash type ' + s)
 
+# default to 256kb buffer.
+def computeHashBytes(b, hasher='sha1', buffersize=0x40000):
+    import io
+    with io.BytesIO(b) as f:
+        return _computeHashImpl(f, hasher, buffersize)
+
 def computeHash(path, hasher='sha1', buffersize=0x40000):
+    with open(path, 'rb') as f:
+        return _computeHashImpl(f, hasher, buffersize)
+
+def _computeHashImpl(f, hasher, buffersize=0x40000):
     if hasher == 'crc32':
         import zlib
         crc = zlib.crc32(bytes(), 0)
-        with open(path, 'rb') as f:
-            while True:
-                # update the hash with the contents of the file
-                buffer = f.read(buffersize)
-                if not buffer:
-                    break
-                crc = zlib.crc32(buffer, crc)
+        while True:
+            # update the hash with the contents of the file
+            buffer = f.read(buffersize)
+            if not buffer:
+                break
+            crc = zlib.crc32(buffer, crc)
         crc = crc & 0xffffffff
         return '%08x' % crc
+    elif hasher == 'crc64':
+        from crc64iso.crc64iso import crc64_pair, format_crc64_pair
+        cur = None
+        while True:
+            # update the hash with the contents of the file
+            buffer = f.read(buffersize)
+            if not buffer:
+                break
+            cur = crc64_pair(buffer, cur)
+        return format_crc64_pair(cur)
     else:
         if isinstance(hasher, str):
             hasher = hasherFromString(hasher)
 
-        with open(path, 'rb') as f:
-            while True:
-                # update the hash with the contents of the file
-                buffer = f.read(buffersize)
-                if not buffer:
-                    break
-                hasher.update(buffer)
+        while True:
+            # update the hash with the contents of the file
+            buffer = f.read(buffersize)
+            if not buffer:
+                break
+            hasher.update(buffer)
         return hasher.hexdigest()
 
 def addAllToZip(root, zipPath, method='deflate', alreadyCompressedAsStore=False,
@@ -536,6 +608,7 @@ def addAllToZip(root, zipPath, method='deflate', alreadyCompressedAsStore=False,
         methodDict['lzma'] = zipfile.ZIP_LZMA
     except AttributeError:
         pass  # lzma isn't always available, e.g. python 2.7
+
     def getMethod(s):
         if alreadyCompressedAsStore and getext(s, False) in alreadyCompressedExt:
             return zipfile.ZIP_STORED
@@ -548,7 +621,7 @@ def addAllToZip(root, zipPath, method='deflate', alreadyCompressedAsStore=False,
     with zipfile.ZipFile(zipPath, 'a') as zip:
         if isfile(root):
             thisMethod = getMethod(root)
-            zip.write(root, pathPrefix + files.getname(root), compress_type=thisMethod)
+            zip.write(root, pathPrefix + getname(root), compress_type=thisMethod)
         elif isdir(root):
             itr = recursefiles(root, **kwargs) if recurse else listfiles(root, **kwargs)
             for f, short in itr:
@@ -584,12 +657,15 @@ def windowsUrlFileWrite(path, url):
     s += 'URL=%s\n' % url
     writeall(path, s)
 
-def runRsync(srcDir, destDir, deleteExisting, excludeFiles=None,
-        excludeDirs=None, throwOnFailure=True, checkExist=True):
-    if not excludeFiles:
-        excludeFiles = []
-    if not excludeDirs:
-        excludeDirs = []
+def runRsync(srcDir, destDir, deleteExisting,
+        winExcludeFiles=None, winExcludeDirs=None,
+        linExcludeRelative=None, linExcludeWithName=None,
+        throwOnFailure=True, checkExist=True):
+    # Specifying exclusions is complicated.
+    # There's absolute paths, relative paths, glob patterns,
+    # and "by name" (should "/XF foo.txt" also exclude "dir/subdir/foo.txt"?)
+    # For now, separate based on platform.
+    emptyIfNone = lambda lst: list(lst) if lst else []
     if checkExist:
         assertTrue(isdir(srcDir), "not a dir", srcDir)
         assertTrue(isdir(destDir), "not a dir", destDir)
@@ -607,26 +683,33 @@ def runRsync(srcDir, destDir, deleteExisting, excludeFiles=None,
         if deleteExisting:
             args.append('/MIR')
         args.append('/E')  # copy all, including empty dirs
-        for ex in excludeFiles:
+        for ex in emptyIfNone(winExcludeFiles):
             args.append('/XF')
             args.append(ex)
-        for ex in excludeDirs:
+        for ex in emptyIfNone(winExcludeDirs):
             args.append('/XD')
             args.append(ex)
+        assertTrue(not linExcludeRelative and not linExcludeWithName, "Not supported")
     else:
-        args.append('rsync')
+        bin = '/usr/local/bin/rsync' if isfile('/usr/local/bin/rsync') else 'rsync'
+        args.append(bin)
         args.append('-az')
         if not srcDir.endswith('/'):
             # so that rsync won't put files into a subdir
             srcDir += '/'
-        args.append(srcDir)
-        args.append(destDir)
         if deleteExisting:
             args.append('--delete-after')
-        for ex in excludeFiles + excludeDirs:
-            args.append('--exclude')
-            args.append(ex)
-    
+        for ex in emptyIfNone(linExcludeRelative):
+            assertTrue(not _os.path.isabs(ex), ex)
+            args.append('--exclude=/' + ex)
+        for ex in emptyIfNone(linExcludeWithName):
+            assertTrue(not _os.path.isabs(ex), ex)
+            args.append('--exclude=' + ex)
+
+        assertTrue(not winExcludeFiles and not winExcludeDirs, "Not supported")
+        args.append(srcDir)
+        args.append(destDir)
+
     retcode, stdout, stderr = run(args, throwOnFailure=False)
     isOk, status = runRsyncErrMap(retcode)
     if throwOnFailure and not isOk:
@@ -682,28 +765,32 @@ def runRsyncErrMap(code, platform=None):
 # returns tuple (returncode, stdout, stderr)
 def run(listArgs, _ind=_enforceExplicitlyNamedParameters, shell=False, createNoWindow=True,
         throwOnFailure=RuntimeError, stripText=True, captureOutput=True, silenceOutput=False,
-        wait=True):
+        wait=True, confirmExists=False):
     import subprocess
     _checkNamedParameters(_ind)
+    if confirmExists:
+        assertTrue(isfile(listArgs[0]) or 'which' not in dir(_shutil) or
+            _shutil.which(listArgs[0]) or shell, 'file not found?', listArgs[0])
+
     kwargs = {}
-    
+
     if sys.platform.startswith('win') and createNoWindow:
         kwargs['creationflags'] = 0x08000000
-    
+
     if captureOutput and not wait:
         raise ValueError('captureOutput implies wait')
-    
+
     if throwOnFailure and not wait:
         raise ValueError('throwing on failure implies wait')
-    
+
     retcode = -1
     stdout = None
     stderr = None
-    
+
     if captureOutput:
         sp = subprocess.Popen(listArgs, shell=shell,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kwargs)
-        
+
         comm = sp.communicate()
         stdout = comm[0]
         stderr = comm[1]
@@ -719,12 +806,12 @@ def run(listArgs, _ind=_enforceExplicitlyNamedParameters, shell=False, createNoW
         else:
             stdoutArg = None
             stderrArg = None
-        
+
         if wait:
             retcode = subprocess.call(listArgs, stdout=stdoutArg, stderr=stderrArg, shell=shell, **kwargs)
         else:
             subprocess.Popen(listArgs, stdout=stdoutArg, stderr=stderrArg, shell=shell, **kwargs)
-        
+
     if throwOnFailure and retcode != 0:
         if throwOnFailure is True:
             throwOnFailure = RuntimeError
@@ -734,13 +821,13 @@ def run(listArgs, _ind=_enforceExplicitlyNamedParameters, shell=False, createNoW
             '\nstdout was ' + str(stdout) + \
             '\nstderr was ' + str(stderr)
         raise throwOnFailure(getPrintable(exceptionText))
-    
+
     return retcode, stdout, stderr
-    
+
 def runWithoutWaitUnicode(listArgs):
     # in Windows in Python2, non-ascii characters cause subprocess.Popen to fail.
     # https://bugs.python.org/issue1759845
-    
+
     import subprocess
     if isPy3OrNewer or not sys.platform.startswith('win') or all(isinstance(arg, str) for arg in listArgs):
         # no workaround needed in Python3
@@ -753,7 +840,7 @@ def runWithoutWaitUnicode(listArgs):
             combinedArgs = listArgs
         else:
             combinedArgs = subprocess.list2cmdline(listArgs)
-            
+
         combinedArgs = unicode(combinedArgs)
         executable = None
         close_fds = False

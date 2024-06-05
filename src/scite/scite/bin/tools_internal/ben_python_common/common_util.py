@@ -1,5 +1,5 @@
 # BenPythonCommon,
-# 2015 Ben Fisher, released under the GPLv3 license.
+# 2015 Ben Fisher, released under the LGPLv3 license.
 
 import sys
 
@@ -11,7 +11,7 @@ class Bucket(object):
 
     def __repr__(self):
         return '\n\n\n'.join(('%s=%s'%(ustr(key), ustr(self.__dict__[key])) for key in sorted(self.__dict__)))
-            
+
 class SimpleEnum(object):
     "simple enum; prevents modification after creation."
     _set = None
@@ -36,7 +36,8 @@ class SimpleEnum(object):
 
     def __delattr__(self, name):
         raise RuntimeError
-    
+
+
 def getPrintable(s, okToIgnore=False):
     if not isPy3OrNewer:
         if not isinstance(s, unicode):
@@ -60,27 +61,42 @@ def getPrintable(s, okToIgnore=False):
             return s.encode('ascii', 'ignore').decode('ascii')
         else:
             return s.encode('ascii', 'replace').decode('ascii')
-        
+
 def trace(*args):
     print(' '.join(map(getPrintable, args)))
-        
-def toValidFilename(s):
-    return s.replace(u'\u2019', u"'").replace(u'?', u'').replace(u'!', u'') \
-        .replace(u'\\ ', u', ').replace(u'\\', u'-') \
-        .replace(u'/ ', u', ').replace(u'/', u'-') \
+
+def toValidFilename(sOrig, dirsepOk=False, maxLen=None):
+    s = sOrig
+    if dirsepOk:
+        # sometimes we want to leave directory-separator characters in the string.
+        import os
+        if os.path.sep == '/':
+            s = s.replace(u'\\ ', u', ').replace(u'\\', u'-')
+        else:
+            s = s.replace(u'/ ', u', ').replace(u'/', u'-')
+    else:
+        s = s.replace(u'\\ ', u', ').replace(u'\\', u'-')
+        s = s.replace(u'/ ', u', ').replace(u'/', u'-')
+
+    result = s.replace(u'\u2019', u"'").replace(u'?', u'').replace(u'!', u'') \
         .replace(u': ', u', ').replace(u':', u'-') \
         .replace(u'| ', u', ').replace(u'|', u'-') \
         .replace(u'*', u'') \
         .replace(u'"', u"'").replace(u'<', u'[').replace(u'>', u']') \
         .replace(u'\r\n', u' ').replace(u'\r', u' ').replace(u'\n', u' ')
-        
-def splice(s, insertionpoint, lenToDelete, newtext):
-    return s[0:insertionpoint] + newtext + s[insertionpoint + lenToDelete:]
 
-def spliceSpan(s, span, newtext):
-    assertTrue(span[1] >= span[0])
-    assertEq(len(span), 2)
-    return splice(s, span[0], span[1] - span[0], newtext)
+    if maxLen and len(result) > maxLen:
+        import os as _os
+        assertTrue(maxLen > 1)
+        ext = _os.path.splitext(s)[1]
+        beforeExt = s[0:-len(ext)]
+        while len(result) > maxLen:
+            result = beforeExt + ext
+            beforeExt = beforeExt[0:-1]
+        # if it ate into the directory, though, through an error
+        assertTrue(_os.path.split(sOrig)[0] == _os.path.split(result)[0])
+
+    return result
 
 def stripHtmlTags(s, removeRepeatedWhitespace=True):
     import re
@@ -95,19 +111,26 @@ def stripHtmlTags(s, removeRepeatedWhitespace=True):
     # malformed tags like "<a<" with no close, replace with ?
     s = s.replace('<', '?').replace('>', '?')
     return s
-    
-def replaceMustExist(s, search, replace):
-    assertTrue(search in s, "not found", search)
-    return s.replace(search, replace)
 
-def reReplaceWholeWord(starget, sin, srep):
-    import re
-    sin = '\\b' + re.escape(sin) + '\\b'
-    return re.sub(sin, srep, starget)
+# see also: html.escape, html.unescape
 
-def reReplace(starget, sre, srep):
+def replaceMustExist(haystack, needle, replace):
+    assertTrue(needle in haystack, "not found", needle)
+    return haystack.replace(needle, replace)
+
+def reSearchWholeWord(haystack, needle):
     import re
-    return re.sub(sre, srep, starget)
+    reNeedle = '\\b' + re.escape(needle) + '\\b'
+    return re.search(reNeedle, haystack)
+
+def reReplaceWholeWord(haystack, sNeedle, replace):
+    import re
+    sNeedle = '\\b' + re.escape(sNeedle) + '\\b'
+    return re.sub(sNeedle, replace, haystack)
+
+def reReplace(haystack, reNeedle, replace):
+    import re
+    return re.sub(reNeedle, replace, haystack)
 
 
 '''
@@ -119,7 +142,7 @@ re.findall(pattern, string, flags=0)
     returns list of strings
 re.finditer(pattern, string, flags=0)
     returns iterator of match objects
-    
+
 re.IGNORECASE, re.MULTILINE, re.DOTALL
 '''
 
@@ -143,6 +166,40 @@ def formatSize(n):
     else:
         return '%db' % n
 
+def strToList(s, replaceComments=True):
+    lines = s.replace('\r\n', '\n').split('\n')
+    if replaceComments:
+        lines = [line for line in lines if not line.startswith('#')]
+    return [line.strip() for line in lines if line.strip()]
+
+def strToSet(s, replaceComments=True):
+    lst = strToList(s, replaceComments=replaceComments)
+    return set(lst)
+
+def parseIntOrFallback(s, fallBack=None):
+    try:
+        return int(s)
+    except:
+        return fallBack
+
+def addOrAppendToArrayInDict(d, key, val):
+    got = d.get(key, None)
+    if got:
+        got.append(val)
+    else:
+        d[key] = [val]
+
+def waitUntilTrue(iter, fnWaitUntil):
+    if isinstance(iter, list):
+        iter = (item for item in iter)
+
+    hasSeen = False
+    for value in iter:
+        if not hasSeen and fnWaitUntil(value):
+            hasSeen = True
+        if hasSeen:
+            yield value
+
 def takeBatchOnArbitraryIterable(iterable, size):
     import itertools
     it = iter(iterable)
@@ -151,10 +208,10 @@ def takeBatchOnArbitraryIterable(iterable, size):
         yield item
         item = list(itertools.islice(it, size))
 
-def takeBatch(l, n):
+def takeBatch(itr, n):
     """ Yield successive n-sized chunks from l."""
-    return list(takeBatchOnArbitraryIterable(l, n))
-    
+    return list(takeBatchOnArbitraryIterable(itr, n))
+
 class TakeBatch(object):
     def __init__(self, batchSize, callback):
         self.batch = []
@@ -181,22 +238,22 @@ class RecentlyUsedList(object):
     def __init__(self, maxSize=None, startList=None):
         self.list = startList or []
         self.maxSize = maxSize
-    
+
     def getList(self):
         return self.list
-        
+
     def indexOf(self, s):
         try:
             return self.list.index(s)
         except ValueError:
             return -1
-    
+
     def add(self, s):
         # if it's also elsewhere in the list, remove that one
         index = self.indexOf(s)
         if index != -1:
             self.list.pop(index)
-        
+
         # insert new entry at the top
         self.list.insert(0, s)
 
@@ -204,7 +261,7 @@ class RecentlyUsedList(object):
         if self.maxSize:
             while len(self.list) > self.maxSize:
                 self.list.pop()
-    
+
 # inspired by http://code.activestate.com/recipes/496879-memoize-decorator-function-with-cache-size-limit/
 def BoundedMemoize(fn):
     from collections import OrderedDict
@@ -239,17 +296,25 @@ def renderMillisTime(millisTime):
     import time
     return time.strftime("%m/%d/%Y %I:%M:%S %p", time.localtime(t))
 
+def renderMillisTimeStandard(millisTime):
+    t = millisTime / 1000.0
+    import time
+    return time.strftime("%Y-%m-%d %I:%M:%S", time.localtime(t))
+
+
 class EnglishDateParserWrapper(object):
-    def __init__(self):
+    def __init__(self, dateOrder='MDY'):
+        # default to month-day-year
         # restrict to English, less possibility of accidentally parsing a non-date string
         import dateparser
-        self.p = dateparser.date.DateDataParser(languages=['en'], settings={
-            'STRICT_PARSING': True,
-            'DATE_ORDER': 'MDY'})  # month-day-year
-            
+        settings = {'STRICT_PARSING': True}
+        if dateOrder:
+            settings['DATE_ORDER'] = dateOrder
+        self.p = dateparser.date.DateDataParser(languages=['en'], settings=settings)
+
     def parse(self, s):
         return self.p.get_date_data(s)['date_obj']
-        
+
     def fromFullWithTimezone(self, s):
         # compensate for +0000
         # Wed Nov 07 04:01:10 +0000 2018
@@ -263,23 +328,24 @@ class EnglishDateParserWrapper(object):
             else:
                 newpts.append(pt)
         return ' '.join(newpts) + isTimeZone
-        
+
     def getDaysBefore(self, baseDate, n):
         import datetime
         assertTrue(isinstance(n, int))
         diff = datetime.timedelta(days=n)
         return baseDate - diff
-        
+
     def getDaysBeforeInMilliseconds(self, sBaseDate, nDaysBefore):
         import datetime
         dObj = self.parse(sBaseDate)
         diff = datetime.timedelta(days=nDaysBefore)
         dBefore = dObj - diff
         return int(dBefore.timestamp() * 1000)
-        
+
     def toUnixMilliseconds(self, s):
         assertTrue(isPy3OrNewer, 'requires python 3 or newer')
         dt = self.parse(s)
+        assertTrue(dt, 'not parse dt', s)
         return int(dt.timestamp() * 1000)
 
 def runAndCatchException(fn):
@@ -294,7 +360,7 @@ def assertTrue(condition, *messageArgs):
     if not condition:
         msg = ' '.join(map(getPrintable, messageArgs)) if messageArgs else ''
         raise AssertionError(msg)
-    
+
 def assertEq(expected, received, *messageArgs):
     if expected != received:
         import pprint
@@ -348,7 +414,7 @@ def assertException(fn, excType, excTypeExpectedString=None, msg='', regexp=Fals
         fn()
     except:
         e = sys.exc_info()[1]
-    
+
     assertTrue(e is not None, 'did not throw ' + msg)
     if excType:
         assertTrue(isinstance(e, excType), 'exception type check failed ' + msg +
@@ -362,6 +428,11 @@ def assertException(fn, excType, excTypeExpectedString=None, msg='', regexp=Fals
         assertTrue(passed, 'exception string check failed ' + msg +
             '\ngot exception string:\n' + str(e))
 
+def getTraceback(e):
+    assertTrue(isPy3OrNewer)
+    import traceback
+    lines = traceback.format_exception(type(e), e, e.__traceback__)
+    return ''.join(lines)
 
 # Python 2/3 compat, inspired by mutagen/_compat.py
 
@@ -370,22 +441,22 @@ if sys.version_info[0] <= 2:
     BytesIO = StringIO
     from cStringIO import StringIO as cBytesIO
     from itertools import izip  # noqa: F401
-    
+
     def endswith(a, b):
         return a.endswith(b)
-    
+
     def startswith(a, b):
         return a.startswith(b)
-    
+
     def iterbytes(b):
         return iter(b)
-    
+
     def bytes_to_string(b):
         return b
-    
+
     def asbytes(s):
         return s
-    
+
     rinput = raw_input
     ustr = unicode
     uchr = unichr
@@ -398,7 +469,7 @@ else:
     StringIO = StringIO
     from io import BytesIO
     cBytesIO = BytesIO
-    
+
     def endswith(a, b):
         # use with either str or bytes
         if isinstance(a, str):
@@ -408,7 +479,7 @@ else:
             if not isinstance(b, bytes):
                 b = b.encode("ascii")
         return a.endswith(b)
-    
+
     def startswith(a, b):
         # use with either str or bytes
         if isinstance(a, str):
@@ -418,16 +489,16 @@ else:
             if not isinstance(b, bytes):
                 b = b.encode("ascii")
         return a.startswith(b)
-    
+
     def iterbytes(b):
         return (bytes([v]) for v in b)
-    
+
     def bytes_to_string(b):
         return b.decode('utf-8')
-    
+
     def asbytes(s, encoding='ascii'):
         return bytes(s, encoding)
-    
+
     rinput = input
     ustr = str
     uchr = chr

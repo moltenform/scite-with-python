@@ -54,16 +54,16 @@ def ErrCheckBool(result, func, args):
 
 class AutoHANDLE(HANDLE):
     """Subclass of HANDLE which will call CloseHandle() on deletion."""
-    
+
     CloseHandleProto = WINFUNCTYPE(BOOL, HANDLE)
     CloseHandle = CloseHandleProto(("CloseHandle", windll.kernel32))
     CloseHandle.errcheck = ErrCheckBool
-    
+
     def Close(self):
         if self.value and self.value != HANDLE(-1).value:
             self.CloseHandle(self)
             self.value = 0
-    
+
     def __del__(self):
         self.Close()
 
@@ -86,7 +86,7 @@ class PROCESS_INFORMATION(Structure):
 
     def __init__(self):
         Structure.__init__(self)
-        
+
         self.cb = sizeof(self)
 
 
@@ -355,7 +355,7 @@ def parent():
     code = process.returncode
     print('Child code: %s' % code)
     assert code == 127
-        
+
 def child():
     from qijo import QueryInformationJobObject
     print('Starting child')

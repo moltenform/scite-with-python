@@ -1,28 +1,14 @@
 # BenPythonCommon,
-# 2015 Ben Fisher, released under the GPLv3 license.
+# 2015 Ben Fisher, released under the LGPLv3 license.
 
 import os
 from .common_util import *
-
-def getRandomString(max=100 * 1000):
-    import random
-    return '%s' % random.randrange(max)
-
-def genGuid(asBase64=False):
-    import uuid
-    u = uuid.uuid4()
-    if asBase64:
-        import base64
-        b = base64.urlsafe_b64encode(u.bytes_le)
-        return b.decode('utf8')
-    else:
-        return str(u)
 
 def getNowAsMillisTime():
     import time
     t = time.time()
     return int(t * 1000)
-    
+
 def DBG(obj=None):
     import pprint
     if obj is None:
@@ -39,7 +25,7 @@ def DBG(obj=None):
     else:
         pprint.pprint(obj)
 
-def getClipboardTextTk():
+def _getClipboardTextTk():
     try:
         from tkinter import Tk
     except ImportError:
@@ -57,40 +43,58 @@ def getClipboardTextTk():
         r.destroy()
     return s
 
-def setClipboardTextTk(s):
+def _setClipboardTextTk(s):
     try:
         from tkinter import Tk
     except ImportError:
         from Tkinter import Tk
     if not isPy3OrNewer:
-        text = unicode(s)
+        s = unicode(s)
     try:
         r = Tk()
         r.withdraw()
         r.clipboard_clear()
-        r.clipboard_append(text)
+        r.clipboard_append(s)
     finally:
         r.destroy()
 
-def getClipboardTextPyperclip():
+def _getClipboardTextPyperclip():
     import pyperclip
     return pyperclip.paste()
 
-def setClipboardTextPyperclip(s):
+def _setClipboardTextPyperclip(s):
     import pyperclip
     pyperclip.copy(s)
-    
+
 def getClipboardText():
     try:
-        return getClipboardTextPyperclip()
+        return _getClipboardTextPyperclip()
     except ImportError:
-        return getClipboardTextTk()
-    
+        return _getClipboardTextTk()
+
 def setClipboardText(s):
     try:
-        setClipboardTextPyperclip(s)
+        _setClipboardTextPyperclip(s)
     except ImportError:
-        setClipboardTextTk(s)
+        _setClipboardTextTk(s)
+
+def getRandomString(max=1000 * 1000, hex=False):
+    import random
+    if hex:
+        return genUuid().split('-')[0]
+    else:
+        return '%s' % random.randrange(max)
+
+def genUuid(asBase64=False):
+    import uuid
+    u = uuid.uuid4()
+    if asBase64:
+        import base64
+        b = base64.urlsafe_b64encode(u.bytes_le)
+        return b.decode('utf8')
+    else:
+        return str(u)
+
 
 class PersistedDict(object):
     data = None
@@ -112,13 +116,13 @@ class PersistedDict(object):
         if keepHandle:
             self.handle = open(filename, 'w')
             self.persist()
-        
+
     def load(self):
         import json
         from .files import readall
         txt = readall(self.filename, encoding='utf-8')
         self.data = json.loads(txt)
-    
+
     def close(self):
         if self.handle:
             self.handle.close()
@@ -134,12 +138,12 @@ class PersistedDict(object):
             self.handle.truncate()
         else:
             writeall(self.filename, txt, encoding='utf-8')
-    
+
     def afterUpdate(self):
         self.counter += 1
         if self.counter % self.persistEveryNWrites == 0:
             self.persist()
-    
+
     def set(self, key, value):
         self.data[key] = value
         self.afterUpdate()
@@ -177,7 +181,7 @@ def startThread(fn, args=None):
 class ParsePlus(object):
     '''
     ParsePlus, by Ben Fisher 2019
-    
+
     Adds the following features to the "parse" module:
         {s:NoNewlines} field type
         {s:NoSpaces} works like {s:S}
@@ -212,12 +216,12 @@ class ParsePlus(object):
         self._escapeSequencesMap = {}
         if len(self.escapeSequences) > 5:
             raise ValueError('we support a max of 5 escape sequences')
-    
+
         sTransformed = s
         for i, seq in enumerate(self.escapeSequences):
             assertTrue(len(seq) > 1, "an escape-sequence only makes sense if " +
                 "it is at least two characters")
-            
+
             # use rarely-occurring ascii chars like
             # \x01 (start of heading)
             rareChar = chr(i + 1)
@@ -232,7 +236,7 @@ class ParsePlus(object):
             repl = rareChar * len(seq)
             self._escapeSequencesMap[repl] = seq
             sTransformed = sTransformed.replace(seq, repl)
-            
+
         assertEq(len(s), len(sTransformed), 'internal error: len(s) changed.')
         return sTransformed
 
@@ -262,7 +266,7 @@ class ParsePlus(object):
         if locationOfFirstOpen == -1 or locationOfLastClose == -1:
             # pattern contained no fields?
             return None
-        
+
         if not len(parseResult.spans):
             # pattern contained no fields?
             return None
@@ -272,11 +276,11 @@ class ParsePlus(object):
             lower, upper = parseResult.spans[key]
             smallestSpanStart = min(smallestSpanStart, lower)
             largestSpanEnd = max(largestSpanEnd, upper)
-        
+
         # ex.: for the pattern aaa{field}bbb, widen by len('aaa') and len('bbb')
         smallestSpanStart -= locationOfFirstOpen
         largestSpanEnd += len(self.pattern) - (locationOfLastClose + len('}'))
-        
+
         # sanity check that the bounds make sense
         assertTrue(0 <= smallestSpanStart <= lenS,
             'internal error: span outside bounds')
@@ -285,7 +289,7 @@ class ParsePlus(object):
         assertTrue(largestSpanEnd >= smallestSpanStart,
             'internal error: invalid span')
         return (smallestSpanStart, largestSpanEnd)
-    
+
     def match(self, s):
         # entire string must match
         import parse
@@ -311,19 +315,20 @@ class ParsePlus(object):
 
     def replaceFieldWithText(self, s, key, newValue,
             appendIfNotFound=None, allowOnlyOnce=False):
+        from . import jslike
         # example: <title>{title}</title>
         results = list(self.findall(s))
         if allowOnlyOnce and len(results) > 1:
             raise RuntimeError('we were told to allow pattern only once.')
         if len(results):
             span = results[0].spans[key]
-            return spliceSpan(s, span, newValue)
+            return jslike.spliceSpan(s, span, newValue)
         else:
             if appendIfNotFound is None:
                 raise RuntimeError("pattern not found.")
             else:
                 return s + appendIfNotFound
-    
+
     def replaceFieldWithTextIntoFile(self, path, key, newValue,
             appendIfNotFound=None, allowOnlyOnce=False, encoding=None):
         from .files import readall, writeall
@@ -332,5 +337,5 @@ class ParsePlus(object):
         newS = self.replaceFieldWithText(s, key, newValue,
             appendIfNotFound=appendIfNotFound,
             allowOnlyOnce=allowOnlyOnce)
-        
+
         writeall(path, newS, 'w', encoding=encoding, skipIfSameContent=True)
