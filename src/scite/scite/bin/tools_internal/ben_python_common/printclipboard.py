@@ -1,6 +1,5 @@
-# SciTE Python Extension
-# Ben Fisher, 2016
-# Released under the GNU General Public License version 3
+# BenPythonCommon,
+# 2015 Ben Fisher, released under the LGPLv3 license.
 
 import pyperclip
 txt = pyperclip.paste()
