@@ -3,8 +3,15 @@
 # Released under the GNU General Public License version 3
 # See documentation at https://moltenform.com/page/scite-with-python/doc/writingplugin.html
 
-import SciTEModule
+import sys
+if sys.platform.startswith('linux'):
+    parentpathparts = __file__.split('/')
+    parentpathparts.pop()
+    pythonallpath = '/'.join(parentpathparts) + '/PythonAll'
+    sys.path.append(pythonallpath + '/build/lib.linux-x86_64-2.7')
+    sys.path.append(pythonallpath + '/Lib')
 
+import SciTEModule
 debugTracing = False
 
 class ScAppClass(object):
