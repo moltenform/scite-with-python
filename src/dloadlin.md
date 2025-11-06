@@ -5,6 +5,7 @@
 
 run the following in a terminal,
 
+    (use apt-get or your system's package manager (yum, pacman, etc))
     sudo apt-get install libgtk2.0-dev
     sudo apt-get install build-essential
     sudo apt-get install xclip

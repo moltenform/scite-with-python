@@ -3,9 +3,9 @@
 
 ### Build from source (optional)
 
-download [Microsoft Visual C++ Compiler for Python 2.7](https://www.microsoft.com/en-us/download/confirmation.aspx?id=44266)
+download [Microsoft Visual C++ Compiler for Python 2.7](https://web.archive.org/web/20210106040224/https://download.microsoft.com/download/7/9/6/796EF2E4-801B-4FC4-AB28-B59FBF6D907B/VCForPython27.msi)
 
-(you must use this compiler version for C runtime compatibility)
+(you must use this compiler version for C runtime compatibility. SHA-256 is 070474db76a2e625513a5835df4595df9324d820f9cc97eab2a596dcbc2f5cbf)
 
 make a destination directory, such as `C:\path\scite-with-python`
 
@@ -53,10 +53,12 @@ then run these commands,
 
 `nmake -f scite.mak`
 
+A few plugins require Python 2.7 to be installed on your computer, but they aren't necessary in most situations.
+
 everything is now compiled, you can run
 
 `"C:\path\scite-with-python\scite-with-python\src\scite\scite\bin\SciTE.exe"`
 
-to start SciTE (it does require x86 Python 2.7 to be installed, though).
+to start SciTE.
 
 <p>&nbsp;</p><a href="../README.md" style="color:black; text-decoration:underline">Back</a>
