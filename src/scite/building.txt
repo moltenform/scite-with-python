@@ -54,7 +54,7 @@ if there is no such file, try this instead
 
 then unzip `src/scite/scite/python/libs.zip` into `src/scite/scite/python/libs`
 
-(there should now be a file `src/scite/scite/python/libs/python27.lib`)
+(there should now be a file `src/scite/scite/python/libs/python27.lib` - you don't need to compile Python itself, we've already included these binaries for Python 2.7.12.)
 
 unzip `src/scite/scite/bin/pythonbinaries.zip` into `src/scite/scite/bin`
 
