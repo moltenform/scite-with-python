@@ -53,7 +53,15 @@ then run these commands,
 
 `nmake -f scite.mak`
 
-A few plugins require Python 2.7 to be installed on your computer, but they aren't necessary in most situations.
+a few plugins require Python 2.7 to be installed on your computer, but they aren't necessary in most situations.
+
+* to get those plugins running, you can install [Python 2.7](https://www.python.org/downloads/windows/), use the Windows x86 MSI installer. 
+
+   * then, press Ctrl+; to open `SciTEGlobal.properties`
+   
+   * at the bottom of this file where it says `customcommand.externalpython=` make sure this is the correct path to python 2.7 `pythonw.exe`
+   
+   * save changes
 
 everything is now compiled, you can run
 

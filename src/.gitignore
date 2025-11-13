@@ -1,0 +1,7 @@
+nocpy*
+wincommondialog.exe
+tools_personal
+
+# this locale.properties is just for testing, shouldn't be committed
+scite/scite/bin/properties/locale.properties
+

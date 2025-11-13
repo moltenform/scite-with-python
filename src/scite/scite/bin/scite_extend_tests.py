@@ -36,7 +36,7 @@ testForEditorPaneFunctions = [
     # void|void|void|Home
     ('Go to start of line (return None)', lambda: print(ScEditor.Home())),
     # void|void|void|LineDuplicate
-    ('Duplicate current selection (return None)', lambda: print(ScEditor.LineDuplicate())),
+    ('Duplicate current line (return None)', lambda: print(ScEditor.LineDuplicate())),
     # bool|void|void|CanUndo
     ('Can undo? (return bool)', lambda: print(ScEditor.CanUndo())),
     # int|int|int|MarkerAdd
