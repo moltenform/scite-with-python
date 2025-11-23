@@ -9,6 +9,6 @@
 
 * open SciTE.exe
 
-* (as an alternative: <a href="dloadwin_src.html">build from source</a>)
+* (as an alternative: <a href="dloadwin_src.md">build from source</a>)
 
 <p>&nbsp;</p><a href="../README.md" style="color:black; text-decoration:underline">Back</a>

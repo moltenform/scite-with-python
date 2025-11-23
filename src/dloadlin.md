@@ -22,8 +22,8 @@ run the following in a terminal,
     cd ../src/scite/scintilla/gtk
     make
     cd ../../scite/gtk
-    make -f makefile_custom_py
-    sudo make -f makefile_custom_py install
+    make -f ./makefile_built_py
+    sudo make -f ./makefile_built_py install
     SciTE_with_python
 
 <p>&nbsp;</p><a href="../README.md" style="color:black; text-decoration:underline">Back</a>
