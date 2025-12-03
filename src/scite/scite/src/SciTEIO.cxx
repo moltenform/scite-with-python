@@ -1432,7 +1432,8 @@ bool SciTEBase::GrepIntoDirectory(const FilePath &directory) {
     return sDirectory[0] != '.';
 }
 
-void SciTEBase::GrepRecursive(GrepFlags gf, FilePath baseDir, const char *searchString, const GUI::gui_char *fileTypes, const char *dirIgnore) {
+void SciTEBase::GrepRecursive(GrepFlags gf, FilePath baseDir, const char *searchString,
+		const GUI::gui_char *fileTypes, const char *dirIgnore) {
 	FilePathSet directories;
 	FilePathSet files;
 
@@ -1455,8 +1456,6 @@ void SciTEBase::GrepRecursive(GrepFlags gf, FilePath baseDir, const char *search
 			return;
 		FilePath fPath = files[i];
 		if (*fileTypes == '\0' || fPath.Matches(fileTypes)) {
-			//OutputAppendStringSynchronised(i->AsInternal());
-			//OutputAppendStringSynchronised("\n");
 			FileReader fr(fPath, flagsMatchCase || regexpSearch.Use());
 			if ((gf & grepBinary) || !fr.BufferContainsNull()) {
 				while (const char *line = fr.Next()) {
@@ -1471,7 +1470,7 @@ void SciTEBase::GrepRecursive(GrepFlags gf, FilePath baseDir, const char *search
 								        ((match + searchLength == (lineEnd)) || !IsWordCharacter(match[searchLength]))) {
 									break;
 								}
-				g				match = strstr(match + 1, searchString);
+								match = strstr(match + 1, searchString);
 							}
 						}
 						if (match) {
@@ -1495,12 +1494,33 @@ void SciTEBase::GrepRecursive(GrepFlags gf, FilePath baseDir, const char *search
 			OutputAppendStringSynchronised(os.c_str());
 		}
 	}
+	
+	std::string sDirIgnore(dirIgnore);
+#if defined(_WIN32)
+	const char *dirSep = "\\";
+#else
+	const char *dirSep = "/";
+#endif
+	std::string ignoreDirWithSlash = std::string(dirSep) + sDirIgnore + dirSep;
+	
 	for (size_t j = 0; j < directories.size(); j++) {
 		FilePath fPath = directories[j];
+		
 		if ((gf & grepDot) || GrepIntoDirectory(fPath.Name())) {
-			if (!dirIgnore || !dirIgnore[0] || !strstr(fPath, dirIgnore)) {
-				GrepRecursive(gf, fPath, searchString, fileTypes, dirIgnore);
+			if (dirIgnore && dirIgnore[0]) {
+				std::string asUtf8 = fPath.AsUTF8();
+				
+				if (strstr(asUtf8.c_str(), ignoreDirWithSlash.c_str())) {
+					continue;
+				}
+				
+				std::string asUtf8WithTrailing = asUtf8 + dirSep;
+				if (strstr(asUtf8WithTrailing.c_str(), ignoreDirWithSlash.c_str())) {
+					continue;
+				}
 			}
+			
+			GrepRecursive(gf, fPath, searchString, fileTypes, dirIgnore);
 		}
 	}
 }

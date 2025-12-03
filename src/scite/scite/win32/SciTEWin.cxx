@@ -782,7 +782,7 @@ DWORD SciTEWin::ExecuteOne(const Job &jobToRun) {
 			// command delimited by nul bytes, go to the next string by moving strlen + 1.
 			const char *findFiles = grepCmd + strlen(grepCmd) + 1;
 			const char *findText = findFiles + strlen(findFiles) + 1;
-			const char *dirIgnore = findFiles + strlen(dirIgnore) + 1;
+			const char *dirIgnore = findText + strlen(findText) + 1;
 			if (cmdWorker.outputScroll == 1)
 				gf = static_cast<GrepFlags>(gf | grepScroll);
 			sptr_t positionEnd = wOutput.Send(SCI_GETCURRENTPOS);

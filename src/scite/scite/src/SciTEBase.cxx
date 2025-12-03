@@ -4706,7 +4706,9 @@ bool SciTEBase::ProcessCommandLine(GUI::gui_string &args, int phase) {
 				std::string sSearch = GUI::UTF8FromString(wlArgs[i+3].c_str());
 				std::string unquoted = UnSlashString(sSearch.c_str());
 				sptr_t originalEnd = 0;
-				InternalGrep(gf, FilePath::GetWorkingDirectory().AsInternal(), wlArgs[i+2].c_str(), unquoted.c_str(), originalEnd);
+				
+				// skipped directory feature is not supported here
+				InternalGrep(gf, FilePath::GetWorkingDirectory().AsInternal(), wlArgs[i+2].c_str(), unquoted.c_str(), originalEnd, "");
 				exit(0);
 			} else {
 				if (AfterName(arg) == ':') {
