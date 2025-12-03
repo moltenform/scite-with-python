@@ -1165,6 +1165,8 @@ void SciTEWin::PerformGrep() {
 		searchParams.append(props.GetString("find.files"));
 		searchParams.append("\0", 1);
 		searchParams.append(props.GetString("find.what"));
+		searchParams.append("\0", 1);
+		searchParams.append(props.GetString("find.ignoredirectory"));
 		AddCommand(searchParams, props.GetString("find.directory"), jobGrep, findInput, flags);
 	} else {
 		AddCommand(findCommand,

@@ -1432,7 +1432,7 @@ bool SciTEBase::GrepIntoDirectory(const FilePath &directory) {
     return sDirectory[0] != '.';
 }
 
-void SciTEBase::GrepRecursive(GrepFlags gf, FilePath baseDir, const char *searchString, const GUI::gui_char *fileTypes) {
+void SciTEBase::GrepRecursive(GrepFlags gf, FilePath baseDir, const char *searchString, const GUI::gui_char *fileTypes, const char *dirIgnore) {
 	FilePathSet directories;
 	FilePathSet files;
 
@@ -1471,7 +1471,7 @@ void SciTEBase::GrepRecursive(GrepFlags gf, FilePath baseDir, const char *search
 								        ((match + searchLength == (lineEnd)) || !IsWordCharacter(match[searchLength]))) {
 									break;
 								}
-								match = strstr(match + 1, searchString);
+				g				match = strstr(match + 1, searchString);
 							}
 						}
 						if (match) {
@@ -1498,12 +1498,14 @@ void SciTEBase::GrepRecursive(GrepFlags gf, FilePath baseDir, const char *search
 	for (size_t j = 0; j < directories.size(); j++) {
 		FilePath fPath = directories[j];
 		if ((gf & grepDot) || GrepIntoDirectory(fPath.Name())) {
-			GrepRecursive(gf, fPath, searchString, fileTypes);
+			if (!dirIgnore || !dirIgnore[0] || !strstr(fPath, dirIgnore)) {
+				GrepRecursive(gf, fPath, searchString, fileTypes, dirIgnore);
+			}
 		}
 	}
 }
 
-void SciTEBase::InternalGrep(GrepFlags gf, const GUI::gui_char *directory, const GUI::gui_char *fileTypes, const char *search, sptr_t &originalEnd) {
+void SciTEBase::InternalGrep(GrepFlags gf, const GUI::gui_char *directory, const GUI::gui_char *fileTypes, const char *search, sptr_t &originalEnd, const char *dirIgnore) {
 	GUI::ElapsedTime commandTime;
 	if (!(gf & grepStdOut)) {
 		std::string os;
@@ -1520,7 +1522,7 @@ void SciTEBase::InternalGrep(GrepFlags gf, const GUI::gui_char *directory, const
 	if (!(gf & grepMatchCase)) {
 		LowerCaseAZ(searchString);
 	}
-	GrepRecursive(gf, FilePath(directory), searchString.c_str(), fileTypes);
+	GrepRecursive(gf, FilePath(directory), searchString.c_str(), fileTypes, dirIgnore);
 	if (!(gf & grepStdOut)) {
 		std::string sExitMessage(">");
 		if (jobQueue.TimeCommands()) {

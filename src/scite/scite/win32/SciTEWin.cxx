@@ -773,7 +773,7 @@ DWORD SciTEWin::ExecuteOne(const Job &jobToRun) {
 	}
 
 	if (jobToRun.jobType == jobGrep) {
-		// jobToRun.command is "(w|~)(c|~)(d|~)(b|~)(r|~)\0files\0text"
+		// jobToRun.command is "(w|~)(c|~)(d|~)(b|~)(r|~)\0files\0text\0dir_to_ignore"
 		const char *grepCmd = jobToRun.command.c_str();
 		if (*grepCmd) {
 			// parse grepflags
@@ -782,10 +782,11 @@ DWORD SciTEWin::ExecuteOne(const Job &jobToRun) {
 			// command delimited by nul bytes, go to the next string by moving strlen + 1.
 			const char *findFiles = grepCmd + strlen(grepCmd) + 1;
 			const char *findText = findFiles + strlen(findFiles) + 1;
+			const char *dirIgnore = findFiles + strlen(dirIgnore) + 1;
 			if (cmdWorker.outputScroll == 1)
 				gf = static_cast<GrepFlags>(gf | grepScroll);
 			sptr_t positionEnd = wOutput.Send(SCI_GETCURRENTPOS);
-			InternalGrep(gf, jobToRun.directory.AsInternal(), GUI::StringFromUTF8(findFiles).c_str(), findText, positionEnd);
+			InternalGrep(gf, jobToRun.directory.AsInternal(), GUI::StringFromUTF8(findFiles).c_str(), findText, positionEnd, dirIgnore);
 			if ((gf & grepScroll) && returnOutputToCommand)
 				wOutput.Send(SCI_GOTOPOS, positionEnd, 0);
 		}

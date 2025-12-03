@@ -961,9 +961,9 @@ protected:
 	};
 	GrepFlags GrepFlagsFromString(const GUI::gui_string &spec);
 	virtual bool GrepIntoDirectory(const FilePath &directory);
-	void GrepRecursive(GrepFlags gf, FilePath baseDir, const char *searchString, const GUI::gui_char *fileTypes);
+	void GrepRecursive(GrepFlags gf, FilePath baseDir, const char *searchString, const GUI::gui_char *fileTypes, const char *dirIgnore);
 	void InternalGrep(GrepFlags gf, const GUI::gui_char *directory, const GUI::gui_char *files,
-			  const char *search, sptr_t &originalEnd);
+			  const char *search, sptr_t &originalEnd, const char *dirIgnore);
 	void EnumProperties(const char *action);
 	void SendOneProperty(const char *kind, const char *key, const char *val);
 	void PropertyFromDirector(const char *arg);
